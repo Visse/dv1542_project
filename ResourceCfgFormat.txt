@@ -1,0 +1,32 @@
+# the resource.cfg format is in YAML
+
+Texture:
+    Name: [Name of texture]
+    Type: [Type of texture, from 'TextureType']
+    Source: [Path to texture, relative to the resourcepack]
+    
+GpuProgram:
+    Name: [Name of program]
+    Shaders:
+        - Type: [Type first shader, from 'ShaderType']
+          Source: [Path to shader, relative to resourcepack]
+         # more shaders can be added
+        
+Material:
+    Name: [Name of material]
+    Source: [Path to material, relative to the resourcepack]
+    
+Mesh:
+    Name: [Name of mesh]
+    Source: [Path to mesh, relative to the resourcepack]
+    
+    
+    
+    
+#### format of material files
+Program: [Name of program]
+Unifroms: 
+    - Name: [Name of first uniform]
+      Type: [Type of first uniform]
+      Value: [Value of first uniform]
+    # more uniforms can be added
