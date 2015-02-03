@@ -6,7 +6,7 @@
 #include <cerrno>
 #include <cassert>
 
-#include <FreeImagePlus.h>
+#include <FreeImage.h>
 
 GLint getBoundTexture()
 {
@@ -92,11 +92,19 @@ void Texture::unbindTexture( int unit )
     glBindTexture( GL_TEXTURE_2D, 0 );
 }
 
-SharedPtr<Texture> createTextureFromFipImage( TextureType type,  fipImage &image )
+SharedPtr<Texture> createTextureFromFipImage( TextureType type, FIBITMAP *image, const std::string& source )
 {
+    // not 100% sure that this is needed, but it makes it easier to know that the pixels is in bgra format :)
+    image = FreeImage_ConvertTo32Bits(image);
+    if( !image )
+    {
+        throw std::runtime_error( StringUtils::strjoin("Failed to convert texture from ",source," to 32 bit!") );
+    }
+    
     FreeImage_FlipVertical(image);
     
-    glm::ivec2 size( image.getWidth(), image.getHeight() );
+    glm::ivec2 size( FreeImage_GetWidth(image), FreeImage_GetHeight(image) );
+    
     GLuint glTexture;
     glGenTextures( 1, &glTexture );
     glBindTexture( GL_TEXTURE_2D, glTexture );
@@ -104,53 +112,64 @@ SharedPtr<Texture> createTextureFromFipImage( TextureType type,  fipImage &image
     GLint internalFormat = typeToGLFormat( type );
     
     int mipmaps = mipmapForSize( size );
+    BYTE *bits = FreeImage_GetBits( image );
     
     glTexStorage2D( GL_TEXTURE_2D, mipmaps, internalFormat, size.x, size.y );
-    glTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, size.x, size.y, GL_BGRA, GL_UNSIGNED_BYTE, image.accessPixels() );
+    glTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, size.x, size.y, GL_BGRA, GL_UNSIGNED_BYTE, bits );
 //     glTexImage2D( GL_TEXTURE_2D, 0, internalFormat, size.x, size.y, 0, GL_BGRA, GL_UNSIGNED_BYTE, image.accessPixels() );
 
     glGenerateMipmap( GL_TEXTURE_2D );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
     
+    FreeImage_Unload( image );
+    
     return std::make_shared<Texture>( type, size, glTexture );
 }
 
 SharedPtr<Texture> Texture::LoadTexture( TextureType type, const std::string& filename )
 {
-    fipImage image;
-
-    if( !image.load( filename.c_str() ) )
-    {
-        throw std::runtime_error( StringUtils::strjoin("Failed to load image from file \"", filename, "\"!") );
+    
+    FREE_IMAGE_FORMAT filetype = FreeImage_GetFileType( filename.c_str() );
+    if( filetype == FIF_UNKNOWN ){
+        filetype = FreeImage_GetFIFFromFilename( filename.c_str() );
     }
-
-    if( !image.convertTo32Bits() )
-    {
-        throw std::runtime_error( StringUtils::strjoin("Failed to convert image from file \"", filename, "\" to 32 bit!") );
+    if( filetype == FIF_UNKNOWN ) {
+        throw std::runtime_error( StringUtils::strjoin("Failed to detect image format for file \"",filename,"\"") );
     }
     
-    return createTextureFromFipImage( type, image );
+    FIBITMAP *image = FreeImage_Load( filetype, filename.c_str() );
+    
+    if( !image ) {
+        throw std::runtime_error( StringUtils::strjoin("Failed to load texture from file \"",filename,"\"") );
+    }
+    
+    SharedPtr<Texture> texture = createTextureFromFipImage( type, image, StringUtils::strjoin("file \"",filename,"\"") );
+    FreeImage_Unload( image );
+    
+    return texture;
 }
 
 SharedPtr<Texture> Texture::LoadTextureFromMemory( TextureType type, const void *memory, size_t size )
 {
-    fipImage image;
+    FIMEMORY *fimemory = FreeImage_OpenMemory( reinterpret_cast<BYTE*>(const_cast<void*>(memory)), size );
     
-    struct IOData {
-        const void *memory;
-        size_t size;
-        size_t pos;
-    };
+    FREE_IMAGE_FORMAT filetype = FreeImage_GetFileTypeFromMemory( fimemory );
+    if( filetype == FIF_UNKNOWN ) {
+        throw std::runtime_error( StringUtils::strjoin("Failed to detect image format for memory!") );
+    }
     
-    fipMemoryIO io( (BYTE*)const_cast<void*>(memory), size );
-    if( !image.loadFromMemory(io) ) {
-        throw std::runtime_error( "Failed to load image from memory!" );
+    FIBITMAP *image = FreeImage_LoadFromMemory( filetype, fimemory );
+    FreeImage_CloseMemory( fimemory );
+    
+    
+    if( !image ) {
+        throw std::runtime_error( "Failed to load texture from memory!" );
     }
-    if( !image.convertTo32Bits() ) {
-        throw std::runtime_error( "Failed to convert image from memory!" );
-    }
-    return createTextureFromFipImage( type, image );
+    SharedPtr<Texture> texture =  createTextureFromFipImage( type, image, "memory" );
+    
+    FreeImage_Unload( image );
+    return texture;
 }
 
 SharedPtr<Texture> Texture::CreateTexture( TextureType type, const glm::ivec2& size, GLuint mipmaps )

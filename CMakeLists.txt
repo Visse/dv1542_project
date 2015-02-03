@@ -27,15 +27,15 @@ find_path(SDL_INCLUDE_DIR SDL2/SDL.h ${PROJECT_DEPENDENCY_DIR}/include REQUIRED)
 
 find_package( OpenGL )
 
-find_library( GLEW_LIBRARY GLEW )
-find_library( FREEIMAGEPLUS_LIBRARY freeimageplus )
+find_library( GLEW_LIBRARY GLEW PATHS ${PROJECT_DEPENDENCY_DIR}/lib )
+find_library( FREEIMAGE_LIBRARY freeimage PATHS ${PROJECT_DEPENDENCY_DIR}/lib )
 
 
 add_executable(dv1542_project main.cpp ${PROJECT_SOURCE_FILES} ${PROJECT_HEADER_FILES} )
 
 target_include_directories(dv1542_project PUBLIC ${PROJECT_INCLUDE_DIR} SDL_INCLUDE_DIR ${PROJECT_DEPENDENCY_DIR}/include)
 
-target_link_libraries(dv1542_project ${SDL_LIBRARY} yaml-cxx imgui boost_system boost_filesystem ${OPENGL_gl_LIBRARY} ${FREEIMAGEPLUS_LIBRARY} ${GLEW_LIBRARY} )
+target_link_libraries(dv1542_project ${SDL_LIBRARY} yaml-cxx imgui boost_system boost_filesystem ${OPENGL_gl_LIBRARY} ${FREEIMAGE_LIBRARY} ${GLEW_LIBRARY} )
 
 
 install(TARGETS dv1542_project RUNTIME DESTINATION bin)
