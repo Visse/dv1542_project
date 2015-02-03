@@ -1,5 +1,5 @@
 bin/
 build/
-dependecies/
 .kdev4/
 models/
+*.kdev4
