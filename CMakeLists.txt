@@ -5,11 +5,11 @@ project(dv1542_project)
 get_filename_component( PROJECT_DEPENDENCY_DIR dependecies/ ABSOLUTE )
 get_filename_component( PROJECT_INCLUDE_DIR include/ ABSOLUTE )
 
-add_definitions( "-DGLEW_NO_GLU -DGLM_FORCE_RADIANS" )
-if(CMAKE_COMPILER_IS_GNUCXX)
+if(UNIX OR MINGW)
     # g++ compiler flags
+    add_definitions( "-DGLEW_NO_GLU -DGLM_FORCE_RADIANS" )
     set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-Wall -Werror -std=c++11 -Wno-error=unused-but-set-variable -Wno-error=unused-variable")
-endif(CMAKE_COMPILER_IS_GNUCXX)
+endif(UNIX OR MINGW)
 
 
 if(MSVS)
