@@ -97,7 +97,7 @@ void MeshLoaderWavefront::parseVertexNormal( const std::string &line )
 
 void MeshLoaderWavefront::parseFace( const std::string &line )
 {
-    auto vertexes = StringUtils::split( line, {" "} );
+    auto vertexes = StringUtils::split( line, std::vector<std::string>{" "} );
     if( vertexes.size() != 4 ) { // f [v1] [v2] [v3]
         throw std::runtime_error( StringUtils::strjoin("Invalid face!, expected format is \"f [v1] [v2] [v3]\", line ",mParseInfo.currentLine," says: \"",line,"\".") );
     }
@@ -252,7 +252,7 @@ static const float VERTEX_EPSILON = 1e-4f;
 
 // floor to VERTEX_EPSILON
 inline glm::vec4 floor( const glm::vec4 &v ) {
-    return v - glm::mod(v,VERTEX_EPSILON);
+    return v - glm::mod(v,glm::vec4(VERTEX_EPSILON));
 }
  
 size_t MeshLoaderWavefront::VertexHash::operator()( const MeshLoaderWavefront::Vertex &v ) const

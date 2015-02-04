@@ -12,7 +12,10 @@ namespace Yaml
         friend class Node;
 
     public:
-        using Node::Node;
+        MappingNode() = default;
+        MappingNode(NodePriv *priv) :
+            Node(priv)
+        {}
 
         size_t getCount() const;
         std::pair<Node,Node> getValue ( size_t index ) const;

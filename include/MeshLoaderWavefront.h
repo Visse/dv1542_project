@@ -31,7 +31,7 @@ public:
     const std::vector<Vertex>& getVertexes() const {
         return mMeshInfo.vertexes;
     }
-    const std::vector<uint>& getIndexes() const {
+    const std::vector<unsigned int>& getIndexes() const {
         return mMeshInfo.indexes;
     }
     const std::vector<SubMesh>& getSubmeshes() const {
@@ -90,7 +90,7 @@ private:
         std::unordered_map<Vertex, int, VertexHash, VertexEqual> vertexLookup;
         
         std::vector<Vertex> vertexes;
-        std::vector<uint> indexes;
+        std::vector<unsigned int> indexes;
         
         std::vector<SubMesh> submeshes;
     } mMeshInfo;

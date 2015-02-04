@@ -14,7 +14,11 @@
 #include <cassert>
 
 
-void debugCallback( GLenum source, GLenum type, unsigned int id, GLuint severity, GLsizei length, const char *message, void *userParam );
+void GLAPIENTRY debugCallback( GLenum source, GLenum type, unsigned int id, GLuint severity, GLsizei length, const char *message, void *userParam );
+// seems like there some variations for the definition of GLDEBUGPROC, well I'm not using the userParam so it shouldn't matter
+void GLAPIENTRY debugCallback( GLenum source, GLenum type, unsigned int id, GLuint severity, GLsizei length, const char *message, const void *userParam ) {
+    debugCallback( source, type, id, severity, length, message, (void*)0 );
+}
 
 bool GraphicsManager::init( Root *root )
 {
@@ -164,7 +168,7 @@ void GraphicsManager::fireFrameEnded()
 }
 
 #include <cstdio>
-void debugCallback( GLenum source, GLenum type, unsigned int id, GLuint severity, GLsizei length, const char *message, void *userParam )
+void GLAPIENTRY debugCallback( GLenum source, GLenum type, unsigned int id, GLuint severity, GLsizei length, const char *message, void *userParam )
 {
     (void)length;
     (void)userParam;

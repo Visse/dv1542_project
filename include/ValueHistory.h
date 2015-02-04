@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include <vector>
 #include <algorithm>
+#include <numeric>
 
 /// @todo come up with a better name :/
 template< typename Type >

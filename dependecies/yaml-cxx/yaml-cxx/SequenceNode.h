@@ -11,7 +11,10 @@ namespace Yaml
         friend class Node;
 
     public:
-        using Node::Node;
+        SequenceNode() = default;
+        SequenceNode(NodePriv *priv) :
+            Node(priv)
+        {}
 
         size_t getCount() const;
         Node getValue ( size_t index ) const;

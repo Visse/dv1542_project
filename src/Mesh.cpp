@@ -145,7 +145,7 @@ SharedPtr<Mesh> uploadMeshToGpu( const std::vector<Mesh::Vertex> &vertexes,
     
     SharedPtr<GpuBuffer> indexBuffer = GpuBuffer::CreateBuffer( 
                                             BufferType::Indexes,
-                                            sizeof(uint) * vertexes.size(),
+                                            sizeof(GLuint) * indexes.size(),
                                             BufferUsage::WriteOnly, BufferUpdate::Static 
                                        );
     vertexBuffer->setContent( vertexes.data(), vertexes.size() );

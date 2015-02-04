@@ -12,7 +12,10 @@ namespace Yaml
     {
         friend class Node;
     public:
-        using Node::Node;
+        ValueNode() = default;
+        ValueNode( NodePriv *priv ) :
+            Node(priv)
+        {}
 
         template< typename Type >
         Type getValue ( const Type &defaultValue = Type(), bool *succes = nullptr ) const {

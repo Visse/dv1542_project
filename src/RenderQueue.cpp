@@ -4,9 +4,9 @@
 #include <cstdio>
 #include <stdexcept>
 
-uint renderQueueFromString( const std::string &str )
+unsigned int renderQueueFromString(const std::string &str)
 {
-    uint queue = uint(-1);
+    unsigned int queue = (unsigned int)-1;
     
     std::string string = StringUtils::toLowerCase( str );
     
@@ -30,7 +30,7 @@ uint renderQueueFromString( const std::string &str )
         if( queue > RQ_DeferredLast ) queue = RQ_DeferredLast;
     }
     
-    if( queue >= RQ_Count ) {
+    if( queue < 0 || queue >= RQ_Count ) {
         throw std::runtime_error( StringUtils::strjoin("String \"",str,"\" isn't a valid RenderQueue!") ); 
     }
     

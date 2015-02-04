@@ -111,7 +111,7 @@ void ComputeParticleSystem::update( float dt )
     
     glm::mat4 transform = getTransform();
     glm::vec4 *attractors = mAttractorBuffer->mapBuffer<glm::vec4>( BufferUsage::WriteOnly );
-    for( uint i=0; i < mAttractorCount; ++i ) {
+    for (unsigned int i = 0; i < mAttractorCount; ++i) {
         attractors[i] = glm::vec4( 
             glm::sin( mCurrentTime*(i+2)*0.06f+i*0.2f)*glm::cos( mCurrentTime*(i+7)*0.04f ),
             glm::sin( mCurrentTime*(i+3)*0.04f+i*0.5f)*glm::sin( mCurrentTime*(i+5)*0.02f ),

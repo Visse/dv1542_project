@@ -23,16 +23,16 @@ void Config::load( const std::string &filename )
             targetFrameRate = value.asValue().getValue<float>();
         }
         else if( StringUtils::equalCaseInsensitive(key,"WindowWidth") ) {
-            windowWidth = value.asValue().getValue<uint>();
+            windowWidth = value.asValue().getValue<unsigned int>();
         }
         else if( StringUtils::equalCaseInsensitive(key,"WindowHeight") ) {
-            windowHeight = value.asValue().getValue<uint>();
+            windowHeight = value.asValue().getValue<unsigned int>();
         }
         else if( StringUtils::equalCaseInsensitive(key,"DefferedBufferHeight") ) {
-            defferedBufferHeight = value.asValue().getValue<uint>();
+            defferedBufferHeight = value.asValue().getValue<unsigned int>();
         }
         else if( StringUtils::equalCaseInsensitive(key,"DefferedBufferWidth") ) {
-            defferedBufferWidth = value.asValue().getValue<uint>();
+            defferedBufferWidth = value.asValue().getValue<unsigned int>();
         }
         else if( StringUtils::equalCaseInsensitive(key,"Fov") ) {
             fov = value.asValue().getValue<float>();

@@ -20,8 +20,8 @@ LowLevelRenderer::LowLevelRenderer( Root *root ) :
     mRoot(root)
 {
     const Config *config = mRoot->getConfig();
-    uint width = config->defferedBufferWidth,
-         height = config->defferedBufferHeight;
+    unsigned int width = config->defferedBufferWidth,
+                 height = config->defferedBufferHeight;
          
     glm::ivec2 size( width, height );
          
@@ -52,7 +52,7 @@ LowLevelRenderer::LowLevelRenderer( Root *root ) :
 
 LowLevelRenderer::~LowLevelRenderer() = default;
 
-void LowLevelRenderer::queueOperation( const LowLevelRenderOperation &operation, uint queue )
+void LowLevelRenderer::queueOperation( const LowLevelRenderOperation &operation, unsigned int queue )
 {
     assert( queue < RQ_Count );
     
@@ -67,7 +67,7 @@ void LowLevelRenderer::flush()
     sortRenderQueues();
     
     mDefferedFrameBuffer->bindFrameBuffer();
-    for( uint i=RQ_DeferredFirst; i < RQ_DeferredLast; ++i ) {
+    for( unsigned int i=RQ_DeferredFirst; i < RQ_DeferredLast; ++i ) {
         renderQueue( i );
     }
     mDefferedFrameBuffer->unbindFrameBuffer();
@@ -107,7 +107,7 @@ void LowLevelRenderer::sortRenderQueues()
 {
 }
 
-void LowLevelRenderer::renderQueue( uint queueId )
+void LowLevelRenderer::renderQueue( unsigned int queueId )
 {
     OperationQueue &queue = mQueue[queueId];
     // @todo make smarter (sort based on material etc.)

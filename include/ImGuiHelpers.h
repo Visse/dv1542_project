@@ -34,7 +34,8 @@ namespace ImGui
         }
         
         char buffer[128];
-        std::snprintf( buffer, 128, "Max: %-10.3g\nMin: %-10.3g\nAvg: %-10.3g", values.getMax(), values.getMin(), values.getAvarage() );
+        // visual studio didn't support snprintf :(, but since I'm using fixed with arguments, sprintf should be safe :)
+        std::sprintf( buffer, "Max: %-10.3g\nMin: %-10.3g\nAvg: %-10.3g", values.getMax(), values.getMin(), values.getAvarage() );
         
         ImGui::PlotLines( label, data, size, index, buffer, min, max, graph_size );
     }
