@@ -42,6 +42,8 @@ public:
     void setDepthWrite( bool depthWrite );
     void setDepthCheck( DepthCheck check );
     
+    void bindTextureUnit( const std::string &name, GLint unit );
+    
     SharedPtr<GpuProgram> getProgram();
     
     void bindMaterial();

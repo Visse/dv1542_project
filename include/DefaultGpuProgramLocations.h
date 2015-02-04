@@ -24,7 +24,14 @@ enum class DefaultAttributeLocations {
 enum class DefaultOutputLocations {
     Diffuse  = 0,
     Normal   = 1,
-    Specular = 2,
+    
+    COUNT
+};
+
+enum class DefaultGBufferBinding {
+    Diffuse   = 0,
+    Normal    = 1,
+    Depth     = 2,
     
     COUNT
 };
@@ -38,7 +45,11 @@ inline GLuint getDefaultAttributeLocation( DefaultAttributeLocations attribute )
 inline GLuint getDefaultOutputLocation( DefaultOutputLocations output ) {
     return static_cast<GLuint>(output);
 }
+inline GLuint getDefaultGBufferBinding( DefaultGBufferBinding binding ) {
+    return static_cast<GLuint>(binding);
+}
 
 const char* getDefaultUniformBlockName( DefaultUniformBlockLocations uniform );
 const char* getDefaultAttributeName( DefaultAttributeLocations attribute );
 const char* getDefaultOutputName( DefaultOutputLocations output );
+const char* getDefaultGBufferName( DefaultGBufferBinding binding );

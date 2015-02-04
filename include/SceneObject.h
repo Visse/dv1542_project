@@ -16,10 +16,11 @@ public:
     
     virtual void queueRenderable( LowLevelRenderer &renderer ) {}
     
-    
     void setPosition( const glm::vec3 &position );
     void setOrientation( const glm::quat &orientation );
-    
+    void setRenderQueue( uint queue ) {
+        mRenderQueue = queue;
+    }
     const glm::vec3& getPosition() {
         return mPosition;
     }
@@ -28,6 +29,9 @@ public:
     }
     const glm::mat4& getTransform() {
         return mTransform;
+    }
+    uint getRenderQueue() {
+        return mRenderQueue;
     }
     
     bool isDirty() {
@@ -41,5 +45,6 @@ private:
     
     glm::mat4 mTransform;
     
+    uint mRenderQueue = 0;
     bool mDirty = false;
 };

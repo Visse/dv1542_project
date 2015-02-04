@@ -34,7 +34,7 @@ public:
     LowLevelRenderer( Root *root );
     ~LowLevelRenderer();
     
-    void queueOperation( const LowLevelRenderOperation &operation, uint queue = RQ_DeferedDefault );
+    void queueOperation( const LowLevelRenderOperation &operation, uint queue = RQ_DeferredDefault );
     void flush();
     
     void clearFrame();

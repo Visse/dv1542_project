@@ -1,11 +1,12 @@
 #pragma once
 
 #include <string>
+#include <iostream>
 
 enum RenderQueue {
-    RQ_DeferedFirst = 0,
-    RQ_DeferedDefault = 5,
-    RQ_DeferedLast  = 10,
+    RQ_DeferredFirst = 0,
+    RQ_DeferredDefault = 5,
+    RQ_DeferredLast  = 10,
     
     RQ_Light = 15,
     

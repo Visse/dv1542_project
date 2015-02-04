@@ -21,10 +21,15 @@ static const char* ATTRIBUTE_NAME_LOOKUP[static_cast<int>(DefaultAttributeLocati
 static const char* OUTPUT_NAME_LOOKUP[static_cast<int>(DefaultOutputLocations::COUNT)] = 
 {
     "Diffuse",
-    "Normal",
-    "Specular"
+    "Normal"
 };
 
+static const char* GBUFFER_NAME_LOOKUP[static_cast<int>(DefaultGBufferBinding::COUNT)] =
+{
+    "Diffuse",
+    "Normal",
+    "Depth"
+};
 const char *getDefaultUniformBlockName( DefaultUniformBlockLocations uniform )
 {
     int index = static_cast<int>(uniform);
@@ -47,4 +52,12 @@ const char *getDefaultOutputName( DefaultOutputLocations output )
     assert( index >= 0 && index < static_cast<int>(DefaultOutputLocations::COUNT)  );
     
     return OUTPUT_NAME_LOOKUP[index];
+}
+
+const char* getDefaultGBufferName( DefaultGBufferBinding binding )
+{
+    int index = static_cast<int>( binding );
+    assert( index >= 0 && index < static_cast<int>(DefaultGBufferBinding::COUNT) );
+    
+    return GBUFFER_NAME_LOOKUP[index];
 }

@@ -102,6 +102,12 @@ void Material::setDepthCheck( DepthCheck check )
     mDepthCheck = check;
 }
 
+void Material::bindTextureUnit( const std::string &name, GLint unit )
+{
+    GLint loc = mProgram->getUniformLocation( name );
+    setTexture( loc, unit, SharedPtr<Texture>() );
+}
+
 SharedPtr<GpuProgram> Material::getProgram()
 {
     return mProgram;
@@ -111,9 +117,11 @@ void Material::bindMaterial()
 {
     mProgram->bindProgram();
     for( const TextureInfo &texEntry : mTextures ) {
-        const SharedPtr<Texture> &texture = texEntry.texture;
         glUniform1i( texEntry.loc, texEntry.unit );
-        texture->bindTexture( texEntry.unit );
+        const SharedPtr<Texture> &texture = texEntry.texture;
+        if( texture ) {
+            texture->bindTexture( texEntry.unit );
+        }
     }
     
     switch( mBlend ) {

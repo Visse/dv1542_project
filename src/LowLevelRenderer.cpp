@@ -27,13 +27,11 @@ LowLevelRenderer::LowLevelRenderer( Root *root ) :
          
     mDefferedDiffuseTexture  = Texture::CreateTexture( TextureType::RGB, size, 1 );
     mDefferedNormalTexture   = Texture::CreateTexture( TextureType::RGB, size, 1 );
-    mDefferedSpecularTexture = Texture::CreateTexture( TextureType::RGB, size, 1 );
     mDefferedDepthTexture    = Texture::CreateTexture( TextureType::Depth, size, 1 );
     
     mDefferedFrameBuffer = makeUniquePtr<FrameBuffer>();
     mDefferedFrameBuffer->attachColorTexture( mDefferedDiffuseTexture, getDefaultOutputLocation(DefaultOutputLocations::Diffuse) );
     mDefferedFrameBuffer->attachColorTexture( mDefferedNormalTexture, getDefaultOutputLocation(DefaultOutputLocations::Normal) );
-    mDefferedFrameBuffer->attachColorTexture( mDefferedSpecularTexture, getDefaultOutputLocation(DefaultOutputLocations::Specular) );
     mDefferedFrameBuffer->setDepthTexture( mDefferedDepthTexture );
     
     ResourceManager *resourceMgr = mRoot->getResourceManager();
@@ -41,7 +39,6 @@ LowLevelRenderer::LowLevelRenderer( Root *root ) :
     
     mDefferedMaterial->setTexture( "DiffuseTexture",  0, mDefferedDiffuseTexture );
     mDefferedMaterial->setTexture( "NormalTexture",   1, mDefferedNormalTexture );
-    mDefferedMaterial->setTexture( "SpecularTexture", 2, mDefferedSpecularTexture );
     mDefferedMaterial->setTexture( "DepthTexture",    3, mDefferedDepthTexture );
     
     mVAO = makeUniquePtr<VertexArrayObject>();
@@ -70,7 +67,7 @@ void LowLevelRenderer::flush()
     sortRenderQueues();
     
     mDefferedFrameBuffer->bindFrameBuffer();
-    for( uint i=RQ_DeferedFirst; i < RQ_DeferedLast; ++i ) {
+    for( uint i=RQ_DeferredFirst; i < RQ_DeferredLast; ++i ) {
         renderQueue( i );
     }
     mDefferedFrameBuffer->unbindFrameBuffer();
@@ -79,6 +76,7 @@ void LowLevelRenderer::flush()
 void LowLevelRenderer::clearFrame()
 {
     glDepthMask( GL_TRUE );
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
     mDefferedFrameBuffer->bindFrameBuffer();
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
     mDefferedFrameBuffer->unbindFrameBuffer();

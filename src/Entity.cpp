@@ -19,6 +19,8 @@ Entity::Entity( const SharedPtr<Mesh> &mesh ) :
         const SubMesh &subMesh = mMesh->getSubMeshes().at(i);
         mRenderers.emplace_back( this, mMesh, &subMesh);
     }
+    
+    setRenderQueue( RQ_DeferredDefault );
 }
 
 void Entity::queueRenderable( LowLevelRenderer &renderer )
@@ -27,13 +29,13 @@ void Entity::queueRenderable( LowLevelRenderer &renderer )
         operation.indexBuffer = mMesh->getIndexBuffer().get();
         operation.vao = mMesh->getVertexArrayObject().get();
         
-    
+    uint renderQueue = getRenderQueue();
     for( SubMeshRenderer &subMeshRenderer : mRenderers ) {
         const SubMesh *subMesh = subMeshRenderer.getSubMesh();
         operation.material = subMesh->material.get();
         operation.renderable = &subMeshRenderer;
         
-        renderer.queueOperation( operation );
+        renderer.queueOperation( operation, renderQueue );
     }
 }
 

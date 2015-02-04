@@ -6,6 +6,7 @@
 #include "GlmStream.h"
 #include "SceneManager.h"
 #include "SceneObjectFactory.h"
+#include "RenderQueue.h"
 
 
 #include "yaml-cxx/YamlCxx.h"
@@ -40,12 +41,36 @@ SharedPtr<Scene> Scene::LoadFromFile( Root *root, const std::string &filename )
     
     auto objectList = sceneCfg.getValues("Object");
     for( Yaml::Node objectNode : objectList ) {
-        std::string type = objectNode.asMapping().getFirstValue("Type").asValue().getValue();
+        Yaml::MappingNode config = objectNode.asMapping();
+        std::string type = config.getFirstValue("Type").asValue().getValue();
         
         SceneObjectFactory *factory = sceneMgr->getFactory( type );
         if( factory ) {
             SceneObject *object = factory->createObject( objectNode );
+            
             if( object ) {
+                Yaml::ValueNode positionNode = config.getFirstValue("Position",false).asValue(),
+                                orientationNode = config.getFirstValue("Orientation",false).asValue(),
+                                renderqueueNode = config.getFirstValue("RenderQueue",false).asValue();
+                bool succes;
+                
+                glm::vec3 position = positionNode.getValue<glm::vec3>(&succes);
+                if( succes ) {
+                    object->setPosition( position );
+                }
+                
+                glm::vec3 orientation = orientationNode.getValue<glm::vec3>(&succes);
+                if( succes ) {
+                    object->setOrientation( glm::quat(orientation) );
+                }
+                
+                std::string renderQueueStr = renderqueueNode.getValue();
+                if( !renderQueueStr.empty() ) {
+                    uint renderQueue = renderQueueFromString(renderQueueStr);
+                    object->setRenderQueue( renderQueue );
+                }
+                
+                           
                 scene->addObject( object, true );
             }
         }
