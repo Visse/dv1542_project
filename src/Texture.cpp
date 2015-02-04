@@ -172,6 +172,27 @@ SharedPtr<Texture> Texture::LoadTextureFromMemory( TextureType type, const void 
     return texture;
 }
 
+SharedPtr<Texture> Texture::LoadTextureFromRawMemory( TextureType type, const void *pixels, size_t width, size_t height )
+{
+    GLuint glTexture;
+    glGenTextures( 1, &glTexture );
+    glBindTexture( GL_TEXTURE_2D, glTexture );
+    
+    GLint internalFormat = typeToGLFormat( type );
+    
+    glm::ivec2 size(width,height);
+    int mipmaps = mipmapForSize( size );
+    
+    glTexStorage2D( GL_TEXTURE_2D, mipmaps, internalFormat, size.x, size.y );
+    glTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, size.x, size.y, GL_RGBA, GL_UNSIGNED_BYTE, pixels );
+
+    glGenerateMipmap( GL_TEXTURE_2D );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+
+    return makeSharedPtr<Texture>( type, size, glTexture );
+}
+
 SharedPtr<Texture> Texture::CreateTexture( TextureType type, const glm::ivec2& size, GLuint mipmaps )
 {
     GLuint glTexture;

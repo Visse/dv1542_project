@@ -30,6 +30,8 @@
 
 #include <imgui.h>
 
+#include <functional>
+
 class DebugFrameListener :
     public FrameListener
 {
@@ -260,7 +262,6 @@ void RenderImGuiDrawLists( ImDrawList** const draw_lists, int count );
 void DebugManager::initImGui()
 {
     ImGuiIO &io = ImGui::GetIO();
-    io.PixelCenterOffset = 0.0f;
     
     for( int i=0; i < ImGuiKey_COUNT; ++i ) {
         io.KeyMap[i] = i;
@@ -279,15 +280,16 @@ void DebugManager::initImGui()
     io.UserData = renderData;
     io.DisplaySize.x = config->windowWidth;
     io.DisplaySize.y = config->windowHeight;
+
+    unsigned char *pixels;
+    int texWidth, texHeight;
+    io.Fonts->GetTexDataAsRGBA32( &pixels, &texWidth, &texHeight );
     
-    const void *pngData;
-    unsigned int pngSize;
-    ImGui::GetDefaultFontData( nullptr, nullptr, &pngData, &pngSize );
-    
+    SharedPtr<Texture> texture = Texture::LoadTextureFromRawMemory( TextureType::RGBA, pixels, texWidth, texHeight );
+
     ResourceManager *resourceMgr = mRoot->getResourceManager();
     renderData->material = resourceMgr->getMaterialAutoPack("DebugGuiMaterial");
     
-    SharedPtr<Texture> texture = Texture::LoadTextureFromMemory( TextureType::RGBA, pngData, pngSize );
     
     texture->bindTexture(0);
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
@@ -448,7 +450,7 @@ void DebugManager::showSceneObject( float dt, SceneObject *object )
                 particleSys->setShowAttractors( showAttractors );
             }
             
-            uint particleCount = particleSys->getParticleCount();
+            unsigned int particleCount = particleSys->getParticleCount();
             ImGui::Value( "Particle Count", particleCount );
         }
         ImGui::TreePop();

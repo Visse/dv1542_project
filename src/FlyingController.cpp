@@ -111,7 +111,7 @@ glm::mat4 FlyingController::getTransformation()
 
 void FlyingController::onKeyDown( const SDL_KeyboardEvent &event )
 {
-    for( uint i=0; i < KB_COUNT; ++i ) {
+    for( unsigned int i=0; i < KB_COUNT; ++i ) {
         if( event.keysym.sym == mKeyBindings[i] ) {
             mKeysDown[i] = true;
         }
@@ -124,7 +124,7 @@ void FlyingController::onKeyDown( const SDL_KeyboardEvent &event )
 
 void FlyingController::onKeyUp( const SDL_KeyboardEvent &event )
 {
-    for( uint i=0; i < KB_COUNT; ++i ) {
+    for( unsigned int i=0; i < KB_COUNT; ++i ) {
         if( event.keysym.sym == mKeyBindings[i] ) {
             mKeysDown[i] = false;
         }

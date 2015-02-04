@@ -44,22 +44,22 @@ public:
     float getPointSize() {
         return mPointSize;
     }
-    uint getParticleGroupCount() {
+    unsigned int getParticleGroupCount() {
         return mParticleGroupCount;
     }
-    uint getMaxParticleGroupCount() {
+	unsigned int getMaxParticleGroupCount() {
         return mMaxParticleGroupCount;
     }
-    uint getAttractorCount() {
+	unsigned int getAttractorCount() {
         return mAttractorCount;
     }
-    uint getMaxAttractorCount() {
+	unsigned int getMaxAttractorCount() {
         return mMaxAttractorCount;
     }
     bool getShowAttractors() {
         return mShowAttractors;
     }
-    uint getParticleCount() {
+	unsigned int getParticleCount() {
         return mParticleGroupCount * mParticleGroupSize;
     }
     
@@ -84,10 +84,10 @@ public:
     void setPointSize( float pointSize ) {
         mPointSize = pointSize;
     }
-    void setParticleGroupCount( uint groupCount ) {
+    void setParticleGroupCount(unsigned int groupCount) {
         mParticleGroupCount = groupCount;
     }
-    void setAttractorCount( uint attractorCount ) {
+    void setAttractorCount(unsigned int attractorCount) {
         mAttractorCount = attractorCount;
     }
     void setShowAttractors( bool showAttractors ) {
@@ -143,11 +143,11 @@ private:
     float mIntensity = 1.f,
           mPointSize = 5.f;
           
-    uint mParticleGroupCount,
-         mParticleGroupSize,
-         mMaxParticleGroupCount,
-         mAttractorCount,
-         mMaxAttractorCount;
+	unsigned int mParticleGroupCount,
+                 mParticleGroupSize,
+                 mMaxParticleGroupCount,
+                 mAttractorCount,
+                 mMaxAttractorCount;
     
     bool mShowAttractors = false;
 };

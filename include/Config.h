@@ -53,11 +53,11 @@ struct Config
     
     
     // graphics config
-    uint windowHeight = 720,
-         windowWidth = 1280;
+    unsigned int windowHeight = 720,
+				 windowWidth = 1280;
          
-    uint defferedBufferWidth = 720,
-         defferedBufferHeight = 1280;
+    unsigned int defferedBufferWidth = 720,
+				 defferedBufferHeight = 1280;
          
     float fov = 90.f,
           nearPlane = 0.1f,

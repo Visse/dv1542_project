@@ -3,7 +3,7 @@
 #include "ValueHistory.h"
 #include "FixedSizeTypes.h"
 
-class Config;
+struct Config;
 class BaseManager;
 class GraphicsManager;
 class DebugManager;

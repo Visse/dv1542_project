@@ -9,7 +9,7 @@ namespace Yaml
 {
     class Node;
 
-    struct Document;
+    class Document;
     struct NodePriv {
         Document *document;
         yaml_node_t *node;

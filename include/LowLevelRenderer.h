@@ -34,7 +34,7 @@ public:
     LowLevelRenderer( Root *root );
     ~LowLevelRenderer();
     
-    void queueOperation( const LowLevelRenderOperation &operation, uint queue = RQ_DeferedDefault );
+    void queueOperation( const LowLevelRenderOperation &operation, unsigned int queue = RQ_DeferedDefault );
     void flush();
     
     void clearFrame();
@@ -45,7 +45,7 @@ public:
     }
 private:
     void sortRenderQueues();
-    void renderQueue( uint queue );
+    void renderQueue( unsigned int queue );
     
 private:
     typedef std::vector<LowLevelRenderOperation> OperationQueue;

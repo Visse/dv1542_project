@@ -14,4 +14,4 @@ enum RenderQueue {
     RQ_Count
 };
 
-uint renderQueueFromString( const std::string &str );
+unsigned int renderQueueFromString( const std::string &str );

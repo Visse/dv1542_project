@@ -5,6 +5,8 @@ project(dv1542_project)
 get_filename_component( PROJECT_DEPENDENCY_DIR dependecies/ ABSOLUTE )
 get_filename_component( PROJECT_INCLUDE_DIR include/ ABSOLUTE )
 
+
+
 add_definitions( "-DGLEW_NO_GLU -DGLM_FORCE_RADIANS" )
 if(CMAKE_COMPILER_IS_GNUCXX)
     # g++ compiler flags
@@ -35,7 +37,7 @@ add_executable(dv1542_project main.cpp ${PROJECT_SOURCE_FILES} ${PROJECT_HEADER_
 
 target_include_directories(dv1542_project PUBLIC ${PROJECT_INCLUDE_DIR} SDL_INCLUDE_DIR ${PROJECT_DEPENDENCY_DIR}/include)
 
-target_link_libraries(dv1542_project ${SDL_LIBRARY} yaml-cxx imgui boost_system boost_filesystem ${OPENGL_gl_LIBRARY} ${FREEIMAGE_LIBRARY} ${GLEW_LIBRARY} )
+target_link_libraries(dv1542_project ${SDL_LIBRARY} yaml-cxx imgui ${OPENGL_gl_LIBRARY} ${FREEIMAGE_LIBRARY} ${GLEW_LIBRARY} )
 
 
 install(TARGETS dv1542_project RUNTIME DESTINATION bin)

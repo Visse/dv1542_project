@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <sstream>
 #include <stdexcept>
+#include <cctype>
 
 namespace StringUtils
 {
@@ -669,13 +670,13 @@ namespace StringUtils
         return internal::ToString<Type,internal::CheckForStdToString<Type>::value>::toString( type );
     }
         
-    template< typename Container = std::list<std::string>, typename TokenContainer = std::list<std::string> >
+    template< typename Container, typename TokenContainer >
     Container split( const std::string &str, const TokenContainer &tokens, bool keepTokens, bool keepEmpty )
     {
         return internal::split<Container,TokenContainer>( str.c_str(), str.size(), tokens, keepTokens, keepEmpty );
     }
        
-    template< typename Container = std::list<std::string>, typename TokenContainer = std::list<std::string> >
+    template< typename Container, typename TokenContainer >
     Container split( const char *str, size_t lenght, const TokenContainer &tokens, bool keepTokens, bool keepEmpty )
     {
         if( lenght == 0 ) {
