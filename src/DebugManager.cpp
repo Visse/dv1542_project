@@ -19,6 +19,8 @@
 #include "Entity.h"
 #include "Mesh.h"
 #include "ComputeParticleSystem.h"
+#include "LightObject.h"
+#include "DebugDrawer.h"
 
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
@@ -119,6 +121,9 @@ void DebugManager::update( float dt )
         }
         ImGui::End();
     }
+
+    submitDebugDraw();
+    
 }
 
 bool DebugManager::handleSDLEvent( const SDL_Event &event )
@@ -357,6 +362,8 @@ void DebugManager::showSceneObject( float dt, SceneObject *object )
 {
     ImGui::PushID( object );
     
+    DebugDrawInfo &debugDrawInfo = mDebugDrawInfo[object];
+    
     if( ImGui::TreeNode(typeid(*object).name()) ) {
         glm::vec3 position = object->getPosition();
         
@@ -388,12 +395,19 @@ void DebugManager::showSceneObject( float dt, SceneObject *object )
             SharedPtr<Mesh> mesh = entity->getMesh();
             const std::string &meshName = mesh->getName();
             
+            debugDrawInfo.mesh = mesh;
+            
             if( !meshName.empty() ) {
                 ImGui::LabelText( "Mesh", meshName.c_str() );
             }
             else {
                 ImGui::LabelText( "Mesh", "Unknown" );
             }
+            
+            ImGui::Checkbox( "WireFrame", &debugDrawInfo.wireFrame );
+            ImGui::SameLine();
+            ImGui::Checkbox( "Normals", &debugDrawInfo.normals );
+            
         }
         
         ComputeParticleSystem *particleSys = dynamic_cast<ComputeParticleSystem*>(object);
@@ -453,12 +467,41 @@ void DebugManager::showSceneObject( float dt, SceneObject *object )
             unsigned int particleCount = particleSys->getParticleCount();
             ImGui::Value( "Particle Count", particleCount );
         }
+        
+        PointLight *pointLight = dynamic_cast<PointLight*>(object);
+        if( pointLight ) {
+            float outerRadius = pointLight->getOuterRadius(),
+                  innerRadius = pointLight->getInnerRadius();
+            glm::vec3 color = pointLight->getColor();
+                  
+            if( ImGui::SliderFloat("OuterRadius", &outerRadius, 0.f, 20.f) ) {
+                pointLight->setOuterRadius( outerRadius );
+            }
+            if( ImGui::SliderFloat("InnerRadius", &innerRadius, 0.f, outerRadius) ) {
+                pointLight->setInnerRadius( innerRadius );
+            }
+            
+            if( ImGui::ColorEdit3("Color", glm::value_ptr(color)) ) {
+                pointLight->setColor( color );
+            }
+        }
         ImGui::TreePop();
     }
 
     ImGui::PopID();
 }
 
+void DebugManager::submitDebugDraw()
+{
+    DebugDrawer *debugDrawer = mRoot->getDebugDrawer();
+    
+    for( const auto &entry : mDebugDrawInfo ) {
+        const DebugDrawInfo &info = entry.second;
+        if( info.mesh && info.wireFrame ) {
+            debugDrawer->drawWireFrame( info.mesh, entry.first->getTransform() );
+        }
+    }
+}
 
 void RenderImGuiDrawLists( ImDrawList** const draw_lists, int count )
 {

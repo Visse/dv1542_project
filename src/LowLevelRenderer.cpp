@@ -13,7 +13,6 @@
 #include "Camera.h"
 #include "GpuProgram.h"
 
-
 #include <cassert>
 
 LowLevelRenderer::LowLevelRenderer( Root *root ) :
@@ -25,29 +24,22 @@ LowLevelRenderer::LowLevelRenderer( Root *root ) :
          
     glm::ivec2 size( width, height );
          
-    mDefferedDiffuseTexture  = Texture::CreateTexture( TextureType::RGB, size, 1 );
-    mDefferedNormalTexture   = Texture::CreateTexture( TextureType::RGB, size, 1 );
-    mDefferedDepthTexture    = Texture::CreateTexture( TextureType::Depth, size, 1 );
+    mDeferredDiffuseTexture  = Texture::CreateTexture( TextureType::RGBA, size, 1 );
+    mDeferredNormalTexture   = Texture::CreateTexture( TextureType::RGB, size, 1 );
+    mDeferredDepthTexture    = Texture::CreateTexture( TextureType::Depth, size, 1 );
+    mDeferredPositionTexture = Texture::CreateTexture( TextureType::RGBF, size, 1 );
     
-    mDefferedFrameBuffer = makeUniquePtr<FrameBuffer>();
-    mDefferedFrameBuffer->attachColorTexture( mDefferedDiffuseTexture, getDefaultOutputLocation(DefaultOutputLocations::Diffuse) );
-    mDefferedFrameBuffer->attachColorTexture( mDefferedNormalTexture, getDefaultOutputLocation(DefaultOutputLocations::Normal) );
-    mDefferedFrameBuffer->setDepthTexture( mDefferedDepthTexture );
-    
-    ResourceManager *resourceMgr = mRoot->getResourceManager();
-    mDefferedMaterial = resourceMgr->getMaterialAutoPack( "DefferedMaterial" );
-    
-    mDefferedMaterial->setTexture( "DiffuseTexture",  0, mDefferedDiffuseTexture );
-    mDefferedMaterial->setTexture( "NormalTexture",   1, mDefferedNormalTexture );
-    mDefferedMaterial->setTexture( "DepthTexture",    3, mDefferedDepthTexture );
-    
-    mVAO = makeUniquePtr<VertexArrayObject>();
+    mDeferredFrameBuffer = makeUniquePtr<FrameBuffer>();
+    mDeferredFrameBuffer->attachColorTexture( mDeferredDiffuseTexture, getDefaultOutputLocation(DefaultOutputLocations::Diffuse) );
+    mDeferredFrameBuffer->attachColorTexture( mDeferredNormalTexture, getDefaultOutputLocation(DefaultOutputLocations::Normal) );
+    mDeferredFrameBuffer->attachColorTexture( mDeferredPositionTexture, getDefaultOutputLocation(DefaultOutputLocations::Position) );
+    mDeferredFrameBuffer->setDepthTexture( mDeferredDepthTexture );
     
     mDefaultSceneInfoBinding = getDefaultUniformBlockBinding( DefaultUniformBlockLocations::SceneInfo );
     
-    SharedPtr<GpuProgram> defferedShader = mDefferedMaterial->getProgram();
-    mDefferedShaderLoc.nearPlane = defferedShader->getUniformLocation( "NearPlane" );
-    mDefferedShaderLoc.farPlane  = defferedShader->getUniformLocation( "FarPlane" );
+    ResourceManager *resourceMgr = mRoot->getResourceManager();
+    mAmbientMaterial = resourceMgr->getMaterialAutoPack("AmbientMaterial");
+    
 }
 
 LowLevelRenderer::~LowLevelRenderer() = default;
@@ -66,69 +58,104 @@ void LowLevelRenderer::flush()
 {
     sortRenderQueues();
     
-    mDefferedFrameBuffer->bindFrameBuffer();
+    mDeferredFrameBuffer->bindFrameBuffer();
     for( unsigned int i=RQ_DeferredFirst; i < RQ_DeferredLast; ++i ) {
-        renderQueue( i );
+        renderDeferredQueue( i );
     }
-    mDefferedFrameBuffer->unbindFrameBuffer();
+    mDeferredFrameBuffer->unbindFrameBuffer();
+    
+    mAmbientMaterial->bindMaterial();
+    
+        
+    GLuint loc = getDefaultGBufferBinding( DefaultGBufferBinding::Diffuse );
+    mDeferredDiffuseTexture->bindTexture( loc );
+    
+    loc = getDefaultGBufferBinding( DefaultGBufferBinding::Normal );
+    mDeferredNormalTexture->bindTexture( loc );
+    
+    loc = getDefaultGBufferBinding( DefaultGBufferBinding::Depth );
+    mDeferredDepthTexture->bindTexture( loc );
+    
+    loc = getDefaultGBufferBinding( DefaultGBufferBinding::Position );
+    mDeferredPositionTexture->bindTexture( loc );
+    
+    glDrawArrays( GL_POINTS, 0, 1 );
+    
+    renderLightQueue( RQ_Light );
+    
+    renderOverlay( RQ_Overlay );
 }
 
 void LowLevelRenderer::clearFrame()
 {
     glDepthMask( GL_TRUE );
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-    mDefferedFrameBuffer->bindFrameBuffer();
+    mDeferredFrameBuffer->bindFrameBuffer();
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-    mDefferedFrameBuffer->unbindFrameBuffer();
-}
-
-void LowLevelRenderer::displayFrame()
-{
-    mDefferedMaterial->bindMaterial();
-    mVAO->bindVAO();
-    
-    float farPlane = 100.f, 
-          nearPlane = 0.1f;
-        
-    if( mCurrentCamera ) {
-        farPlane = mCurrentCamera->getFarPlane();
-        nearPlane = mCurrentCamera->getNearPlane();
-    }
-    
-    glUniform1f( mDefferedShaderLoc.farPlane, farPlane );
-    glUniform1f( mDefferedShaderLoc.nearPlane, nearPlane );
-    
-    glDrawArrays( GL_POINTS, 0, 1 );
-    
-    mVAO->unbindVAO();
+    mDeferredFrameBuffer->unbindFrameBuffer();
 }
 
 void LowLevelRenderer::sortRenderQueues()
 {
+    // @todo make smarter (sort based on material etc.)
 }
 
-void LowLevelRenderer::renderQueue( unsigned int queueId )
+void LowLevelRenderer::renderDeferredQueue( unsigned int queueId )
 {
     OperationQueue &queue = mQueue[queueId];
-    // @todo make smarter (sort based on material etc.)
     for( const LowLevelRenderOperation &operation : queue ) {
-        if( operation.material ) {
-            operation.material->bindMaterial();
-        }
-        if( operation.vao ) {
-            operation.vao->bindVAO();
-        }
-        if( operation.indexBuffer ) {
-            operation.indexBuffer->bindBuffer();
-        }
-        if( operation.sceneUniforms ) {
-            operation.sceneUniforms->bindIndexed( mDefaultSceneInfoBinding );
-        }
-        
-        operation.renderable->render();
+        performOperation( operation );
     }
     queue.clear();
 }
 
+void LowLevelRenderer::renderLightQueue( unsigned int queueId )
+{
+    OperationQueue &queue = mQueue[queueId];
+
+    
+    // disable cliping by the near & far planes
+    // this fixes the issue of being 'inside' the light volume
+    glEnable( GL_DEPTH_CLAMP );
+    
+    for( const LowLevelRenderOperation &operation : queue )
+    {
+        performOperation( operation );
+    }
+    
+    glDisable( GL_DEPTH_CLAMP );
+    
+    queue.clear();
+}
+
+void LowLevelRenderer::renderOverlay( unsigned int queueId )
+{
+    OperationQueue &queue = mQueue[queueId];
+    
+    for( const LowLevelRenderOperation &operation : queue )
+    {
+        performOperation( operation );
+    }
+    
+    queue.clear();
+}
+
+
+inline void LowLevelRenderer::performOperation( const LowLevelRenderOperation &operation )
+{
+    if( operation.material ) {
+        operation.material->bindMaterial();
+    }
+    if( operation.vao ) {
+        operation.vao->bindVAO();
+    }
+    if( operation.indexBuffer ) {
+        operation.indexBuffer->bindBuffer();
+    }
+    if( operation.sceneUniforms ) {
+        operation.sceneUniforms->bindIndexed( mDefaultSceneInfoBinding );
+    }
+    operation.renderable->render();
+}
 
 

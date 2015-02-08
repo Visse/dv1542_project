@@ -46,6 +46,7 @@ public:
     
     virtual void update( float dt ) override;
     virtual glm::mat4 getTransformation() override;
+    virtual glm::vec3 getPosition() override;
     
     void setKeyBinding( KeyBinding binding, Int32 key );
     void loadFromConfig( const FlyingControllConfig &config );

@@ -109,6 +109,11 @@ glm::mat4 FlyingController::getTransformation()
     return mTransform;
 }
 
+glm::vec3 FlyingController::getPosition()
+{
+    return mPosition;
+}
+
 void FlyingController::onKeyDown( const SDL_KeyboardEvent &event )
 {
     for( unsigned int i=0; i < KB_COUNT; ++i ) {

@@ -21,14 +21,16 @@ static const char* ATTRIBUTE_NAME_LOOKUP[static_cast<int>(DefaultAttributeLocati
 static const char* OUTPUT_NAME_LOOKUP[static_cast<int>(DefaultOutputLocations::COUNT)] = 
 {
     "Diffuse",
-    "Normal"
+    "Normal",
+    "Position"
 };
 
 static const char* GBUFFER_NAME_LOOKUP[static_cast<int>(DefaultGBufferBinding::COUNT)] =
 {
     "Diffuse",
     "Normal",
-    "Depth"
+    "Depth",
+    "Position"
 };
 const char *getDefaultUniformBlockName( DefaultUniformBlockLocations uniform )
 {

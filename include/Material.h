@@ -25,7 +25,10 @@ enum class DepthCheck {
     None,
     Less,
     Equal,
-    Greater
+    Greater,
+    
+    LessEqual,
+    GreaterEqual
 };
 DepthCheck depthCheckFromString( const std::string &str );
 

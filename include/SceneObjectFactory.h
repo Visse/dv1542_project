@@ -41,3 +41,14 @@ public:
 private:
     Root *mRoot;
 };
+
+class LightFactory :
+    public SceneObjectFactory
+{
+public:
+    LightFactory( Root *root );
+    virtual SceneObject *createObject(const Yaml::Node& node);
+    
+private:
+    Root *mRoot;
+};

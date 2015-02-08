@@ -22,6 +22,7 @@ bool SceneManager::init( Root *root )
     
     addFactory( "Entity", new EntityFactory(mRoot), true );
     addFactory( "ComputeParticle", new ComputeParticleFactory(mRoot), true );
+    addFactory( "Light", new LightFactory(mRoot), true );
     
     const Config *config = mRoot->getConfig();
     
@@ -32,7 +33,7 @@ bool SceneManager::init( Root *root )
     controller->loadFromConfig( config->freeCamera );
     controller->setMouseControll( true );
     controller->setPosition( glm::vec3(0,1,0) );
-    mCamera = new SceneCamera( mScene, controller );
+    mCamera = new SceneCamera( mRoot, mScene, controller );
     
     float aspect = (float)config->windowWidth / (float)config->windowHeight;
     
@@ -52,6 +53,14 @@ bool SceneManager::init( Root *root )
 
 void SceneManager::destroy()
 {
+    for( const auto &entry : mSceneObjectFactories ) {
+        const SceneObjectFactoryInfo &info = entry.second;
+        if( info.ownsFactory) {
+            delete info.factory;
+        }
+    }
+    mSceneObjectFactories.clear();
+    
     GraphicsManager *graphicsMgr = mRoot->getGraphicsManager();
     graphicsMgr->removeCamera( mCamera );
     

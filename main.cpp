@@ -9,6 +9,7 @@ void freeImageOutput( FREE_IMAGE_FORMAT fif, const char *msg )
 
 int main(int argc, char **argv) 
 {
+
     FreeImage_SetOutputMessage( freeImageOutput );
     
     Root root;

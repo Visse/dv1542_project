@@ -7,40 +7,44 @@
 #include "Mesh.h"
 #include "Material.h"
 #include "GLinclude.h"
+#include "GpuProgram.h"
+#include "Renderable.h"
+#include "LowLevelRenderer.h"
 
-struct DebugDrawer::DebugFrameListener :
-    public FrameListener
+#include <glm/gtc/type_ptr.hpp>
+
+struct DebugDrawer::DebugWireRenderable :
+    public Renderable
 {
     DebugDrawer *drawer;
     
-    virtual void onPostCameraDraw( Camera *camera ) {
-        drawer->render( camera );
+    virtual void render() override {
+        drawer->renderWireframe();
     }
 };
 
 bool DebugDrawer::init( Root *root )
 {
     mRoot = root;
-    mFrameListener = new DebugFrameListener;
-    mFrameListener->drawer = this;
+    mWireRenderable = new DebugWireRenderable;
+    mWireRenderable->drawer = this;
     
     ResourceManager *resourceMgr = mRoot->getResourceManager();
     mWireFrameMaterial = resourceMgr->getMaterialAutoPack( "DebugDrawerWireMaterial" );
     
-    GraphicsManager *graphicsMgr = mRoot->getGraphicsManager();
-    graphicsMgr->addFrameListener( mFrameListener );
+    SharedPtr<GpuProgram> program = mWireFrameMaterial->getProgram();
+    mWireFrameLoc.color = program->getUniformLocation("Color");
+    mWireFrameLoc.modelMatrix = program->getUniformLocation("ModelMatrix");
+    
     
     return true;
 }
 
 void DebugDrawer::destroy()
 {
-    GraphicsManager *graphicsMgr = mRoot->getGraphicsManager();
-    graphicsMgr->removeFrameListener( mFrameListener );
-    
-    delete mFrameListener;
-    mFrameListener = nullptr;
-
+    delete mWireRenderable;
+    mWireRenderable = nullptr;
+    mRoot = nullptr;
 }
 
 void DebugDrawer::update( float dt )
@@ -58,8 +62,16 @@ void DebugDrawer::drawWireFrame( const SharedPtr<Mesh> &mesh, const glm::mat4 &t
     mWireFramesDraws.push_back( draw );
 }
 
+void DebugDrawer::queueRenderable( LowLevelRenderer &renderer )
+{
+    LowLevelRenderOperation operation;
+    operation.material = mWireFrameMaterial.get();
+    operation.renderable = mWireRenderable;
+    
+    renderer.queueOperation( operation, RQ_Overlay );
+}
 
-void DebugDrawer::render( Camera *camera )
+void DebugDrawer::renderWireframe(  )
 {
     mWireFrameMaterial->bindMaterial();
     for( const WireFrameDraw &draw : mWireFramesDraws ) {
@@ -67,8 +79,11 @@ void DebugDrawer::render( Camera *camera )
         draw.mesh->getVertexArrayObject()->bindVAO();
         const auto &subMeshes = draw.mesh->getSubMeshes();
         
+        glUniformMatrix4fv( mWireFrameLoc.modelMatrix, 1, GL_FALSE, glm::value_ptr(draw.transform) );
+        glUniform3fv( mWireFrameLoc.color, 1, glm::value_ptr(draw.color) );
+        
         for( const SubMesh &submesh : subMeshes ) {
-            glDrawElements( GL_LINES, submesh.vertexCount, GL_UNSIGNED_INT, reinterpret_cast<GLvoid*>(submesh.vertexStart*4) );
+            glDrawElements( GL_TRIANGLES, submesh.vertexCount, GL_UNSIGNED_INT, reinterpret_cast<GLvoid*>(submesh.vertexStart*4) );
         }
     }
 }

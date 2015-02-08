@@ -34,6 +34,9 @@ private:
     void fireFrameBegun();
     void fireFrameEnded();
     
+    void firePreCamera( Camera *camera );
+    void firePostCamera( Camera *camera );
+    
 private:
     Root *mRoot = nullptr;
     SDL_Window *mWindow = nullptr;

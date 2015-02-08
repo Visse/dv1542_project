@@ -24,6 +24,7 @@ enum class DefaultAttributeLocations {
 enum class DefaultOutputLocations {
     Diffuse  = 0,
     Normal   = 1,
+    Position = 2,
     
     COUNT
 };
@@ -32,6 +33,7 @@ enum class DefaultGBufferBinding {
     Diffuse   = 0,
     Normal    = 1,
     Depth     = 2,
+    Position  = 3,
     
     COUNT
 };

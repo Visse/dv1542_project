@@ -5,6 +5,7 @@
 
 #include <vector>
 
+class Root;
 class Controller;
 class Scene;
 
@@ -12,7 +13,7 @@ class SceneCamera :
     public Camera
 {
 public:
-    SceneCamera( const SharedPtr<Scene> &scene, const SharedPtr<Controller> &controller ); 
+    SceneCamera( Root *root, const SharedPtr<Scene> &scene, const SharedPtr<Controller> &controller ); 
     
     virtual GpuBuffer* getSceneUniforms();
     
@@ -20,6 +21,7 @@ public:
     virtual void render( LowLevelRenderer &renderer ) override;
     
 private:
+    Root *mRoot;
     SharedPtr<Scene> mScene;
     SharedPtr<Controller> mController;
     SharedPtr<GpuBuffer> mSceneUniformBuffer;

@@ -105,11 +105,12 @@ void GraphicsManager::render()
     
     for( Camera *camera : mCameras ) {
         mRenderer->_setCurrentCamera( camera );
+        firePreCamera( camera );
         camera->render( *mRenderer );
+        firePostCamera( camera );
     }
     mRenderer->flush();
     
-    mRenderer->displayFrame();
     fireFrameEnded();
     
     SDL_GL_SwapWindow(mWindow);
@@ -166,6 +167,23 @@ void GraphicsManager::fireFrameEnded()
         listener->onFrameEnded();
     }
 }
+
+void GraphicsManager::firePreCamera( Camera *camera )
+{
+    for( FrameListener *listener : mFrameListeners ) {
+        listener->onPreCameraDraw( camera );
+    }
+
+}
+
+void GraphicsManager::firePostCamera( Camera *camera )
+{
+    for( FrameListener *listener : mFrameListeners ) {
+        listener->onPostCameraDraw( camera );
+    }
+
+}
+
 
 #include <cstdio>
 void GLAPIENTRY debugCallback( GLenum source, GLenum type, unsigned int id, GLuint severity, GLsizei length, const char *message, void *userParam )

@@ -32,6 +32,12 @@ TextureType stringToTextureType( const std::string &str )
     if( StringUtils::equalCaseInsensitive(str,"Depth") ) {
         return TextureType::Depth;
     }
+    if( StringUtils::equalCaseInsensitive(str,"RGBF") ) {
+        return TextureType::RGBF;
+    }
+    if( StringUtils::equalCaseInsensitive(str,"RGBAF") ) {
+        return TextureType::RGBAF;
+    }
     
     throw std::runtime_error( StringUtils::strjoin("String isn't a TextureType (\"",str,"\")") );
 }
@@ -50,8 +56,12 @@ GLint typeToGLFormat( TextureType type )
         return GL_RGBA8;
     case( TextureType::Depth ):
         return GL_DEPTH_COMPONENT16;
+    case( TextureType::RGBF ):
+        return GL_RGB16F;
+    case( TextureType::RGBAF ):
+        return GL_RGBA16F;
     }
-    return GL_RGBA8;
+    throw std::runtime_error("Invalid texture type!");
 }
 
 GLint mipmapForSize( const glm::ivec2 &size )

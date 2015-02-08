@@ -54,6 +54,12 @@ DepthCheck depthCheckFromString( const std::string &str )
     else if( StringUtils::equalCaseInsensitive(str,"Greater") ) {
         return DepthCheck::Greater;
     }
+    else if( StringUtils::equalCaseInsensitive(str,"LessEqual") ) {
+        return DepthCheck::LessEqual;
+    }
+    else if( StringUtils::equalCaseInsensitive(str,"GreaterEqual") ) {
+        return DepthCheck::GreaterEqual;
+    }
     throw std::string( StringUtils::strjoin("String (\"",str,"\") isn't a valid DepthCheck!") );
 }
 
@@ -148,6 +154,12 @@ void Material::bindMaterial()
     case( DepthCheck::Greater ):
         glDepthFunc( GL_GREATER );
         break;
+    case( DepthCheck::LessEqual ):
+        glDepthFunc( GL_LEQUAL );
+        break;
+    case( DepthCheck::GreaterEqual ):
+        glDepthFunc( GL_GEQUAL );
+        break;
     }
     glDepthMask( mDepthWrite ? GL_TRUE : GL_FALSE );
     
@@ -163,7 +175,7 @@ SharedPtr<Material> Material::LoadFromFile( const std::string &filename, Resourc
     
     SharedPtr<GpuProgram> program = resourceMgr->getGpuProgramAutoPack( programName );
     if( !program ) {
-        return SharedPtr<Material>();
+        throw std::runtime_error(StringUtils::strjoin("Failed to load program \"", programName,"\".") );
     }
     
     GLuint glProgram = program->getGLProgram();
@@ -299,10 +311,17 @@ SharedPtr<Material> Material::LoadFromFile( const std::string &filename, Resourc
         Yaml::MappingNode settings = textureNode.asMapping();
         
         std::string name = settings.getFirstValue("Name").asValue().getValue();
-        std::string textureName = settings.getFirstValue("Texture").asValue().getValue();
+        
+        Yaml::Node nameNode = settings.getFirstValue("Texture");
+        std::string textureName = nameNode.asValue().getValue();
+        
+        Yaml::Node unitNode = settings.getFirstValue( "Unit", false);
+        if( unitNode ) {
+            textureUnit = unitNode.asValue().getValue<int>();
+        }
         
         SharedPtr<Texture> texture = resourceMgr->getTextureAutoPack( textureName );
-        if( texture ) {
+        if( texture || !nameNode ) {
             material->setTexture( name, textureUnit, texture );
             textureUnit++;
         }

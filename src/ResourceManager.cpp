@@ -256,9 +256,11 @@ void ResourceManager::loadUncompressedResourcePack( const std::string &name, con
         std::string filename = resourcePrefix + source;
         TexturePtr texture = Texture::LoadTexture( type, filename );
         
-        pack.textures.emplace( texName, texture );
-        
-        std::clog << "[ResourceManager] Loaded texture \"" << texName << "\" in resource pack \"" << name << "\"" << std::endl;
+        if( texture ) {
+            pack.textures.emplace( texName, texture );
+            
+            std::clog << "[ResourceManager] Loaded texture \"" << texName << "\" in resource pack \"" << name << "\"" << std::endl;
+        }
     }
     
     for( Yaml::Node programNode : programs ) {
@@ -280,14 +282,15 @@ void ResourceManager::loadUncompressedResourcePack( const std::string &name, con
             std::string filename = resourcePrefix + source;
             SharedPtr<GpuShader> shader = GpuShader::LoadShaderFromFile(type,filename);
             shaders.push_back( shader );
-            
-            
         }
         
         GpuProgramPtr program = GpuProgram::CreateProgram( shaders );
-        pack.programs.emplace( progName, program );
         
-        std::clog << "[ResourceManager] Loaded program \"" << progName << "\" in resource pack \"" << name << "\"" << std::endl;
+        if( program ) {
+            pack.programs.emplace( progName, program );
+            
+            std::clog << "[ResourceManager] Loaded program \"" << progName << "\" in resource pack \"" << name << "\"" << std::endl;
+        }
     }
     
     for( Yaml::Node materialNode : materials ) {
@@ -300,9 +303,11 @@ void ResourceManager::loadUncompressedResourcePack( const std::string &name, con
         std::string filename = resourcePrefix + source;
         MaterialPtr material = Material::LoadFromFile( filename, this );
         
-        pack.materials.emplace( matName, material );
-        
-        std::clog << "[ResourceManager] Loaded material \"" << matName << "\" in resource pack \"" << name << "\"" << std::endl;
+        if( material ) {
+            pack.materials.emplace( matName, material );
+            
+            std::clog << "[ResourceManager] Loaded material \"" << matName << "\" in resource pack \"" << name << "\"" << std::endl;
+        }
     }
     
     for( Yaml::Node meshNode : meshes ) {
@@ -316,8 +321,10 @@ void ResourceManager::loadUncompressedResourcePack( const std::string &name, con
         MeshPtr mesh = Mesh::LoadMeshFromFile( filename, this );
         mesh->setName( StringUtils::strjoin(name,":",modName) );
         
-        pack.meshes.emplace( modName, mesh );
-        
-        std::clog << "[ResourceManager] Loaded mesh \"" << modName << "\" in resource pack \"" << name << "\"" << std::endl;
+        if( mesh ) {
+            pack.meshes.emplace( modName, mesh );
+            
+            std::clog << "[ResourceManager] Loaded mesh \"" << modName << "\" in resource pack \"" << name << "\"" << std::endl;
+        }
     }
 }

@@ -38,14 +38,17 @@ public:
     void flush();
     
     void clearFrame();
-    void displayFrame();
     
     void _setCurrentCamera( Camera *camera ) {
         mCurrentCamera = camera;
     }
 private:
     void sortRenderQueues();
-    void renderQueue( uint queue );
+    void renderDeferredQueue( unsigned int queue );
+    void renderLightQueue( unsigned int queue );
+    void renderOverlay( unsigned int queue );
+    
+    void performOperation( const LowLevelRenderOperation &operation );
     
 private:
     typedef std::vector<LowLevelRenderOperation> OperationQueue;
@@ -57,16 +60,16 @@ private:
     Camera *mCurrentCamera = nullptr;
     GLuint mDefaultSceneInfoBinding;
     
-    UniquePtr<FrameBuffer> mDefferedFrameBuffer;
-    UniquePtr<VertexArrayObject> mVAO;
+    UniquePtr<FrameBuffer> mDeferredFrameBuffer;
     
-    SharedPtr<Texture> mDefferedDiffuseTexture,
-                       mDefferedDepthTexture,
-                       mDefferedNormalTexture,
-                       mDefferedSpecularTexture;
+    SharedPtr<Texture> mDeferredDiffuseTexture,
+                       mDeferredDepthTexture,
+                       mDeferredNormalTexture,
+                       mDeferredPositionTexture;
+                       
+    SharedPtr<Material> mAmbientMaterial;
     
-    SharedPtr<Material> mDefferedMaterial;
     struct {
         GLint nearPlane, farPlane;
-    } mDefferedShaderLoc;
+    } mDeferredShaderLoc;
 };

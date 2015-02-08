@@ -9,9 +9,12 @@
 
 #include <vector>
 
+class LowLevelRenderer;
 class Material;
 class Camera;
 class Mesh;
+
+class Renderable;
 
 class DebugDrawer :
     public BaseManager
@@ -23,9 +26,10 @@ public:
     virtual void update( float dt );
     
     void drawWireFrame( const SharedPtr<Mesh> &mesh, const glm::mat4 &transform, const glm::vec3 &color = glm::vec3(0.1f,1.f,0.5f));
+    void queueRenderable( LowLevelRenderer &renderer );
     
 private:
-    struct DebugFrameListener;
+    class DebugWireRenderable;
     
     struct WireFrameDraw {
         SharedPtr<Mesh> mesh;
@@ -34,19 +38,17 @@ private:
     };
     
 private:
-    
-    void render( Camera *camera );
-    
-    
+    void renderWireframe();
     
 private:
-    Root *mRoot;
-    DebugFrameListener *mFrameListener = nullptr;
+    Root *mRoot = nullptr;
+    DebugWireRenderable *mWireRenderable = nullptr;
     
     std::vector<WireFrameDraw> mWireFramesDraws;
     
     SharedPtr<Material> mWireFrameMaterial;
     struct {
-        GLint colorLoc;
+        GLint color, modelMatrix;
     } mWireFrameLoc;
+    
 };
