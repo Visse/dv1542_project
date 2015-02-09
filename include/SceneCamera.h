@@ -19,6 +19,7 @@ public:
     
     virtual void update( float dt ) override;
     virtual void render( LowLevelRenderer &renderer ) override;
+    virtual glm::vec3 getAmbientColor() override;
     
 private:
     Root *mRoot;

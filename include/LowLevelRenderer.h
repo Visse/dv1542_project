@@ -66,10 +66,14 @@ private:
                        mDeferredDepthTexture,
                        mDeferredNormalTexture,
                        mDeferredPositionTexture;
-                       
+    
     SharedPtr<Material> mAmbientMaterial;
     
     struct {
         GLint nearPlane, farPlane;
     } mDeferredShaderLoc;
+    
+    struct {
+        GLint ambientColor;
+    } mAmbientLoc;
 };

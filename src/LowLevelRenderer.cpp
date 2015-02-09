@@ -13,6 +13,8 @@
 #include "Camera.h"
 #include "GpuProgram.h"
 
+#include <glm/gtc/type_ptr.hpp>
+
 #include <cassert>
 
 LowLevelRenderer::LowLevelRenderer( Root *root ) :
@@ -40,6 +42,8 @@ LowLevelRenderer::LowLevelRenderer( Root *root ) :
     ResourceManager *resourceMgr = mRoot->getResourceManager();
     mAmbientMaterial = resourceMgr->getMaterialAutoPack("AmbientMaterial");
     
+    SharedPtr<GpuProgram> program = mAmbientMaterial->getProgram();
+    mAmbientLoc.ambientColor = program->getUniformLocation("AmbientColor");
 }
 
 LowLevelRenderer::~LowLevelRenderer() = default;
@@ -65,7 +69,8 @@ void LowLevelRenderer::flush()
     mDeferredFrameBuffer->unbindFrameBuffer();
     
     mAmbientMaterial->bindMaterial();
-    
+    glm::vec3 ambientColor = mCurrentCamera->getAmbientColor();
+    glUniform3fv( mAmbientLoc.ambientColor, 1, glm::value_ptr(ambientColor) );
         
     GLuint loc = getDefaultGBufferBinding( DefaultGBufferBinding::Diffuse );
     mDeferredDiffuseTexture->bindTexture( loc );

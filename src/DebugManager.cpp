@@ -108,11 +108,19 @@ void DebugManager::update( float dt )
                 ImGui::PlotLines( "Frame Rate", mRoot->getFrameRateHistory(), 0, 10.f, -0.f, ImVec2(0,70) );
             }
             
-            if( ImGui::CollapsingHeader("SceneObjects") ) {
-                SceneManager *sceneMgr = mRoot->getSceneManager();
-                Scene *scene = sceneMgr->getScene();
+            SceneManager *sceneMgr = mRoot->getSceneManager();
+            Scene *scene = sceneMgr->getScene();
+            
+            if( scene ) {
+                if( ImGui::CollapsingHeader("Scene") ) {
+                    glm::vec3 ambientColor = scene->getAmbientColor();
+                    
+                    if( ImGui::ColorEdit3("Ambient", glm::value_ptr(ambientColor)) ) {
+                        scene->setAmbientColor( ambientColor );
+                    }
+                }
                 
-                if( scene ) {
+                if( ImGui::CollapsingHeader("SceneObjects") ) {
                     scene->forEachObject(
                         std::bind( &DebugManager::showSceneObject, this, dt, std::placeholders::_1 )
                     );

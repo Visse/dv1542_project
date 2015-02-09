@@ -3,6 +3,7 @@
 #include "Frustrum.h"
 
 #include <glm/mat4x4.hpp>
+#include <glm/vec3.hpp>
 
 class GpuBuffer;
 class LowLevelRenderer;
@@ -43,6 +44,7 @@ public:
     }
     
     virtual GpuBuffer* getSceneUniforms() { return nullptr; }
+    virtual glm::vec3 getAmbientColor() { return glm::vec3(); }
     
 private:
     glm::mat4 mProjectionMatrix;

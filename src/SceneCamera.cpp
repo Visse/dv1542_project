@@ -68,3 +68,8 @@ void SceneCamera::render( LowLevelRenderer &renderer )
     }
 }
 
+glm::vec3 SceneCamera::getAmbientColor()
+{
+    return mScene->getAmbientColor();
+}
+

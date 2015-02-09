@@ -3,6 +3,8 @@
 #include <vector>
 #include <functional>
 
+#include <glm/vec3.hpp>
+
 #include "SharedPtr.h"
 
 class Root;
@@ -31,6 +33,13 @@ public:
     
     void forEachObject( std::function<void(SceneObject*)> callback );
     
+    glm::vec3 getAmbientColor() {
+        return mAmbientColor;
+    }
+    void setAmbientColor( const glm::vec3 &ambient ) {
+        mAmbientColor = ambient;
+    }
+    
 private:
     struct ObjectInfo {
         SceneObject *object;
@@ -42,4 +51,5 @@ private:
 private:
     Root *mRoot;
     std::vector<ObjectInfo> mObjects;
+    glm::vec3 mAmbientColor;
 };
