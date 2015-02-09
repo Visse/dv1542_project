@@ -500,6 +500,9 @@ void DebugManager::submitDebugDraw()
         if( info.mesh && info.wireFrame ) {
             debugDrawer->drawWireFrame( info.mesh, entry.first->getTransform() );
         }
+        if( info.mesh && info.normals ) {
+            debugDrawer->drawVertexNormals( info.mesh, entry.first->getTransform() );
+        }
     }
 }
 

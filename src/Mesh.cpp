@@ -124,6 +124,7 @@ void generateTangentAndBitangent( std::vector<Mesh::Vertex> &vertexes,
         glm::vec3 &b = vertex.bitangent;
 
         t = glm::normalize(t - n * glm::dot(n, t));
+        b = glm::normalize( b );
 
         if (glm::dot(glm::cross(n, t), b) < 0.0f){
             t = t * -1.0f;
