@@ -1,0 +1,19 @@
+Program: PointLightShader
+DepthWrite: False
+BlendMode: AddjectiveBlend
+
+Texture:
+    Name: DiffuseTexture
+    Unit: 0
+
+Texture: 
+    Name: NormalTexture
+    Unit: 1
+    
+Texture: 
+    Name: DepthTexture
+    Unit: 2
+
+Texture:
+    Name: PositionTexture
+    Unit: 3

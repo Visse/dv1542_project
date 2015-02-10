@@ -1,0 +1,5 @@
+Program: DebugGuiShader
+
+BlendMode: AlphaBlend
+DepthWrite: False
+DepthCheck: None

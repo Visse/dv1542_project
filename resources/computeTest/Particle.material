@@ -1,0 +1,4 @@
+Program: ComputeParticleShader
+
+DepthWrite: False
+BlendMode: AddjectiveBlend

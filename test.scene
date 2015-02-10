@@ -1,0 +1,33 @@
+Ambient: "{0.1,0.1,0.1}"
+
+Object:
+    Type: Entity
+    Mesh: "core:StationCorridor"
+Object:
+    Type: Entity
+    Mesh: "core:StationCorridorWindow"
+    Position: "{0, 0, -10}"
+Object:
+    Type: Entity
+    Mesh: "core:StationCorridorDoor"
+    Position: "{0, 0, -10}"
+
+Object:
+    Type: Light
+    LightType: Point
+    OuterRadius: 2
+    InnerRadius: 1
+    Color: "{1,1,1}"
+    Position: "{0, 1, -10}"
+
+#ResourcePack: computeTest
+#Object:
+    #Type: ComputeParticle
+    #Position: "{0, 2.5, 0}"
+#Object:
+    #Type: ComputeParticle
+    #Position: "{0, 2.5, -10}"
+#Object:
+    #Type: ComputeParticle
+    #Position: "{0, 2.5, -20}"
+    
