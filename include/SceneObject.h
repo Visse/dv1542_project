@@ -18,7 +18,7 @@ public:
     
     void setPosition( const glm::vec3 &position );
     void setOrientation( const glm::quat &orientation );
-    void setRenderQueue( uint queue ) {
+    void setRenderQueue( unsigned int queue ) {
         mRenderQueue = queue;
     }
     const glm::vec3& getPosition() {
@@ -30,7 +30,7 @@ public:
     const glm::mat4& getTransform() {
         return mTransform;
     }
-    uint getRenderQueue() {
+    unsigned int getRenderQueue() {
         return mRenderQueue;
     }
     
@@ -45,6 +45,6 @@ private:
     
     glm::mat4 mTransform;
     
-    uint mRenderQueue = 0;
+    unsigned int mRenderQueue = 0;
     bool mDirty = false;
 };
