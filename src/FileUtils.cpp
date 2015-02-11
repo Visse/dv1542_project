@@ -18,6 +18,11 @@ namespace FileUtils
         std::string content;
         content.resize ( size );
         file.read ( &content[0], size );
+        // apperently since we opened the file in text mode,
+        // we got a incorrect size from tellg :/,
+        // so now we have to find out how many characters we 'really' read.
+        size_t charactersRead = file.gcount();
+        content.resize( charactersRead );
 
         return std::move ( content );
     }

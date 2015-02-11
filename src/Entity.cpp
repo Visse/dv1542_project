@@ -6,8 +6,7 @@
 
 #include "GLinclude.h"
 
-#include <glm/glm.hpp>
-#include <glm/ext.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 Entity::Entity( const SharedPtr<Mesh> &mesh ) :
     mMesh(mesh)
@@ -29,7 +28,7 @@ void Entity::queueRenderable( LowLevelRenderer &renderer )
         operation.indexBuffer = mMesh->getIndexBuffer().get();
         operation.vao = mMesh->getVertexArrayObject().get();
         
-    uint renderQueue = getRenderQueue();
+    unsigned int renderQueue = getRenderQueue();
     for( SubMeshRenderer &subMeshRenderer : mRenderers ) {
         const SubMesh *subMesh = subMeshRenderer.getSubMesh();
         operation.material = subMesh->material.get();

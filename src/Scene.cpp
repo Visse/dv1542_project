@@ -69,7 +69,7 @@ SharedPtr<Scene> Scene::LoadFromFile( Root *root, const std::string &filename )
                 
                 std::string renderQueueStr = renderqueueNode.getValue();
                 if( !renderQueueStr.empty() ) {
-                    uint renderQueue = renderQueueFromString(renderQueueStr);
+                    unsigned int renderQueue = renderQueueFromString(renderQueueStr);
                     object->setRenderQueue( renderQueue );
                 }
                 
