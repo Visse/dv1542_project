@@ -1,8 +1,0 @@
-Program: DebugDrawerNormalShader
-
-DepthWrite: False
-DepthCheck: LessEqual
-
-Texture: 
-    Name: DepthTexture
-    Unit: 2
