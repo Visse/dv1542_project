@@ -251,15 +251,19 @@ void ResourceManager::loadUncompressedResourcePack( const std::string &name, con
                     texName   = settings.getValues("Name",false).at(0).asValue().getValue(),
                     strType   = settings.getValues("Type",false).at(0).asValue().getValue();
         
-        TextureType type = stringToTextureType( strType );
-        
-        std::string filename = resourcePrefix + source;
-        TexturePtr texture = Texture::LoadTexture( type, filename );
-        
-        if( texture ) {
-            pack.textures.emplace( texName, texture );
+        try {
+            TextureType type = stringToTextureType( strType );
             
-            std::clog << "[ResourceManager] Loaded texture \"" << texName << "\" in resource pack \"" << name << "\"" << std::endl;
+            std::string filename = resourcePrefix + source;
+            TexturePtr texture = Texture::LoadTexture( type, filename );
+            
+            if( texture ) {
+                pack.textures.emplace( texName, texture );
+                
+                std::clog << "[ResourceManager] Loaded texture \"" << texName << "\" in resource pack \"" << name << "\"" << std::endl;
+            } 
+        } catch( const std::exception &e ) {
+            std::cerr << "[ResourceManager] Failed to load texture \"" << texName << "\" in resource pack \"" << name << "\", error: " << e.what() << std::endl;
         }
     }
     
@@ -270,26 +274,30 @@ void ResourceManager::loadUncompressedResourcePack( const std::string &name, con
         
         Yaml::SequenceNode sources = settings.getValues("Shaders").at(0).asSequence();
         
-        std::vector<SharedPtr<GpuShader>> shaders;
-        for( size_t i=0, count=sources.getCount(); i < count; ++i ) {
-            Yaml::MappingNode shaderNode = sources.getValue(i).asMapping();
+        try {
+            std::vector<SharedPtr<GpuShader>> shaders;
+            for( size_t i=0, count=sources.getCount(); i < count; ++i ) {
+                Yaml::MappingNode shaderNode = sources.getValue(i).asMapping();
+                
+                std::string strType = shaderNode.getValues("Type",false).at(0).asValue().getValue();
+                std::string source  = shaderNode.getValues("Source",false).at(0).asValue().getValue();
+                
+                ShaderType type = stringToShaderType(strType);
+                
+                std::string filename = resourcePrefix + source;
+                SharedPtr<GpuShader> shader = GpuShader::LoadShaderFromFile(type,filename);
+                shaders.push_back( shader );
+            }
             
-            std::string strType = shaderNode.getValues("Type",false).at(0).asValue().getValue();
-            std::string source  = shaderNode.getValues("Source",false).at(0).asValue().getValue();
+            GpuProgramPtr program = GpuProgram::CreateProgram( shaders );
             
-            ShaderType type = stringToShaderType(strType);
-            
-            std::string filename = resourcePrefix + source;
-            SharedPtr<GpuShader> shader = GpuShader::LoadShaderFromFile(type,filename);
-            shaders.push_back( shader );
-        }
-        
-        GpuProgramPtr program = GpuProgram::CreateProgram( shaders );
-        
-        if( program ) {
-            pack.programs.emplace( progName, program );
-            
-            std::clog << "[ResourceManager] Loaded program \"" << progName << "\" in resource pack \"" << name << "\"" << std::endl;
+            if( program ) {
+                pack.programs.emplace( progName, program );
+                
+                std::clog << "[ResourceManager] Loaded program \"" << progName << "\" in resource pack \"" << name << "\"" << std::endl;
+            }
+        } catch( const std::exception &e ) {
+            std::cerr << "[ResourceManager] Failed to load program \"" << progName << "\" in resource pack \"" << name << "\", error: " << e.what() << std::endl;
         }
     }
     
@@ -299,14 +307,17 @@ void ResourceManager::loadUncompressedResourcePack( const std::string &name, con
         std::string matName = settings.getValues("Name").at(0).asValue().getValue();
         std::string source = settings.getValues("Source").at(0).asValue().getValue();
         
-        
-        std::string filename = resourcePrefix + source;
-        MaterialPtr material = Material::LoadFromFile( filename, this );
-        
-        if( material ) {
-            pack.materials.emplace( matName, material );
+        try {
+            std::string filename = resourcePrefix + source;
+            MaterialPtr material = Material::LoadFromFile( filename, this );
             
-            std::clog << "[ResourceManager] Loaded material \"" << matName << "\" in resource pack \"" << name << "\"" << std::endl;
+            if( material ) {
+                pack.materials.emplace( matName, material );
+                
+                std::clog << "[ResourceManager] Loaded material \"" << matName << "\" in resource pack \"" << name << "\"" << std::endl;
+            }
+        } catch( const std::exception &e ) {
+            std::cerr << "[ResourceManager] Failed to load material \"" << matName << "\" in resource pack \"" << name << "\", error: " << e.what() << std::endl;
         }
     }
     
@@ -316,15 +327,18 @@ void ResourceManager::loadUncompressedResourcePack( const std::string &name, con
         std::string modName = settings.getValues("Name").at(0).asValue().getValue();
         std::string source = settings.getValues("Source").at(0).asValue().getValue();
         
+        try {
+            std::string filename = resourcePrefix + source;
+            MeshPtr mesh = Mesh::LoadMeshFromFile( filename, this );
+            mesh->setName( StringUtils::strjoin(name,":",modName) );
         
-        std::string filename = resourcePrefix + source;
-        MeshPtr mesh = Mesh::LoadMeshFromFile( filename, this );
-        mesh->setName( StringUtils::strjoin(name,":",modName) );
-        
-        if( mesh ) {
-            pack.meshes.emplace( modName, mesh );
-            
-            std::clog << "[ResourceManager] Loaded mesh \"" << modName << "\" in resource pack \"" << name << "\"" << std::endl;
+            if( mesh ) {
+                pack.meshes.emplace( modName, mesh );
+                
+                std::clog << "[ResourceManager] Loaded mesh \"" << modName << "\" in resource pack \"" << name << "\"" << std::endl;
+            }
+        } catch( const std::exception &e ) {
+            std::cerr << "[ResourceManager] Failed to load mesh \"" << modName << "\" in resource pack \"" << name << "\", error: " << e.what() << std::endl;
         }
     }
 }
