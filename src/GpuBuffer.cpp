@@ -86,6 +86,27 @@ GLenum bufferTypeToGL( BufferType type )
     return 0;
 }
 
+GpuBuffer::GpuBuffer( BufferType type, size_t size, BufferUsage usage, BufferUpdate update ) :
+    mUsage(usage),
+    mUpdate(update),
+    mType(type),
+    mSize(size)
+{
+    GLenum bufferType = bufferTypeToGL( mType );
+#ifdef USE_DEBUG_NORMAL
+    // since we are binding our buffer, no other buffer can be bound
+    assert( getBoundBuffer(bufferType) == 0 );
+#endif
+    
+    glGenBuffers( 1, &mBuffer );
+    glBindBuffer( bufferType, mBuffer );
+    
+    GLenum bufferUsage = usageAndUpdateToGL( mUsage, mUpdate );
+    glBufferData( bufferType, size, NULL, bufferUsage );
+    
+    glBindBuffer( bufferType, 0 );
+}
+
 GpuBuffer::GpuBuffer( GpuBuffer&& move ) :
     mBuffer(move.mBuffer)
 {
@@ -232,11 +253,6 @@ void GpuBuffer::uploadData( const void *data, size_t size )
 
 SharedPtr<GpuBuffer> GpuBuffer::CreateBuffer( BufferType type, size_t size, BufferUsage usage, BufferUpdate update )
 {
-    SharedPtr<GpuBuffer> buffer = makeSharedPtr<GpuBuffer>();
-    buffer->setType( type );
-    buffer->setUsage( usage );
-    buffer->setUpdate( update );
-    buffer->setSize( size );
-    return buffer;
+    return makeSharedPtr<GpuBuffer>( type, size, usage, update );
 }
 

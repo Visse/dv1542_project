@@ -69,11 +69,6 @@ Material::Material( const SharedPtr<GpuProgram> &program, const SharedPtr<GpuBuf
 {
 }
 
-void Material::setProgram( const SharedPtr<GpuProgram> &program )
-{
-    mProgram = program;
-}
-
 void Material::setTexture( GLint loc, GLint unit, const SharedPtr<Texture> &texture  )
 {
     if( loc < 0 ) return;
@@ -167,6 +162,18 @@ void Material::bindMaterial()
         mMaterialUnifoms->bindIndexed( getDefaultUniformBlockBinding(DefaultUniformBlockLocations::Material) );
     }
 }
+
+SharedPtr<Material> Material::clone()
+{
+    SharedPtr<Material> clone = makeSharedPtr<Material>( mProgram, mMaterialUnifoms );
+    clone->mBlend = mBlend;
+    clone->mTextures = mTextures;
+    clone->mDepthWrite = mDepthWrite;
+    clone->mDepthCheck = mDepthCheck;
+    
+    return clone;
+}
+
 
 SharedPtr<Material> Material::LoadFromFile( const std::string &filename, ResourceManager *resourceMgr )
 {

@@ -100,11 +100,12 @@ void GraphicsManager::update( float dt )
 
 void GraphicsManager::render()
 {
-    mRenderer->clearFrame();
+    glDepthMask( GL_TRUE );
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+    
     fireFrameBegun();
     
     for( Camera *camera : mCameras ) {
-        mRenderer->_setCurrentCamera( camera );
         firePreCamera( camera );
         camera->render( *mRenderer );
         firePostCamera( camera );

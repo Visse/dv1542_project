@@ -6993,9 +6993,10 @@ void ImFont::BuildLookupTable()
     // FIXME: Needs proper TAB handling but it needs to be contextualized (can arbitrary say that each string starts at "column 0"
     if (const ImFont::Glyph* space_glyph = FindGlyph((unsigned short)' '))
     {
+        ImFont::Glyph tmp = *space_glyph;
         Glyphs.resize(Glyphs.size() + 1);
         ImFont::Glyph& tab_glyph = Glyphs.back();
-        tab_glyph = *space_glyph;
+        tab_glyph = tmp;
         tab_glyph.Codepoint = '\t';
         tab_glyph.XAdvance *= 4;
         IndexLookup[(int)tab_glyph.Codepoint] = (int)(Glyphs.size()-1);

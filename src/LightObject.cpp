@@ -6,6 +6,7 @@
 #include "Material.h"
 #include "GpuProgram.h"
 #include "GLinclude.h"
+#include "UniformBlockDefinitions.h"
 
 #include <glm/gtc/type_ptr.hpp>
 
@@ -17,43 +18,39 @@ PointLight::PointLight( Root *root ) :
     mMesh = resourceMgr->getMeshAutoPack("Sphere");
     mMaterial = resourceMgr->getMaterialAutoPack("PointLightMaterial");
     
-    mRenderer.init( this );
+    
+    SharedPtr<GpuProgram> program = mMaterial->getProgram();
+    
+    const UniformBlockLayout &block = program->getUniformBlockLayout("PointLight");
+    const UniformBlockLayout &expectedLayout = PointLightUniforms::GetUniformBlockLayout();
+    
+    if( !expectedLayout.canBeUsedAs(block) )  {
+        throw std::runtime_error( "PointLight uniform block doesn't match the expected layout!" );
+    }
+    
+    mBlockLoc = program->getUniformBlockLocation("PointLight");
 }
 
 void PointLight::queueRenderable( LowLevelRenderer &renderer )
 {
-    LowLevelRenderOperation operation;
-        operation.indexBuffer = mMesh->getIndexBuffer().get();
-        operation.vao = mMesh->getVertexArrayObject().get();
-        operation.material = mMaterial.get();
-        operation.renderable = &mRenderer;
+    PointLightUniforms uniforms;
+        uniforms.modelMatrix = getTransform();
+        uniforms.radius = glm::vec2( mInnerRadius, mOuterRadius );
+        uniforms.color = glm::vec4(mColor,1.f);
     
-    renderer.queueOperation( operation, RQ_Light);
-}
+    QueueOperationParams params;
+        params.indexBuffer = mMesh->getIndexBuffer().get();
+        params.vao = mMesh->getVertexArrayObject().get();
+        params.material = mMaterial.get();
+        params.drawMode = DrawMode::Triangles;
+        params.renderQueue = RQ_Light;
+        params.uniforms[0] = renderer.aquireUniformBuffer(mBlockLoc, uniforms);
 
-void PointLightRenderer::init( PointLight *light )
-{
-    mLight = light;
+    const auto &submeshes =  mMesh->getSubMeshes();
     
-    SharedPtr<GpuProgram> shader = mLight->mMaterial->getProgram();
-    mModelMatrixLoc = shader->getUniformLocation("ModelMatrix");
-    mOuterRadiusLoc = shader->getUniformLocation("OuterRadius");
-    mInnerRadiusLoc = shader->getUniformLocation("InnerRadius");
-    mColorLoc = shader->getUniformLocation("Color");
-}
-
-void PointLightRenderer::render()
-{
-    const auto &subMeshes = mLight->mMesh->getSubMeshes();
-    glm::mat4 modelMatrix = mLight->getTransform();
-    
-    glUniformMatrix4fv( mModelMatrixLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix) );
-    glUniform3fv( mColorLoc, 1, glm::value_ptr(mLight->mColor) );
-    glUniform1f( mOuterRadiusLoc, mLight->mOuterRadius );
-    glUniform1f( mInnerRadiusLoc, mLight->mInnerRadius );
-    
-    for( const SubMesh &submesh : subMeshes ) {
-        glDrawElements( GL_TRIANGLES, submesh.vertexCount, GL_UNSIGNED_INT, reinterpret_cast<GLvoid*>(sizeof(GLint)*submesh.vertexStart) );
+    for( const SubMesh &submesh : submeshes ) {
+        params.vertexStart = submesh.vertexStart;
+        params.vertexCount = submesh.vertexCount;
+        renderer.queueOperation( params );
     }
 }
-

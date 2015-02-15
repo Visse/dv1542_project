@@ -15,8 +15,6 @@ class SceneCamera :
 public:
     SceneCamera( Root *root, const SharedPtr<Scene> &scene, const SharedPtr<Controller> &controller ); 
     
-    virtual GpuBuffer* getSceneUniforms();
-    
     virtual void update( float dt ) override;
     virtual void render( LowLevelRenderer &renderer ) override;
     virtual glm::vec3 getAmbientColor() override;
@@ -25,7 +23,6 @@ private:
     Root *mRoot;
     SharedPtr<Scene> mScene;
     SharedPtr<Controller> mController;
-    SharedPtr<GpuBuffer> mSceneUniformBuffer;
     
     std::vector<SceneObject*> mCulledObjects;
 };

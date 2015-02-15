@@ -14,9 +14,6 @@
 ComputeParticleSystem::ComputeParticleSystem( Root *root ) :
     mRoot(root)
 {
-    mRenderer.particleSys = this;
-    mAttractorRenderer.particleSys = this;
-    
     ResourceManager *resourceMgr = mRoot->getResourceManager();
     
     mSimulation = resourceMgr->getGpuProgramAutoPack( "ComputeParticleSimulation" );
@@ -27,22 +24,22 @@ ComputeParticleSystem::ComputeParticleSystem( Root *root ) :
         throw std::runtime_error( "computeParticle: Missing gpu programs and/or material!, did you load the resourcepack?" );
     }
     if( mAttractorMaterial ) {
-        mAttractorRenderingLoc.modelMatrix = mAttractorMaterial->getProgram()->getUniformLocation("ModelMatrix");
+//         mAttractorRenderingLoc.modelMatrix = mAttractorMaterial->getProgram()->getUniformLocation("ModelMatrix");
     }
     
     mShader = mMaterial->getProgram();
     
-    mSimulationLoc.dt = mSimulation->getUniformLocation( "dt" );
-    mSimulationLoc.weightMod = mSimulation->getUniformLocation( "weightMod" );
-    mSimulationLoc.distMod = mSimulation->getUniformLocation( "distMod" );
-    mSimulationLoc.lifeTime = mSimulation->getUniformLocation( "lifeTimeMod" );
-    mSimulationLoc.damping = mSimulation->getUniformLocation( "dampingMod" );
-    mSimulationLoc.attractorCount = mSimulation->getUniformLocation( "AttractorCount" );
-    
-    mRenderingLoc.modelMatrix = mShader->getUniformLocation( "ModelMatrix" );
-    
-    mRenderingLoc.intensity = mShader->getUniformLocation( "Intensity" );
-    mRenderingLoc.pointSize = mShader->getUniformLocation( "PointSize" );
+//     mSimulationLoc.dt = mSimulation->getUniformLocation( "dt" );
+//     mSimulationLoc.weightMod = mSimulation->getUniformLocation( "weightMod" );
+//     mSimulationLoc.distMod = mSimulation->getUniformLocation( "distMod" );
+//     mSimulationLoc.lifeTime = mSimulation->getUniformLocation( "lifeTimeMod" );
+//     mSimulationLoc.damping = mSimulation->getUniformLocation( "dampingMod" );
+//     mSimulationLoc.attractorCount = mSimulation->getUniformLocation( "AttractorCount" );
+//     
+//     mRenderingLoc.modelMatrix = mShader->getUniformLocation( "ModelMatrix" );
+//     
+//     mRenderingLoc.intensity = mShader->getUniformLocation( "Intensity" );
+//     mRenderingLoc.pointSize = mShader->getUniformLocation( "PointSize" );
     
     const Config *config = mRoot->getConfig();
     
@@ -143,39 +140,21 @@ void ComputeParticleSystem::update( float dt )
 
 void ComputeParticleSystem::queueRenderable( LowLevelRenderer &renderer )
 {
-    LowLevelRenderOperation operation;
-        operation.material = mMaterial.get();
-        operation.renderable = &mRenderer;
-        operation.vao = &mVAO;
-        
-    renderer.queueOperation( operation );
-    
-    if( mShowAttractors && mAttractorMaterial ) {
-        LowLevelRenderOperation attractorOp;
-            attractorOp.material = mAttractorMaterial.get();
-            attractorOp.renderable = &mAttractorRenderer;
-            attractorOp.vao = &mAttractorVAO;
-            
-        renderer.queueOperation( attractorOp );
-    }
+//     QueueOperationParams params;
+//         params.material = mMaterial.get();
+//         params.vao = &mVAO;
+//         params.vertexStart = 0;
+//         params.vertexCount = 
+//         
+//     renderer.queueOperation( operation );
+//     
+//     if( mShowAttractors && mAttractorMaterial ) {
+//         LowLevelRenderOperation attractorOp;
+//             attractorOp.material = mAttractorMaterial.get();
+//             attractorOp.renderable = &mAttractorRenderer;
+//             attractorOp.vao = &mAttractorVAO;
+//             
+//         renderer.queueOperation( attractorOp );
+//     }
 }
 
-void ComputeParticleSystem::ParticleSystemRenderer::render()
-{
-    glm::mat4 transform = particleSys->getTransform();
-    
-    glUniformMatrix4fv( particleSys->mRenderingLoc.modelMatrix, 1, GL_FALSE, glm::value_ptr(transform) );
-    glUniform1f( particleSys->mRenderingLoc.intensity, particleSys->mIntensity );
-    glUniform1f( particleSys->mRenderingLoc.pointSize, particleSys->mPointSize );
-    
-    glDrawArrays( GL_POINTS, 0, particleSys->mParticleGroupCount * particleSys->mParticleGroupSize );
-}
-
-void ComputeParticleSystem::AttractorRenderer::render()
-{
-    glm::mat4 transform = particleSys->getTransform();
-    
-    glUniformMatrix4fv( particleSys->mAttractorRenderingLoc.modelMatrix, 1, GL_FALSE, glm::value_ptr(transform) );
-    
-    glDrawArrays( GL_POINTS, 0, particleSys->mAttractorCount );
-}

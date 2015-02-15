@@ -1,10 +1,10 @@
-#include "RenderQueue.h"
+#include "SharedEnums.h"
 #include "StringUtils.h"
 
 #include <cstdio>
 #include <stdexcept>
 
-unsigned int renderQueueFromString(const std::string &str)
+RenderQueueId renderQueueFromString(const std::string &str)
 {
     unsigned int queue = (unsigned int)-1;
     

@@ -25,7 +25,7 @@ SceneObject* EntityFactory::createObject( const Yaml::Node &node )
     
     SharedPtr<Mesh> mesh = resourceMgr->getMeshAutoPack( meshName );
     if( mesh ) {
-        Entity *entity = new Entity( mesh );
+        Entity *entity = new Entity( mRoot, mesh );
         
         return entity;
     }

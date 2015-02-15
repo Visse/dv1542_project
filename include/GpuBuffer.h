@@ -49,6 +49,8 @@ public:
     
     GpuBuffer& operator = ( const GpuBuffer& ) = delete;
     GpuBuffer& operator = ( GpuBuffer&& ) = delete;
+    
+    GpuBuffer( BufferType type, size_t size, BufferUsage usage, BufferUpdate update );
      
     void setUsage( BufferUsage usage ) {
         mUsage = usage;

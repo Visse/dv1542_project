@@ -6,7 +6,7 @@
 #include "GlmStream.h"
 #include "SceneManager.h"
 #include "SceneObjectFactory.h"
-#include "RenderQueue.h"
+#include "SharedEnums.h"
 
 
 #include "yaml-cxx/YamlCxx.h"

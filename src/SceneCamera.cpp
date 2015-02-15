@@ -1,11 +1,12 @@
 #include "SceneCamera.h"
 #include "LowLevelRenderer.h"
 #include "GpuBuffer.h"
-#include "SceneRenderInfo.h"
+#include "UniformBlockDefinitions.h"
 #include "Controller.h"
 #include "Scene.h"
 #include "Root.h"
 #include "DebugDrawer.h"
+#include "DefaultGpuProgramLocations.h"
 
 #include <glm/glm.hpp>
 
@@ -15,14 +16,6 @@ SceneCamera::SceneCamera( Root *root, const SharedPtr<Scene> &scene, const Share
     mScene(scene),
     mController(controller)
 {
-    mSceneUniformBuffer = makeSharedPtr<GpuBuffer>();
-    mSceneUniformBuffer->setType( BufferType::Uniforms );
-    mSceneUniformBuffer->setSize( sizeof(SceneRenderUniforms) );
-}
-
-GpuBuffer* SceneCamera::getSceneUniforms()
-{
-    return mSceneUniformBuffer.get();
 }
 
 void SceneCamera::update( float dt )
@@ -50,9 +43,13 @@ void SceneCamera::render( LowLevelRenderer &renderer )
         sceneUniforms.inverseProjectionMatrix = glm::inverse( sceneUniforms.projectionMatrix );
         sceneUniforms.inverseViewProjMatrix = glm::inverse( sceneUniforms.viewProjMatrix );
         sceneUniforms.clippingPlanes = glm::vec2( getNearPlane(), getFarPlane() );
-        sceneUniforms.cameraPos = mController->getPosition();
-        
-    mSceneUniformBuffer->setContent( &sceneUniforms, 1 );
+        sceneUniforms.cameraPosition = mController->getPosition();
+    
+    UniformBuffer uniformBuffer = renderer.aquireUniformBuffer( sizeof(SceneRenderUniforms) );
+    uniformBuffer.setIndex( getDefaultUniformBlockBinding(DefaultUniformBlockLocations::SceneInfo) );
+    uniformBuffer.setRawContent( 0, &sceneUniforms, sizeof(SceneRenderUniforms) );
+    
+    renderer.setSceneUniforms( uniformBuffer );
     
     Frustrum frustrum = getFrustrum();
     

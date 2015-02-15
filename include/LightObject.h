@@ -1,7 +1,6 @@
 #pragma once
 
 #include "SceneObject.h"
-#include "Renderable.h"
 #include "SceneObjectFactory.h"
 #include "SharedPtr.h"
 #include "GLTypes.h"
@@ -12,25 +11,9 @@ class Mesh;
 class Material;
 class PointLight;
 
-class PointLightRenderer :
-    public Renderable
-{
-public:
-    void init( PointLight *light );
-    virtual void render();
-    
-private:
-    PointLight *mLight;
-    GLuint mModelMatrixLoc,
-           mOuterRadiusLoc,
-           mInnerRadiusLoc,
-           mColorLoc;
-};
-
 class PointLight :
     public SceneObject
 {
-    friend class PointLightRenderer;
 public:
     PointLight( Root *root );
     virtual void queueRenderable( LowLevelRenderer& renderer );
@@ -57,7 +40,6 @@ public:
     
 private:
     Root *mRoot;
-    PointLightRenderer mRenderer;
     
     SharedPtr<Mesh> mMesh;
     SharedPtr<Material> mMaterial;
@@ -65,5 +47,7 @@ private:
     float mOuterRadius = 1.f,
           mInnerRadius = 0.f;
     glm::vec3 mColor;
+    
+    size_t mBlockLoc;
 };
 

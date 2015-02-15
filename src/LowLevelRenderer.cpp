@@ -2,7 +2,6 @@
 #include "Material.h"
 #include "VertexArrayObject.h"
 #include "GpuBuffer.h"
-#include "Renderable.h"
 #include "DefaultGpuProgramLocations.h"
 #include "Texture.h"
 #include "Root.h"
@@ -12,10 +11,24 @@
 #include "ResourceManager.h"
 #include "Camera.h"
 #include "GpuProgram.h"
+#include "UniformBufferAllocator.h"
 
 #include <glm/gtc/type_ptr.hpp>
 
 #include <cassert>
+
+GLenum drawModeToGL( DrawMode mode )
+{
+    switch( mode ) {
+    case( DrawMode::Points ):
+        return GL_POINTS;
+    case( DrawMode::Triangles ):
+        return GL_TRIANGLES;
+    }
+    
+    assert( false && "Invalid mode!" );
+    return GL_POINTS;
+}
 
 LowLevelRenderer::LowLevelRenderer( Root *root ) :
     mRoot(root)
@@ -37,67 +50,123 @@ LowLevelRenderer::LowLevelRenderer( Root *root ) :
     mDeferredFrameBuffer->attachColorTexture( mDeferredPositionTexture, getDefaultOutputLocation(DefaultOutputLocations::Position) );
     mDeferredFrameBuffer->setDepthTexture( mDeferredDepthTexture );
     
-    mDefaultSceneInfoBinding = getDefaultUniformBlockBinding( DefaultUniformBlockLocations::SceneInfo );
+    mBufferAllocator = makeSharedPtr<UniformBufferAllocator>();
     
-    ResourceManager *resourceMgr = mRoot->getResourceManager();
-    mAmbientMaterial = resourceMgr->getMaterialAutoPack("AmbientMaterial");
-    
-    SharedPtr<GpuProgram> program = mAmbientMaterial->getProgram();
-    mAmbientLoc.ambientColor = program->getUniformLocation("AmbientColor");
+    mSceneUniforms.buffer = 0;
 }
 
 LowLevelRenderer::~LowLevelRenderer() = default;
 
-void LowLevelRenderer::queueOperation( const LowLevelRenderOperation &operation, unsigned int queue )
+void LowLevelRenderer::queueOperation( const QueueOperationParams &params )
 {
-    assert( queue < RQ_Count );
+    LowLevelRenderOperation operation;
+        operation.material = params.material;
+        operation.vao = params.vao;
+        operation.indexBuffer = params.indexBuffer;
+        operation.drawMode = params.drawMode;
+        operation.vertexStart = params.vertexStart;
+        operation.vertexCount = params.vertexCount;
+        operation.faceCulling = params.faceCulling;
+        operation.scissorTest = params.scissorTest;
+        operation.scissorPos  = params.scissorPos;
+        operation.scissorSize = params.scissorSize;
+        
+    size_t cur = 0;
     
-    mQueue[queue].push_back( operation );
-    if( !operation.sceneUniforms && mCurrentCamera ) {
-        mQueue[queue].back().sceneUniforms = mCurrentCamera->getSceneUniforms();
+    size_t id = params.sceneUniforms.getId();
+    size_t index = params.sceneUniforms.getIndex();
+    if( id == 0 && mSceneUniforms.buffer > 0) {
+        operation.uniforms[cur] = mSceneUniforms;
+        cur++;
     }
+    else if( id > 0 && index != (size_t)GL_INVALID_INDEX ) {
+        operation.uniforms[cur] = mBlockInfo[id-1];
+        cur++;
+    }
+    
+    for( size_t i=0; i < MAX_UNIFORM_BLOCK_COUNT; ++i ) {
+        id = params.uniforms[i].getId();
+        index = params.uniforms[i].getIndex();
+        if( id > 0 && index != (size_t)GL_INVALID_INDEX ) {
+            operation.uniforms[cur] = mBlockInfo[id-1];
+            operation.uniforms[cur].index = index;
+            cur++;
+        }
+    }
+    
+    operation.uniformCount = cur;
+    
+    mQueue[params.renderQueue].push_back( operation );
 }
 
 void LowLevelRenderer::flush()
 {
+    mBufferAllocator->flushAndReset();
+    mBlockInfo.clear();
+    
     sortRenderQueues();
     
     mDeferredFrameBuffer->bindFrameBuffer();
-    for( unsigned int i=RQ_DeferredFirst; i < RQ_DeferredLast; ++i ) {
+    glDepthMask( GL_TRUE );
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+    
+    for( unsigned int i=RQ_DeferredFirst; i <= RQ_DeferredLast; ++i ) {
         renderDeferredQueue( i );
     }
     mDeferredFrameBuffer->unbindFrameBuffer();
-    
-    mAmbientMaterial->bindMaterial();
-    glm::vec3 ambientColor = mCurrentCamera->getAmbientColor();
-    glUniform3fv( mAmbientLoc.ambientColor, 1, glm::value_ptr(ambientColor) );
-        
+  
     GLuint loc = getDefaultGBufferBinding( DefaultGBufferBinding::Diffuse );
     mDeferredDiffuseTexture->bindTexture( loc );
-    
     loc = getDefaultGBufferBinding( DefaultGBufferBinding::Normal );
     mDeferredNormalTexture->bindTexture( loc );
-    
     loc = getDefaultGBufferBinding( DefaultGBufferBinding::Depth );
     mDeferredDepthTexture->bindTexture( loc );
-    
     loc = getDefaultGBufferBinding( DefaultGBufferBinding::Position );
     mDeferredPositionTexture->bindTexture( loc );
     
-    glDrawArrays( GL_POINTS, 0, 1 );
+    for( unsigned int i=RQ_LightFirst; i <= RQ_LightLast; ++i ) {    
+        renderLightQueue( i );
+    }
+    for( unsigned int i=RQ_OverlayFirst; i <= RQ_OverlayLast; ++i ) {
+        renderOverlay( i );
+    }    
     
-    renderLightQueue( RQ_Light );
     
-    renderOverlay( RQ_Overlay );
+    memset( &mBoundObjects, 0, sizeof(mBoundObjects) );
+    
+    mBoundObjects.faceCulling = true;
+    mBoundObjects.scissorTest = false;
+    glEnable( GL_CULL_FACE );
+    glDisable( GL_SCISSOR_TEST );
 }
 
-void LowLevelRenderer::clearFrame()
+UniformBuffer LowLevelRenderer::aquireUniformBuffer( size_t size )
 {
-    glDepthMask( GL_TRUE );
-    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-    mDeferredFrameBuffer->bindFrameBuffer();
-    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-    mDeferredFrameBuffer->unbindFrameBuffer();
+    UniformBufferAllocator::AllocationResult result;
+    result = mBufferAllocator->getMemory( size );
+    
+    UniformBlockInfo info;
+        info.buffer = result.buffer;
+        info.offset = result.offset;
+        info.size = size;
+        
+    mBlockInfo.push_back( info );
+    size_t id = mBlockInfo.size();
+    
+    return UniformBuffer( id, result.memory, size );
+}
+
+void LowLevelRenderer::setSceneUniforms( const UniformBuffer &buffer )
+{
+    size_t id = buffer.getId();
+    
+    if( id > 0 ) {
+        mSceneUniforms = mBlockInfo[id-1];
+        mSceneUniforms.index = buffer.getIndex();
+    }
+    else {
+        mSceneUniforms.buffer = 0;
+    }
 }
 
 void LowLevelRenderer::sortRenderQueues()
@@ -118,7 +187,6 @@ void LowLevelRenderer::renderLightQueue( unsigned int queueId )
 {
     OperationQueue &queue = mQueue[queueId];
 
-    
     // disable cliping by the near & far planes
     // this fixes the issue of being 'inside' the light volume
     glEnable( GL_DEPTH_CLAMP );
@@ -145,22 +213,54 @@ void LowLevelRenderer::renderOverlay( unsigned int queueId )
     queue.clear();
 }
 
-
 inline void LowLevelRenderer::performOperation( const LowLevelRenderOperation &operation )
 {
-    if( operation.material ) {
-        operation.material->bindMaterial();
+    if( mBoundObjects.material != operation.material && operation.material ) {
+        mBoundObjects.material = operation.material;
+        mBoundObjects.material->bindMaterial();
     }
-    if( operation.vao ) {
-        operation.vao->bindVAO();
+    if( mBoundObjects.vao != operation.vao && operation.vao ) {
+        mBoundObjects.vao = operation.vao;
+        mBoundObjects.vao->bindVAO();
     }
+    if( mBoundObjects.indexBuffer != operation.indexBuffer && operation.indexBuffer ) {
+        mBoundObjects.indexBuffer = operation.indexBuffer;
+        mBoundObjects.indexBuffer->bindBuffer();
+    }
+    if( mBoundObjects.faceCulling != operation.faceCulling ) {
+        mBoundObjects.faceCulling = operation.faceCulling;
+        if( mBoundObjects.faceCulling ) {
+            glEnable( GL_CULL_FACE );
+        }
+        else {
+            glDisable( GL_CULL_FACE );
+        }
+    }
+    if( mBoundObjects.scissorTest != operation.scissorTest ) {
+        mBoundObjects.scissorTest = operation.scissorTest;
+        if( mBoundObjects.scissorTest ) {
+            glEnable( GL_SCISSOR_TEST );
+        }
+        else {
+            glDisable( GL_SCISSOR_TEST );
+        }
+    }
+    if( operation.scissorTest ) {
+        glScissor( operation.scissorPos.x, operation.scissorPos.y, 
+                   operation.scissorSize.x, operation.scissorSize.y );
+    }
+    
+    for( size_t i=0; i < operation.uniformCount; ++i ) {
+        const UniformBlockInfo &uniform = operation.uniforms[i];
+        glBindBufferRange( GL_UNIFORM_BUFFER, uniform.index, uniform.buffer, uniform.offset, uniform.size );
+    }
+    
+    GLenum mode = drawModeToGL(operation.drawMode);
     if( operation.indexBuffer ) {
-        operation.indexBuffer->bindBuffer();
+        glDrawElements( mode, operation.vertexCount, GL_UNSIGNED_INT, reinterpret_cast<GLvoid*>(4*operation.vertexStart) );
     }
-    if( operation.sceneUniforms ) {
-        operation.sceneUniforms->bindIndexed( mDefaultSceneInfoBinding );
+    else {
+        glDrawArrays( mode, operation.vertexStart, operation.vertexCount );
     }
-    operation.renderable->render();
 }
-
 

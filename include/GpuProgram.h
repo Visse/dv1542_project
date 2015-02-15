@@ -2,6 +2,7 @@
 
 #include "GLTypes.h"
 #include "SharedPtr.h"
+#include "UniformBlock.h"
 
 #include <vector>
 #include <map>
@@ -27,14 +28,19 @@ public:
     
     GLint getAttribLocation( const std::string &name );
     GLint getUniformLocation( const std::string &name );
-    
+    GLint getUniformBlockLocation( const std::string &name );
+    const UniformBlockLayout& getUniformBlockLayout( const std::string &name );
     
     GLuint getGLProgram() {
         return mProgram;
     }
+    
 private:
     GLuint mProgram;
     
-    std::map<std::string,GLint> mUniformLoc,
+    std::map<std::string,GLint> mUniformBlockLoc,
+                                mUniformLoc,
                                 mAttribLoc;
+    
+    std::map<std::string,UniformBlockLayout> mUniformBlocks;
 };

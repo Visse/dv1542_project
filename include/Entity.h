@@ -2,33 +2,14 @@
 
 #include "SceneObject.h"
 #include "SharedPtr.h"
-#include "Renderable.h"
 #include "GLTypes.h"
 
 #include <vector>
 
 struct SubMesh;
 class Mesh;
-class Entity;
-
-class SubMeshRenderer :
-    public Renderable
-{
-public:
-    SubMeshRenderer( SceneObject *object, const SharedPtr<Mesh> &mesh, const SubMesh *submesh );
-    
-    virtual void render();
-    
-    const SubMesh* getSubMesh();
-    
-private:
-    SceneObject *mObject;
-    SharedPtr<Mesh> mMesh;
-    const SubMesh *mSubMesh;
-    
-    GLint mModelMatrixLoc;
-};
-
+class Root;
+class Material;
 
 class Entity :
     public SceneObject
@@ -36,7 +17,7 @@ class Entity :
     friend class SubMeshRenderer;
     
 public:
-    Entity( const SharedPtr<Mesh> &mesh );
+    Entity( Root *root, const SharedPtr<Mesh> &mesh );
     
     virtual void queueRenderable( LowLevelRenderer& renderer );
     
@@ -45,6 +26,17 @@ public:
     }
     
 private:
+    struct SubMeshInfo {
+        unsigned int blockLoc;
+        size_t vertexStart, vertexCount;
+        SharedPtr<Material> material;
+    };
+    
+private:
+    Root *mRoot;
     SharedPtr<Mesh> mMesh;
-    std::vector<SubMeshRenderer> mRenderers;
+    size_t mModelMatrixOffset, mBlockIndex;
+    
+    std::vector<SubMeshInfo> mSubMeshes;
+    
 };

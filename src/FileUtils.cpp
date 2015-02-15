@@ -29,20 +29,27 @@ namespace FileUtils
 }
 
 #ifndef WIN32
-#include <boost/filesystem.hpp>
+#include <sys/stat.h>
 
 namespace FileUtils 
 {
     bool isFile( const std::string &filename )
     {
-        return boost::filesystem::is_regular_file(filename);
+        struct stat buf;
+        lstat( filename.c_str(), &buf );
+        
+        return S_ISREG(buf.st_mode);
     }
     
     bool isDirectory( const std::string &directory )
     {
-        return boost::filesystem::is_directory(directory);
+        struct stat buf;
+        lstat( directory.c_str(), &buf );
+        
+        return S_ISDIR(buf.st_mode);
     }
-
+    
+/*
     namespace filesystem {
         using namespace boost::filesystem;
     }
@@ -64,7 +71,7 @@ namespace FileUtils
         }
         
         return std::move(res);
-    }
+    }*/
 
 }
 

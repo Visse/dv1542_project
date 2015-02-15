@@ -42,7 +42,7 @@ private:
     SDL_Window *mWindow = nullptr;
     SDL_GLContext mGLContext = nullptr;
     
-    LowLevelRenderer *mRenderer;
+    LowLevelRenderer *mRenderer = nullptr;
     
     std::vector<FrameListener*> mFrameListeners;
     std::vector<Camera*> mCameras;

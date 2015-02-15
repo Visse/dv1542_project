@@ -43,7 +43,6 @@ public:
         mFarPlane = farPlane;
     }
     
-    virtual GpuBuffer* getSceneUniforms() { return nullptr; }
     virtual glm::vec3 getAmbientColor() { return glm::vec3(); }
     
 private:

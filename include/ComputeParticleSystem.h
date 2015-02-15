@@ -1,7 +1,6 @@
 #pragma once
 
 #include "SceneObject.h"
-#include "Renderable.h"
 
 #include "VertexArrayObject.h"
 #include "SharedPtr.h"
@@ -9,9 +8,9 @@
 #include <vector>
 
 class Root;
-class ComputeParticleSystem;
 class GpuProgram;
 class GpuBuffer;
+class Material;
 
 
 class ComputeParticleSystem :
@@ -93,25 +92,9 @@ public:
     void setShowAttractors( bool showAttractors ) {
         mShowAttractors = showAttractors;
     }
-private:
-    struct ParticleSystemRenderer :
-        public Renderable
-    {
-        ComputeParticleSystem *particleSys;
-        virtual void render() override;
-    };
-    struct AttractorRenderer :
-        public Renderable
-    {
-        ComputeParticleSystem *particleSys;
-        virtual void render() override;
-    };
-    
     
 private:
     Root *mRoot;
-    ParticleSystemRenderer mRenderer;
-    AttractorRenderer mAttractorRenderer;
     
     VertexArrayObject mVAO, mAttractorVAO;
     SharedPtr<GpuProgram> mSimulation,

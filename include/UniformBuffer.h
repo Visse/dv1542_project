@@ -2,6 +2,3 @@
 
 
 
-class UniformBuffer {
-public:
-};

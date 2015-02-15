@@ -5,9 +5,14 @@
 #include "SharedPtr.h"
 
 #include <map>
+#include <glm/mat4x4.hpp>
 
 class Root;
-class DebugFrameListener;
+class GpuBuffer;
+class GraphicsManager;
+class LowLevelRenderer;
+class Material;
+class VertexArrayObject;
 
 class SceneObject;
 class Mesh;
@@ -23,7 +28,6 @@ public:
     virtual void update( float dt );
     virtual bool handleSDLEvent( const SDL_Event &event );
     
-    void paintDebugOverlay();
     
 private:
     void initImGui();
@@ -33,6 +37,9 @@ private:
     void showSceneObject( float dt, SceneObject *object );
     void submitDebugDraw();
     
+    void paintDebugOverlay();
+    void render( LowLevelRenderer &renderer );
+    
 private:
     struct DebugDrawInfo {
         bool wireFrame,
@@ -40,13 +47,26 @@ private:
         SharedPtr<Mesh> mesh;
     };
     
+    struct UniformBlock {
+        glm::mat4 projectionMatrix;
+    };
+    
+    class DebugCamera;
 private:
     Root *mRoot = nullptr;
-    Int32 mKeyToogleDebug;
+    DebugCamera *mCamera;
     
-    DebugFrameListener *mFrameListener = nullptr;
+    Int32 mKeyToogleDebug; 
     
     bool mIsDebugVisible = false;
     
     std::map<SceneObject*, DebugDrawInfo> mDebugDrawInfo;
+    SharedPtr<GpuBuffer> mVertexBuffer;
+    SharedPtr<Material> mMaterial;
+    SharedPtr<VertexArrayObject> mVAO;
+    
+    float mHeight;
+    
+    UniformBlock mUniforms;
+    size_t mUniformBlockLoc;
 };

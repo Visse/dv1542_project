@@ -8,29 +8,12 @@
 
 #include "SharedPtr.h"
 #include "GLTypes.h"
+#include "SharedEnums.h"
 
 class GpuBuffer;
 class GpuProgram;
 class Texture;
 class ResourceManager;
-
-enum class BlendMode {
-    Replace,
-    AlphaBlend,
-    AddjectiveBlend
-};
-BlendMode blendModeFromString( const std::string &str );
-
-enum class DepthCheck {
-    None,
-    Less,
-    Equal,
-    Greater,
-    
-    LessEqual,
-    GreaterEqual
-};
-DepthCheck depthCheckFromString( const std::string &str );
 
 class Material {
 public:
@@ -39,7 +22,6 @@ public:
 public:
     Material( const SharedPtr<GpuProgram> &program, const SharedPtr<GpuBuffer> &materialUniforms );
     
-    void setProgram( const SharedPtr<GpuProgram> &program );
     void setTexture( const std::string &name, GLint unit, const SharedPtr<Texture> &texture );
     void setBlendMode( BlendMode mode );
     void setDepthWrite( bool depthWrite );
@@ -50,6 +32,8 @@ public:
     SharedPtr<GpuProgram> getProgram();
     
     void bindMaterial();
+    
+    SharedPtr<Material> clone();
     
 private:
     void setTexture( GLint loc, GLint unit, const SharedPtr<Texture> &texture );

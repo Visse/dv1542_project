@@ -21,6 +21,8 @@
 #include "ComputeParticleSystem.h"
 #include "LightObject.h"
 #include "DebugDrawer.h"
+#include "Camera.h"
+#include "LowLevelRenderer.h"
 
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
@@ -33,17 +35,17 @@
 #include <imgui.h>
 
 #include <functional>
+#include <iostream>
 
-class DebugFrameListener :
-    public FrameListener
+
+class DebugManager::DebugCamera :
+    public Camera
 {
 public:
-    virtual void onFrameBegun() override {
-    }
-    virtual void onFrameEnded() override {
-        debugMgr->paintDebugOverlay();
-    }
     DebugManager *debugMgr;
+    virtual void render( LowLevelRenderer &renderer ) {
+        debugMgr->render( renderer );
+    }
 };
 
 bool DebugManager::init( Root *root )
@@ -55,13 +57,56 @@ bool DebugManager::init( Root *root )
     const Config *config = mRoot->getConfig();
     mKeyToogleDebug = config->keyBindings.toogleDebug;
     
+    
+    ResourceManager *resourceMgr = mRoot->getResourceManager();
+    mMaterial = resourceMgr->getMaterialAutoPack("DebugGuiMaterial");
+    
+    if( !mMaterial ) {
+        std::cerr << "Failed to load debug gui material!" << std::endl;
+        return false;
+    }
+    
+    mHeight = config->windowHeight;
+    
+    SharedPtr<GpuProgram> program = mMaterial->getProgram();
+    
+    GLint posLocation = program->getAttribLocation("Position"),
+          uvLocation  = program->getAttribLocation("UV"),
+          colourLocation = program->getAttribLocation("Colour");
+          
+    mUniformBlockLoc = program->getUniformBlockLocation("Debug");
+    
+    float width = config->windowWidth,
+          height = config->windowHeight;
+    
+    mUniforms.projectionMatrix = glm::mat4(
+         2.0f/width, 0.0f,         0.0f,   0.0f,
+         0.0f,       2.0f/-height, 0.0f,   0.0f,
+         0.0f,       0.0f,        -1.0f,   0.0f,
+        -1.0f,       1.0f,         0.0f,   1.0f
+    );
+    
+    mVertexBuffer = GpuBuffer::CreateBuffer( BufferType::Vertexes, 20000, BufferUsage::WriteOnly, BufferUpdate::Dynamic );
+    
+    mVAO = makeSharedPtr<VertexArrayObject>();
+    mVAO->bindVAO();
+    mVertexBuffer->bindBuffer();
+    
+    mVAO->setVertexAttribPointer( posLocation, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), offsetof(ImDrawVert, pos) );
+    mVAO->setVertexAttribPointer( uvLocation, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), offsetof(ImDrawVert, uv) );
+    mVAO->setVertexAttribPointer( colourLocation, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), offsetof(ImDrawVert, col)) ;
+    
+    mVAO->unbindVAO();
+    mVertexBuffer->unbindBuffer();
+    
+    
     initImGui();
     
-    mFrameListener = new DebugFrameListener;
-    mFrameListener->debugMgr = this;
+    mCamera = new DebugCamera;
+    mCamera->debugMgr = this;
     
     GraphicsManager *graphicsMgr = mRoot->getGraphicsManager();
-    graphicsMgr->addFrameListener( mFrameListener );
+    graphicsMgr->addCamera( mCamera );
     
     StartupMesurements *mesurements = mRoot->getStartupMesurements();
     mesurements->debugStartup = initTimer.getTimeAsSeconds();
@@ -74,10 +119,10 @@ void DebugManager::destroy()
     destroyImGui();
     
     GraphicsManager *graphicsMgr = mRoot->getGraphicsManager();
-    graphicsMgr->removeFrameListener( mFrameListener );
+    graphicsMgr->removeCamera( mCamera );
     
-    delete mFrameListener;
-    mFrameListener = nullptr;
+    delete mCamera;
+    mCamera = nullptr;
     
     mRoot = nullptr;
 }
@@ -129,9 +174,7 @@ void DebugManager::update( float dt )
         }
         ImGui::End();
     }
-
     submitDebugDraw();
-    
 }
 
 bool DebugManager::handleSDLEvent( const SDL_Event &event )
@@ -263,13 +306,52 @@ void DebugManager::paintDebugOverlay()
     }
 }
 
+struct DrawInfo {
+    glm::vec2 scissorPos, scissorSize;
+    size_t vertexStart, vertexCount;
+};
+    
 struct ImGuiRenderData {
     DebugManager *debugMgr;
-    VertexArrayObject vao;
-    GpuBuffer buffer;
-    SharedPtr<Material> material;
-    float height;
+    SharedPtr<GpuBuffer> vertexBuffer;
+    std::vector<DrawInfo> draws;
 };
+
+
+void DebugManager::render( LowLevelRenderer &renderer )
+{
+    if( !mIsDebugVisible ) return;
+    
+    ImGui::Render();
+    
+    QueueOperationParams params;
+        params.material = mMaterial.get();
+        params.vao = mVAO.get();
+        params.drawMode = DrawMode::Triangles;
+        params.renderQueue = RQ_Overlay;
+        params.scissorTest = true;
+        params.faceCulling = false;
+        
+        
+    auto uniforms = renderer.aquireUniformBuffer( sizeof(UniformBlock) );
+    uniforms.setIndex( mUniformBlockLoc );
+    uniforms.setRawContent( 0, &mUniforms, sizeof(UniformBlock) );
+    params.uniforms[0] = uniforms;
+        
+    ImGuiIO &io = ImGui::GetIO();
+    ImGuiRenderData *renderData = static_cast<ImGuiRenderData*>(io.UserData);
+    
+    for( const DrawInfo &draw : renderData->draws ) {
+        params.vertexStart = draw.vertexStart;
+        params.vertexCount = draw.vertexCount;
+        
+        params.scissorPos = glm::vec2( draw.scissorPos.x, mHeight-draw.scissorPos.y );
+        params.scissorSize = draw.scissorSize;
+        
+        renderer.queueOperation( params );
+    }
+}
+
 void RenderImGuiDrawLists( ImDrawList** const draw_lists, int count );
 
 void DebugManager::initImGui()
@@ -290,6 +372,7 @@ void DebugManager::initImGui()
     };
     ImGuiRenderData *renderData = new ImGuiRenderData;
     renderData->debugMgr = this;
+    renderData->vertexBuffer = mVertexBuffer;
     io.UserData = renderData;
     io.DisplaySize.x = config->windowWidth;
     io.DisplaySize.y = config->windowHeight;
@@ -300,53 +383,12 @@ void DebugManager::initImGui()
     
     SharedPtr<Texture> texture = Texture::LoadTextureFromRawMemory( TextureType::RGBA, pixels, texWidth, texHeight );
 
-    ResourceManager *resourceMgr = mRoot->getResourceManager();
-    renderData->material = resourceMgr->getMaterialAutoPack("DebugGuiMaterial");
-    
-    
     texture->bindTexture(0);
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
     texture->unbindTexture(0);
     
-    renderData->material->setTexture( "Texture", 0, texture );
-    
-    renderData->height = config->windowHeight;
-    
-    SharedPtr<GpuProgram> program = renderData->material->getProgram();
-    
-    GLint posLocation = program->getAttribLocation("Position"),
-          uvLocation  = program->getAttribLocation("UV"),
-          colourLocation = program->getAttribLocation("Colour"),
-          textureLocation = program->getUniformLocation("Texture"),
-          othoLocation = program->getUniformLocation("ortho");
-    
-    program->bindProgram();
-    float width = config->windowWidth,
-          height = config->windowHeight;
-    const float ortho_projection[4][4] =
-    {
-        { 2.0f/width,   0.0f,           0.0f,       0.0f },
-        { 0.0f,         2.0f/-height,   0.0f,       0.0f },
-        { 0.0f,         0.0f,           -1.0f,      0.0f },
-        { -1.0f,        1.0f,           0.0f,       1.0f },
-    };
-    glUniform1i( textureLocation, 0 );
-    glUniformMatrix4fv( othoLocation, 1, GL_FALSE, &ortho_projection[0][0] );
-    
-    renderData->buffer.setUsage( BufferUsage::WriteOnly );
-    renderData->buffer.setUpdate( BufferUpdate::Stream );
-    renderData->buffer.setSize( 20000 );
-    
-    renderData->vao.bindVAO();
-    renderData->buffer.bindBuffer();
-    
-    renderData->vao.setVertexAttribPointer( posLocation, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), offsetof(ImDrawVert, pos) );
-    renderData->vao.setVertexAttribPointer( uvLocation, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), offsetof(ImDrawVert, uv) );
-    renderData->vao.setVertexAttribPointer( colourLocation, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), offsetof(ImDrawVert, col)) ;
-    
-    renderData->vao.unbindVAO();
-    renderData->buffer.unbindBuffer();
+    mMaterial->setTexture( "Texture", 0, texture );
     
     ImGui::NewFrame();
 }
@@ -526,20 +568,47 @@ void RenderImGuiDrawLists( ImDrawList** const draw_lists, int count )
     }
     
     size_t neededBufferSize = totalVertexCount * sizeof(ImDrawVert);
-    size_t bufferSize = renderData->buffer.getSize();
+    size_t bufferSize = renderData->vertexBuffer->getSize();
     if( neededBufferSize > bufferSize ) {
         bufferSize = neededBufferSize + 5000;
-        renderData->buffer.setSize( bufferSize );
+        renderData->vertexBuffer->setSize( bufferSize );
     }
     
-    ImDrawVert *bufferData = static_cast<ImDrawVert*>(renderData->buffer.mapBuffer(BufferUsage::WriteOnly));
+    renderData->draws.clear();
+    
+    ImDrawVert *bufferData = renderData->vertexBuffer->mapBuffer<ImDrawVert>(BufferUsage::WriteOnly ) ;
     for( int i=0; i < count; ++i ) {
         const ImDrawList *drawList = draw_lists[i];
         memcpy( bufferData, &drawList->vtx_buffer[0], drawList->vtx_buffer.size()*sizeof(ImDrawVert) );
         bufferData += drawList->vtx_buffer.size();
     }
-    renderData->buffer.unmapBuffer();
+    renderData->vertexBuffer->unmapBuffer();
     
+    
+    
+    size_t vertexStart = 0;
+    for( int i=0; i < count; ++i ) {
+        const ImDrawList *cmdList = draw_lists[i];
+        
+        for( const ImDrawCmd &command : cmdList->commands ) {
+            int x = command.clip_rect.x,
+                y = command.clip_rect.w, 
+                width  = command.clip_rect.z - command.clip_rect.x, 
+                height = command.clip_rect.w - command.clip_rect.y;
+                
+            DrawInfo draw;
+                draw.scissorPos = glm::vec2(x,y);
+                draw.scissorSize = glm::vec2(width,height);
+                draw.vertexStart = vertexStart;
+                draw.vertexCount = command.vtx_count;
+                
+            renderData->draws.push_back( draw );
+            
+            vertexStart += command.vtx_count;
+        }
+    }
+    
+    /*
     glDisable( GL_CULL_FACE );
     glEnable( GL_SCISSOR_TEST );
     
@@ -568,5 +637,7 @@ void RenderImGuiDrawLists( ImDrawList** const draw_lists, int count )
     
     glDisable( GL_SCISSOR_TEST );
     glEnable( GL_CULL_FACE );
+    */
+
 }
 

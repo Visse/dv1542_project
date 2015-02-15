@@ -3,58 +3,75 @@
 #include "Material.h"
 #include "GpuProgram.h"
 #include "LowLevelRenderer.h"
+#include "UniformBlockDefinitions.h"
+#include "Root.h"
+#include "ResourceManager.h"
 
 #include "GLinclude.h"
 
 #include <glm/gtc/type_ptr.hpp>
 
-Entity::Entity( const SharedPtr<Mesh> &mesh ) :
+
+Entity::Entity( Root *root, const SharedPtr<Mesh> &mesh ) :
     mMesh(mesh)
 {
-    const auto &subMeshes = mMesh->getSubMeshes();
+    setRenderQueue( RQ_DeferredDefault );
     
-    mRenderers.reserve( subMeshes.size() );
-    for( int i=0, c=subMeshes.size(); i < c; ++i ) {
-        const SubMesh &subMesh = mMesh->getSubMeshes().at(i);
-        mRenderers.emplace_back( this, mMesh, &subMesh);
+    const auto &submeshes = mMesh->getSubMeshes();
+    
+    mSubMeshes.reserve( submeshes.size() );
+    
+//     ResourceManager *resourceMgr = 
+    SharedPtr<Material> missingMaterial;
+    const UniformBlockLayout &expectedLayout = EntityUniforms::GetUniformBlockLayout();
+    
+    for( const SubMesh &submesh : submeshes ) {
+        SubMeshInfo info;
+            info.material = submesh.material;
+            info.vertexStart = submesh.vertexStart;
+            info.vertexCount = submesh.vertexCount;
+        
+        if( !info.material ) {
+            info.material = missingMaterial;
+        }
+        
+        SharedPtr<GpuProgram> program = info.material->getProgram();
+        info.blockLoc = program->getUniformBlockLocation("Entity");
+        
+        const UniformBlockLayout &layout = program->getUniformBlockLayout("Entity");
+        if( !expectedLayout.canBeUsedAs(layout) ) {
+            throw std::runtime_error( "Entity uniform block doesn't match the expected layout!" );
+        }
+        
+        mSubMeshes.push_back( info );
     }
     
-    setRenderQueue( RQ_DeferredDefault );
 }
 
 void Entity::queueRenderable( LowLevelRenderer &renderer )
 {
-    LowLevelRenderOperation operation;
-        operation.indexBuffer = mMesh->getIndexBuffer().get();
-        operation.vao = mMesh->getVertexArrayObject().get();
-        
     unsigned int renderQueue = getRenderQueue();
-    for( SubMeshRenderer &subMeshRenderer : mRenderers ) {
-        const SubMesh *subMesh = subMeshRenderer.getSubMesh();
-        operation.material = subMesh->material.get();
-        operation.renderable = &subMeshRenderer;
+    
+    QueueOperationParams params;
+        params.indexBuffer = mMesh->getIndexBuffer().get();
+        params.vao = mMesh->getVertexArrayObject().get();
+        params.drawMode = DrawMode::Triangles;
+        params.renderQueue = renderQueue;
         
-        renderer.queueOperation( operation, renderQueue );
+    UniformBuffer buffer = renderer.aquireUniformBuffer( sizeof(EntityUniforms) );
+    EntityUniforms uniforms;
+        uniforms.modelMatrix = getTransform();
+    
+    buffer.setRawContent( 0, &uniforms, sizeof(EntityUniforms) );
+    
+    params.uniforms[0] = buffer;
+        
+    for( const SubMeshInfo &info : mSubMeshes ) {
+        params.material = info.material.get();
+        params.vertexStart = info.vertexStart;
+        params.vertexCount = info.vertexCount;
+        params.uniforms[0].setIndex( info.blockLoc );
+        
+        renderer.queueOperation( params );
     }
-}
-
-
-SubMeshRenderer::SubMeshRenderer( SceneObject *object, const SharedPtr<Mesh> &mesh, const SubMesh *submesh ) :
-    mObject(object),
-    mMesh(mesh),
-    mSubMesh(submesh)
-{
-    mModelMatrixLoc = submesh->material->getProgram()->getUniformLocation("ModelMatrix");
-}
-
-void SubMeshRenderer::render()
-{
-    glm::mat4 transform = mObject->getTransform();
-    glUniformMatrix4fv( mModelMatrixLoc, 1, GL_FALSE, glm::value_ptr(transform) );
-    glDrawElements( GL_TRIANGLES, mSubMesh->vertexCount, GL_UNSIGNED_INT, reinterpret_cast<GLvoid*>(( mSubMesh->vertexStart*4)) );
-}
-
-const SubMesh* SubMeshRenderer::getSubMesh()
-{
-    return mSubMesh;
 }
