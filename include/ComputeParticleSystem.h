@@ -94,6 +94,15 @@ public:
     }
     
 private:
+    struct RenderingUniformBlock {
+        glm::mat4 modelMatrix;
+        glm::vec2 intensityAndSize;
+    };
+    struct AttractorUniformBlock {
+        glm::mat4 modelMatrix;
+    };
+    
+private:
     Root *mRoot;
     
     VertexArrayObject mVAO, mAttractorVAO;
@@ -108,12 +117,10 @@ private:
         GLint dt, distMod, weightMod, lifeTime,
               damping, attractorCount, modelMatrix;
     } mSimulationLoc;
-    struct {
-        GLint modelMatrix, intensity, pointSize;
-    } mRenderingLoc;
-    struct {
-        GLint modelMatrix = -1;
-    } mAttractorRenderingLoc;
+
+    size_t mRenderingUniformLoc,
+           mAttractorUniformLoc;
+    
     
     std::vector<float> mAttractorWeights;
     

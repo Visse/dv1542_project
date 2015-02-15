@@ -24,22 +24,21 @@ ComputeParticleSystem::ComputeParticleSystem( Root *root ) :
         throw std::runtime_error( "computeParticle: Missing gpu programs and/or material!, did you load the resourcepack?" );
     }
     if( mAttractorMaterial ) {
-//         mAttractorRenderingLoc.modelMatrix = mAttractorMaterial->getProgram()->getUniformLocation("ModelMatrix");
+        mAttractorUniformLoc = mAttractorMaterial->getProgram()->getUniformBlockLocation("ComputeAttractors");
     }
     
     mShader = mMaterial->getProgram();
     
-//     mSimulationLoc.dt = mSimulation->getUniformLocation( "dt" );
-//     mSimulationLoc.weightMod = mSimulation->getUniformLocation( "weightMod" );
-//     mSimulationLoc.distMod = mSimulation->getUniformLocation( "distMod" );
-//     mSimulationLoc.lifeTime = mSimulation->getUniformLocation( "lifeTimeMod" );
-//     mSimulationLoc.damping = mSimulation->getUniformLocation( "dampingMod" );
-//     mSimulationLoc.attractorCount = mSimulation->getUniformLocation( "AttractorCount" );
-//     
-//     mRenderingLoc.modelMatrix = mShader->getUniformLocation( "ModelMatrix" );
-//     
-//     mRenderingLoc.intensity = mShader->getUniformLocation( "Intensity" );
-//     mRenderingLoc.pointSize = mShader->getUniformLocation( "PointSize" );
+    mSimulationLoc.dt = mSimulation->getUniformLocation( "dt" );
+    mSimulationLoc.weightMod = mSimulation->getUniformLocation( "weightMod" );
+    mSimulationLoc.distMod = mSimulation->getUniformLocation( "distMod" );
+    mSimulationLoc.lifeTime = mSimulation->getUniformLocation( "lifeTimeMod" );
+    mSimulationLoc.damping = mSimulation->getUniformLocation( "dampingMod" );
+    mSimulationLoc.attractorCount = mSimulation->getUniformLocation( "AttractorCount" );
+    mSimulationLoc.modelMatrix = mSimulation->getUniformLocation("ModelMatrix");
+    
+    mRenderingUniformLoc = mShader->getUniformBlockLocation( "ComputeParticle" );
+
     
     const Config *config = mRoot->getConfig();
     
@@ -124,7 +123,6 @@ void ComputeParticleSystem::update( float dt )
     mStartPositionBuffer->bindIndexed( 1 );
     mAttractorBuffer->bindIndexed( 2 );
     
-    
     glUniform1f( mSimulationLoc.dt, dt * mSpeed );
     glUniform1f( mSimulationLoc.distMod, mDistMod );
     glUniform1f( mSimulationLoc.weightMod, mWeightMod );
@@ -140,21 +138,35 @@ void ComputeParticleSystem::update( float dt )
 
 void ComputeParticleSystem::queueRenderable( LowLevelRenderer &renderer )
 {
-//     QueueOperationParams params;
-//         params.material = mMaterial.get();
-//         params.vao = &mVAO;
-//         params.vertexStart = 0;
-//         params.vertexCount = 
-//         
-//     renderer.queueOperation( operation );
-//     
-//     if( mShowAttractors && mAttractorMaterial ) {
-//         LowLevelRenderOperation attractorOp;
-//             attractorOp.material = mAttractorMaterial.get();
-//             attractorOp.renderable = &mAttractorRenderer;
-//             attractorOp.vao = &mAttractorVAO;
-//             
-//         renderer.queueOperation( attractorOp );
-//     }
+    RenderingUniformBlock uniforms;
+        uniforms.modelMatrix = getTransform();
+        uniforms.intensityAndSize = glm::vec2(mIntensity,mPointSize);
+    
+    QueueOperationParams params;
+        params.material = mMaterial.get();
+        params.vao = &mVAO;
+        params.vertexStart = 0;
+        params.vertexCount = mParticleGroupCount * mParticleGroupSize;
+        params.drawMode = DrawMode::Points;
+        params.renderQueue = RQ_LightLast;
+        params.uniforms[0] = renderer.aquireUniformBuffer( mRenderingUniformLoc, uniforms );
+        
+    renderer.queueOperation( params );
+    
+    if( mShowAttractors && mAttractorMaterial ) {
+        AttractorUniformBlock uniforms;
+            uniforms.modelMatrix = getTransform();
+        
+        QueueOperationParams params;
+            params.material = mAttractorMaterial.get();
+            params.vao = &mAttractorVAO;
+            params.vertexStart = 0;
+            params.vertexCount = mAttractorCount;
+            params.drawMode = DrawMode::Points;
+            params.renderQueue = RQ_LightLast;
+            params.uniforms[0] = renderer.aquireUniformBuffer( mAttractorUniformLoc, uniforms );
+            
+        renderer.queueOperation( params );
+    }
 }
 
