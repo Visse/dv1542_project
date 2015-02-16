@@ -518,21 +518,30 @@ void DebugManager::showSceneObject( float dt, SceneObject *object )
             ImGui::Value( "Particle Count", particleCount );
         }
         
-        PointLight *pointLight = dynamic_cast<PointLight*>(object);
-        if( pointLight ) {
-            float outerRadius = pointLight->getOuterRadius(),
-                  innerRadius = pointLight->getInnerRadius();
-            glm::vec3 color = pointLight->getColor();
-                  
-            if( ImGui::SliderFloat("OuterRadius", &outerRadius, 0.f, 20.f) ) {
-                pointLight->setOuterRadius( outerRadius );
-            }
-            if( ImGui::SliderFloat("InnerRadius", &innerRadius, 0.f, outerRadius) ) {
-                pointLight->setInnerRadius( innerRadius );
+        LightObject *light = dynamic_cast<LightObject*>(object);
+        if( light ) {
+            glm::vec3 color = light->getColor();
+            if( ImGui::ColorEdit3("Color", glm::value_ptr(color)) ) {
+                light->setColor( color );
             }
             
-            if( ImGui::ColorEdit3("Color", glm::value_ptr(color)) ) {
-                pointLight->setColor( color );
+            PointLight *pointLight = dynamic_cast<PointLight*>( light );
+            if( pointLight ) {
+                float outerRadius = pointLight->getOuterRadius(),
+                      innerRadius = pointLight->getInnerRadius(),
+                      intesity = pointLight->getIntensity();
+                    
+                if( ImGui::SliderFloat("OuterRadius", &outerRadius, 0.f, 20.f) ) {
+                    pointLight->setOuterRadius( outerRadius );
+                }
+                if( ImGui::SliderFloat("InnerRadius", &innerRadius, 0.f, outerRadius) ) {
+                    pointLight->setInnerRadius( innerRadius );
+                }
+                if( ImGui::SliderFloat("Intensity", &intesity, 0.f, 2.f) ) {
+                    pointLight->setIntensity( intesity );
+                }
+                
+                ImGui::Checkbox( "DebugDraw", &debugDrawInfo.debugLight );
             }
         }
         ImGui::TreePop();
@@ -547,11 +556,19 @@ void DebugManager::submitDebugDraw()
     
     for( const auto &entry : mDebugDrawInfo ) {
         const DebugDrawInfo &info = entry.second;
+        SceneObject *object = entry.first;
+        
         if( info.mesh && info.wireFrame ) {
-            debugDrawer->drawWireFrame( info.mesh, entry.first->getTransform() );
+            debugDrawer->drawWireFrame( info.mesh, object->getTransform() );
         }
         if( info.mesh && info.normals ) {
-            debugDrawer->drawVertexNormals( info.mesh, entry.first->getTransform() );
+            debugDrawer->drawVertexNormals( info.mesh, object->getTransform() );
+        }
+        if( info.debugLight ) {
+            if( PointLight *point = dynamic_cast<PointLight*>(object) ) {
+                debugDrawer->drawWireSphere( point->getOuterRadius(), object->getTransform(), glm::vec4(0.2,0.5f,0.2f,0.1f) );
+                debugDrawer->drawWireSphere( point->getInnerRadius(), object->getTransform(), glm::vec4(0.2,0.2f,0.5f,0.1f) );
+            }
         }
     }
 }
@@ -584,8 +601,6 @@ void RenderImGuiDrawLists( ImDrawList** const draw_lists, int count )
     }
     renderData->vertexBuffer->unmapBuffer();
     
-    
-    
     size_t vertexStart = 0;
     for( int i=0; i < count; ++i ) {
         const ImDrawList *cmdList = draw_lists[i];
@@ -607,37 +622,5 @@ void RenderImGuiDrawLists( ImDrawList** const draw_lists, int count )
             vertexStart += command.vtx_count;
         }
     }
-    
-    /*
-    glDisable( GL_CULL_FACE );
-    glEnable( GL_SCISSOR_TEST );
-    
-    renderData->material->bindMaterial();
-    renderData->vao.bindVAO();
-    
-    int cmdOffset = 0;
-    float height = renderData->height;
-    for( int i=0; i < count; ++i ) {
-        const ImDrawList *cmdList = draw_lists[i];
-        int vertexOffset = cmdOffset;
-        
-        for( const ImDrawCmd &command : cmdList->commands ) {
-            int x = command.clip_rect.x,
-                y = height - command.clip_rect.w, 
-                width  = command.clip_rect.z - command.clip_rect.x, 
-                height = command.clip_rect.w - command.clip_rect.y;
-            glScissor( x, y, width, height );
-            glDrawArrays( GL_TRIANGLES, vertexOffset, command.vtx_count );
-            vertexOffset += command.vtx_count;
-        }
-        cmdOffset = vertexOffset;
-    }
-    
-    renderData->vao.unbindVAO();
-    
-    glDisable( GL_SCISSOR_TEST );
-    glEnable( GL_CULL_FACE );
-    */
-
 }
 

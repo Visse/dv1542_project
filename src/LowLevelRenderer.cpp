@@ -40,7 +40,7 @@ LowLevelRenderer::LowLevelRenderer( Root *root ) :
     glm::ivec2 size( width, height );
          
     mDeferredDiffuseTexture  = Texture::CreateTexture( TextureType::RGBA, size, 1 );
-    mDeferredNormalTexture   = Texture::CreateTexture( TextureType::RGB, size, 1 );
+    mDeferredNormalTexture   = Texture::CreateTexture( TextureType::RGB_SNORM, size, 1 );
     mDeferredDepthTexture    = Texture::CreateTexture( TextureType::Depth, size, 1 );
     mDeferredPositionTexture = Texture::CreateTexture( TextureType::RGBF, size, 1 );
     

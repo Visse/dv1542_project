@@ -11,31 +11,47 @@ class Mesh;
 class Material;
 class PointLight;
 
-class PointLight :
+
+class LightObject :
     public SceneObject
+{
+public:
+    void setColor( const glm::vec3 &color ) {
+        mColor = color;
+    }
+    const glm::vec3& getColor() {
+        return mColor;
+    }
+    
+private:
+    glm::vec3 mColor;
+};
+
+class PointLight :
+    public LightObject
 {
 public:
     PointLight( Root *root );
     virtual void queueRenderable( LowLevelRenderer& renderer );
     
-    void setColor( const glm::vec3 &color ) {
-        mColor = color;
-    }
     void setOuterRadius( float radius ) {
         mOuterRadius = radius;
     }
     void setInnerRadius( float radius ) {
         mInnerRadius = radius;
     }
-    
-    const glm::vec3& getColor() {
-        return mColor;
+    void setIntensity( float intensity ) {
+        mIntensity = intensity;
     }
+    
     float getOuterRadius() {
         return mOuterRadius;
     }
     float getInnerRadius() {
         return mInnerRadius;
+    }
+    float getIntensity() {
+        return mIntensity;
     }
     
 private:
@@ -46,8 +62,22 @@ private:
     
     float mOuterRadius = 1.f,
           mInnerRadius = 0.f;
-    glm::vec3 mColor;
     
+    float mIntensity = 0.5f;
+          
     size_t mBlockLoc;
 };
 
+class AmbientLight :
+    public LightObject
+{
+public:
+    AmbientLight( Root *root );
+    virtual void queueRenderable(LowLevelRenderer& renderer);
+
+private:
+    Root *mRoot;
+    SharedPtr<Material> mMaterial;
+    
+    size_t mBlockLoc;
+};

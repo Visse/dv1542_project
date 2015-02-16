@@ -42,8 +42,11 @@ private:
     
 private:
     struct DebugDrawInfo {
-        bool wireFrame,
-             normals;
+        bool wireFrame = false,
+             normals = false;
+             
+        bool debugLight = false;
+        
         SharedPtr<Mesh> mesh;
     };
     

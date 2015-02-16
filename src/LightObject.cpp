@@ -36,7 +36,7 @@ void PointLight::queueRenderable( LowLevelRenderer &renderer )
     PointLightUniforms uniforms;
         uniforms.modelMatrix = getTransform();
         uniforms.radius = glm::vec2( mInnerRadius, mOuterRadius );
-        uniforms.color = glm::vec4(mColor,1.f);
+        uniforms.color = glm::vec4(getColor(),mIntensity);
     
     QueueOperationParams params;
         params.indexBuffer = mMesh->getIndexBuffer().get();
@@ -54,3 +54,30 @@ void PointLight::queueRenderable( LowLevelRenderer &renderer )
         renderer.queueOperation( params );
     }
 }
+
+AmbientLight::AmbientLight( Root *root ) :
+    mRoot(root)
+{
+    ResourceManager *resourceMgr = root->getResourceManager();
+    
+    mMaterial = resourceMgr->getMaterialAutoPack("AmbientMaterial");
+    
+    SharedPtr<GpuProgram> program = mMaterial->getProgram();
+
+    mBlockLoc = program->getUniformBlockLocation("AmbientLight");
+}
+
+void AmbientLight::queueRenderable( LowLevelRenderer &renderer )
+{
+    QueueOperationParams params;
+        params.material = mMaterial.get();
+        params.drawMode = DrawMode::Points;
+        params.renderQueue = RQ_LightFirst;
+        params.uniforms[0] = renderer.aquireUniformBuffer( mBlockLoc, getColor() );
+        params.vertexCount = 1;
+        
+    renderer.queueOperation( params );
+}
+
+
+

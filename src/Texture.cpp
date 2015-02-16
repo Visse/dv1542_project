@@ -38,6 +38,12 @@ TextureType stringToTextureType( const std::string &str )
     if( StringUtils::equalCaseInsensitive(str,"RGBAF") ) {
         return TextureType::RGBAF;
     }
+    if( StringUtils::equalCaseInsensitive(str,"RGB_SNORM") ) {
+        return TextureType::RGB_SNORM;
+    }
+    if( StringUtils::equalCaseInsensitive(str,"RGBA_SNORM") ) {
+        return TextureType::RGBA_SNORM;
+    }
     
     throw std::runtime_error( StringUtils::strjoin("String isn't a TextureType (\"",str,"\")") );
 }
@@ -60,6 +66,10 @@ GLint typeToGLFormat( TextureType type )
         return GL_RGB16F;
     case( TextureType::RGBAF ):
         return GL_RGBA16F;
+    case( TextureType::RGB_SNORM ):
+        return GL_RGB8_SNORM;
+    case( TextureType::RGBA_SNORM ):
+        return GL_RGBA8_SNORM;
     }
     throw std::runtime_error("Invalid texture type!");
 }

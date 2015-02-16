@@ -18,7 +18,11 @@ enum class TextureType
     
     // floating point formats
     RGBF,
-    RGBAF
+    RGBAF,
+    
+    // [-1,1] 8 bits formats
+    RGB_SNORM,
+    RGBA_SNORM
 };
 
 TextureType stringToTextureType( const std::string &str );

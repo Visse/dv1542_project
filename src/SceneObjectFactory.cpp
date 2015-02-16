@@ -70,6 +70,12 @@ SceneObject *LightFactory::createObject( const Yaml::Node &node )
         
         return light;
     }
+    if( StringUtils::equalCaseInsensitive(lightType,"Ambient") ) {
+        AmbientLight *light = new AmbientLight( mRoot );
+        light->setColor( color );
+        
+        return light;
+    }
     /// @todo add proper logging
     std::cerr << "Failed to create light: Unknown light type \"" << lightType << "\".";
     return nullptr;

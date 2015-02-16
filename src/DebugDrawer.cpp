@@ -12,6 +12,8 @@
 
 #include <iostream>
 
+#include <glm/gtc/matrix_transform.hpp>
+
 bool DebugDrawer::init( Root *root )
 {
     mRoot = root;
@@ -34,6 +36,8 @@ bool DebugDrawer::init( Root *root )
     
     program = mNormalMaterial->getProgram();
     mNormalUniformBlockLoc = program->getUniformBlockLocation( "DebugNormal" );
+    
+    mSphereMesh = resourceMgr->getMeshAutoPack( "Sphere" );
     
     return true;
 }
@@ -80,6 +84,12 @@ void DebugDrawer::drawVertexNormals( const SharedPtr<Mesh> &mesh, const glm::mat
     mNormalDraws.push_back( draw );
 }
 
+void DebugDrawer::drawWireSphere( float radius, const glm::mat4 &transform, const glm::vec4 &color )
+{
+    glm::mat4 t = glm::scale( transform, glm::vec3(radius) );
+    drawWireFrame( mSphereMesh, t, color );
+}
+
 void DebugDrawer::queueRenderable( LowLevelRenderer &renderer )
 {
     queueWireframe( renderer );
@@ -93,7 +103,6 @@ void DebugDrawer::queueWireframe( LowLevelRenderer &renderer )
         params.faceCulling = false;
         params.material = mWireFrameMaterial.get();
         params.renderQueue = RQ_Overlay-1;
-        
     
     for( const DebugDraw &draw : mWireFramesDraws ) {
         WireDrawUniformBlock uniforms;
@@ -118,7 +127,6 @@ void DebugDrawer::queueWireframe( LowLevelRenderer &renderer )
 
 void DebugDrawer::queueNormals( LowLevelRenderer &renderer )
 {
-    
     QueueOperationParams params;
         params.drawMode = DrawMode::Points;
         params.faceCulling = false;

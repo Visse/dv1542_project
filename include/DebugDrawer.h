@@ -32,6 +32,8 @@ public:
                           );
     void queueRenderable( LowLevelRenderer &renderer );
     
+    void drawWireSphere( float radius, const glm::mat4 &transform, const glm::vec4 &color = glm::vec4(0.1f,1.f,0.5f,1.f) );
+    
 private:
     struct DebugDraw {
         SharedPtr<Mesh> mesh;
@@ -73,4 +75,6 @@ private:
     
     size_t mWireUniformBlockLoc,
            mNormalUniformBlockLoc;
+           
+    SharedPtr<Mesh> mSphereMesh;
 };
