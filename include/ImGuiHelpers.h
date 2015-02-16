@@ -3,10 +3,11 @@
 #include <cmath>
 
 #include "ValueHistory.h"
+#include "FixedSizeTypes.h"
 
 namespace ImGui 
 {
-    void PlotLines(const char* label, const ValueHistory<float> &values, int values_offset = 0, float maxGranity=0.1f, float minGranity=0.1f, ImVec2 graph_size = ImVec2(0,0) )
+    void PlotLines(const char* label, const ValueHistory<float> &values, float maxGranity=0.1f, float minGranity=0.1f, ImVec2 graph_size = ImVec2(0,0) )
     {
         float max = std::numeric_limits<float>::min(),
               min = std::numeric_limits<float>::max();
@@ -39,4 +40,14 @@ namespace ImGui
         
         ImGui::PlotLines( label, data, size, index, buffer, min, max, graph_size );
     }
+
+    
+    void PlotLines(const char* label, const ValueHistory<UInt32> &values, float maxGranity=0.1f, float minGranity=0.1f, ImVec2 graph_size = ImVec2(0,0) )
+    {
+        ValueHistory<float> tmp = values.convertTo<float>();
+        PlotLines( label, tmp, maxGranity, minGranity, graph_size );
+    }
+
+    
+    
 }

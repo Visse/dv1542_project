@@ -9,11 +9,25 @@
 template< typename Type >
 class ValueHistory {
 public:
-    ValueHistory( size_t size = 0 ) :
+    ValueHistory( const ValueHistory& ) = default;
+    ValueHistory( ValueHistory&& ) = default;
+    
+    ValueHistory& operator = ( const ValueHistory& ) = default;
+    ValueHistory& operator = ( ValueHistory&& ) = default;
+    
+    explicit ValueHistory( size_t size = 0 ) :
         mSize(size)
     {
         mValues.resize(size);
     }
+    
+    template< typename OtherType >
+    ValueHistory( const std::vector<OtherType> &values, size_t nextIndex ) : 
+        mValues(values.begin(),values.end()), 
+        mNextIndex(nextIndex),
+        mSize(values.size())
+    {}
+    
     
     void setSize( size_t size ) {
         mSize = size;
@@ -53,6 +67,10 @@ public:
         return *std::max_element( mValues.begin(), mValues.end() );
     }
 
+    template< typename OtherType > 
+    ValueHistory<OtherType> convertTo() const {
+        return ValueHistory<OtherType>( mValues, mNextIndex );
+    }
     
 private:
     std::vector<Type> mValues;

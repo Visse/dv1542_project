@@ -1,6 +1,9 @@
 #pragma once
 
 #include "BaseManager.h"
+#include "ValueHistory.h"
+#include "FixedSizeTypes.h"
+#include "GLTypes.h"
 
 #include <vector>
 
@@ -30,6 +33,10 @@ public:
     void addCamera( Camera *camera );
     void removeCamera( Camera *camera );
     
+    const ValueHistory<float> getGpuTimeHistory() {
+        return mGpuTimes;
+    }
+    
 private:
     void fireFrameBegun();
     void fireFrameEnded();
@@ -46,4 +53,9 @@ private:
     
     std::vector<FrameListener*> mFrameListeners;
     std::vector<Camera*> mCameras;
+    
+    std::vector<GLuint> mQuaryObjects;
+    int mCurrentQuary = 0;
+    
+    ValueHistory<float> mGpuTimes;
 };

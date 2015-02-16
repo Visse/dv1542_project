@@ -99,7 +99,6 @@ bool DebugManager::init( Root *root )
     mVAO->unbindVAO();
     mVertexBuffer->unbindBuffer();
     
-    
     initImGui();
     
     mCamera = new DebugCamera;
@@ -149,8 +148,11 @@ void DebugManager::update( float dt )
             }
             
             if( ImGui::CollapsingHeader("Mesurements") ) {
-                ImGui::PlotLines( "Frame Time", mRoot->getFrameTimeHistory(), 0, 0.1f, 0.1f, ImVec2(0,70) );
-                ImGui::PlotLines( "Frame Rate", mRoot->getFrameRateHistory(), 0, 10.f, -0.f, ImVec2(0,70) );
+                GraphicsManager *graphicsMgr = mRoot->getGraphicsManager();
+                
+                ImGui::PlotLines( "Frame Time", mRoot->getFrameTimeHistory(), 0.1f, 0.1f, ImVec2(0,70) );
+                ImGui::PlotLines( "Frame Rate", mRoot->getFrameRateHistory(), 10.f, 0.f, ImVec2(0,70) );
+                ImGui::PlotLines( "Gpu Time", graphicsMgr->getGpuTimeHistory(), 10, 10, ImVec2(0,70) );
             }
             
             SceneManager *sceneMgr = mRoot->getSceneManager();
@@ -158,11 +160,6 @@ void DebugManager::update( float dt )
             
             if( scene ) {
                 if( ImGui::CollapsingHeader("Scene") ) {
-                    glm::vec3 ambientColor = scene->getAmbientColor();
-                    
-                    if( ImGui::ColorEdit3("Ambient", glm::value_ptr(ambientColor)) ) {
-                        scene->setAmbientColor( ambientColor );
-                    }
                 }
                 
                 if( ImGui::CollapsingHeader("SceneObjects") ) {

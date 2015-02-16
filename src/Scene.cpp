@@ -33,9 +33,6 @@ SharedPtr<Scene> Scene::LoadFromFile( Root *root, const std::string &filename )
     SceneManager *sceneMgr = root->getSceneManager();
     ResourceManager *resourceMgr = root->getResourceManager();
     
-    glm::vec3 ambient = sceneCfg.getFirstValue("Ambient").asValue().getValue<glm::vec3>();
-    scene->setAmbientColor( ambient );
-    
     auto resourcePackList = sceneCfg.getValues("ResourcePack");
     for( Yaml::Node packNode : resourcePackList ) {
         resourceMgr->loadResourcePack( packNode.asValue().getValue() );

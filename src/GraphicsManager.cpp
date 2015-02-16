@@ -73,12 +73,24 @@ bool GraphicsManager::init( Root *root )
     
     StartupMesurements *mesurements = mRoot->getStartupMesurements();
     mesurements->graphicsStartup = initTimer.getTimeAsSeconds();
-
+    
+    mQuaryObjects.reserve( 16 );
+    mQuaryObjects.resize(3);
+    
+    mGpuTimes.setSize( config->valueHistoryLenght );
+    
+    glGenQueries( 3, &mQuaryObjects[0] );
+    for( int i=0; i < 3; ++i ) {
+        glBeginQuery( GL_TIME_ELAPSED, mQuaryObjects[i] );
+        glEndQuery( GL_TIME_ELAPSED );
+    }
     return true;
 }
 
 void GraphicsManager::destroy()
 {
+    glDeleteQueries( mQuaryObjects.size(), &mQuaryObjects[0] );
+    
     delete mRenderer;
     mRenderer = nullptr;
     
@@ -93,13 +105,15 @@ void GraphicsManager::postInit()
 {
     mRenderer = new LowLevelRenderer( mRoot );
 }
-
+#include <iostream>
 void GraphicsManager::update( float dt )
 {
 }
 
 void GraphicsManager::render()
 {
+    glBeginQuery( GL_TIME_ELAPSED, mQuaryObjects[mCurrentQuary] );
+    
     glDepthMask( GL_TRUE );
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
     
@@ -113,6 +127,23 @@ void GraphicsManager::render()
     mRenderer->flush();
     
     fireFrameEnded();
+    
+    {
+        glEndQuery( GL_TIME_ELAPSED );
+        
+        GLint resultAvailable = -1;
+        glGetQueryObjectiv( mQuaryObjects[(mCurrentQuary+1)%mQuaryObjects.size()], GL_QUERY_RESULT_NO_WAIT, &resultAvailable );
+        
+        if( resultAvailable != -1 ) {
+            mGpuTimes.pushValue( (double)(resultAvailable) / 1000000.0 );
+        }
+        else {
+            std::cout << "Need more quary objects!";
+        }
+        
+        mCurrentQuary++;
+        mCurrentQuary %= mQuaryObjects.size();
+    }
     
     SDL_GL_SwapWindow(mWindow);
 }

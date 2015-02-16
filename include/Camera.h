@@ -43,8 +43,6 @@ public:
         mFarPlane = farPlane;
     }
     
-    virtual glm::vec3 getAmbientColor() { return glm::vec3(); }
-    
 private:
     glm::mat4 mProjectionMatrix;
     Frustrum mFrustrum;
