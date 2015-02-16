@@ -94,3 +94,33 @@ const UniformBlockLayout &PointLightUniforms::GetUniformBlockLayout()
     static Block block;
     return block.uniforms;
 }
+
+const UniformBlockLayout &SpotLightUniforms::GetUniformBlockLayout()
+{
+    struct Block {
+        UniformBlockLayout uniforms;
+        Block() 
+        {
+            static const size_t ExpectedSize = 
+                                          4*4 + // modelMatrix
+                                          4*2; // color & radius
+                                        
+            // just to make sure we don't forget to update this function
+            static_assert( sizeof(PointLightUniforms) == ExpectedSize *4, "Fix me!" );
+            
+            uniforms.setSize( sizeof(PointLightUniforms) );
+            
+                
+#define UNIFORM_BLOCK SpotLightUniforms
+            SetUniform( "ModelMatrix", Mat4, modelMatrix );
+            SetUniform( "Color", Vec4, color );
+            SetUniform( "Angle", Vec2, angle );
+            SetUniform( "Distance", Vec2, distance );
+#undef UNIFORM_BLOCK
+        }
+    };
+
+    static Block block;
+    return block.uniforms;
+}
+

@@ -60,13 +60,16 @@ SceneObject *LightFactory::createObject( const Yaml::Node &node )
     glm::vec3 color = config.getFirstValue("Color",false).asValue().getValue<glm::vec3>(glm::vec3(1.f));
     
     if( StringUtils::equalCaseInsensitive(lightType,"Point") ) {
-        float outerRadius = config.getFirstValue("OuterRadius",false).asValue().getValue<float>(1.f);
-        float innerRadius = config.getFirstValue("InnerRadius",false).asValue().getValue<float>(0.f);
-        
         PointLight *light = new PointLight( mRoot );
+        
+        float innerRadius = config.getFirstValue("InnerRadius",false).asValue().getValue<float>(light->getInnerRadius());
+        float outerRadius = config.getFirstValue("OuterRadius",false).asValue().getValue<float>(light->getOuterRadius());
+        float intensity = config.getFirstValue("Intensity",false).asValue().getValue<float>(light->getIntensity());
+        
         light->setColor( color );
         light->setOuterRadius( outerRadius );
         light->setInnerRadius( innerRadius );
+        light->setIntensity( intensity );
         
         return light;
     }
@@ -76,6 +79,26 @@ SceneObject *LightFactory::createObject( const Yaml::Node &node )
         
         return light;
     }
+    if( StringUtils::equalCaseInsensitive(lightType,"Spot") ) {
+        SpotLight *light = new SpotLight( mRoot );
+        
+        float innerAngle = config.getFirstValue("InnerAngle",false).asValue().getValue<float>(light->getInnerAngle());
+        float outerAngle = config.getFirstValue("OuterAngle",false).asValue().getValue<float>(light->getOuterAngle());
+        float innerDistance = config.getFirstValue("InnerDistance",false).asValue().getValue<float>(light->getInnerDistance());
+        float outerDistance = config.getFirstValue("OuterDistance",false).asValue().getValue<float>(light->getOuterDistance());
+        float intensity = config.getFirstValue("Intensity",false).asValue().getValue<float>(light->getIntensity());
+        
+        light->setColor( color );
+        light->setInnerAngle( innerAngle );
+        light->setOuterAngle( outerAngle );
+        light->setInnerDistance( innerDistance );
+        light->setOuterDistance( outerDistance );
+        light->setIntensity( intensity );
+        
+        return light;
+    }
+    
+    
     /// @todo add proper logging
     std::cerr << "Failed to create light: Unknown light type \"" << lightType << "\".";
     return nullptr;

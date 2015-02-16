@@ -42,3 +42,14 @@ struct PointLightUniforms {
 
     static const UniformBlockLayout& GetUniformBlockLayout();
 };
+
+struct SpotLightUniforms {
+    glm::mat4 modelMatrix;
+    glm::vec4 color;
+    glm::vec2 angle, distance;
+
+    static const UniformBlockLayout& GetUniformBlockLayout();
+};
+
+
+

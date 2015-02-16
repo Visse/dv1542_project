@@ -38,6 +38,7 @@ bool DebugDrawer::init( Root *root )
     mNormalUniformBlockLoc = program->getUniformBlockLocation( "DebugNormal" );
     
     mSphereMesh = resourceMgr->getMeshAutoPack( "Sphere" );
+    mConeMesh = resourceMgr->getMeshAutoPack( "Cone" );
     
     return true;
 }
@@ -89,6 +90,19 @@ void DebugDrawer::drawWireSphere( float radius, const glm::mat4 &transform, cons
     glm::mat4 t = glm::scale( transform, glm::vec3(radius) );
     drawWireFrame( mSphereMesh, t, color );
 }
+
+void DebugDrawer::drawWireCone( float height, float radius, const glm::mat4 &transform, const glm::vec4 &color )
+{
+    glm::mat4 t = glm::scale( transform, glm::vec3(radius,radius,height) );
+    drawWireFrame( mConeMesh, t, color );
+}
+
+void DebugDrawer::drawWireConeAngle( float height, float angle, const glm::mat4 &transform, const glm::vec4 &color )
+{
+    float radius = glm::tan(angle) * height;
+    drawWireCone( height, radius, transform, color );
+}
+
 
 void DebugDrawer::queueRenderable( LowLevelRenderer &renderer )
 {

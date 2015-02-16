@@ -33,6 +33,8 @@ public:
     void queueRenderable( LowLevelRenderer &renderer );
     
     void drawWireSphere( float radius, const glm::mat4 &transform, const glm::vec4 &color = glm::vec4(0.1f,1.f,0.5f,1.f) );
+    void drawWireCone( float height, float radius, const glm::mat4 &transform, const glm::vec4 &color = glm::vec4(0.1f,1.f,0.5f,1.f) );
+    void drawWireConeAngle( float height, float angle, const glm::mat4 &transform, const glm::vec4 &color = glm::vec4(0.1f,1.f,0.5f,1.f) );
     
 private:
     struct DebugDraw {
@@ -76,5 +78,6 @@ private:
     size_t mWireUniformBlockLoc,
            mNormalUniformBlockLoc;
            
-    SharedPtr<Mesh> mSphereMesh;
+    SharedPtr<Mesh> mSphereMesh,
+                    mConeMesh;
 };

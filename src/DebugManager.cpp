@@ -540,6 +540,33 @@ void DebugManager::showSceneObject( float dt, SceneObject *object )
                 
                 ImGui::Checkbox( "DebugDraw", &debugDrawInfo.debugLight );
             }
+            
+            SpotLight *spotLight = dynamic_cast<SpotLight*>( light );
+            if( spotLight ) {
+                float outerAngle = spotLight->getOuterAngle(),
+                      innerAngle = spotLight->getInnerAngle(),
+                      outerDist  = spotLight->getOuterDistance(),
+                      innerDist  = spotLight->getInnerDistance(),
+                      intensity = spotLight->getIntensity();
+                      
+                if( ImGui::SliderAngle("OuterAngle", &outerAngle, 0.f, 45.f) ) {
+                    spotLight->setOuterAngle( outerAngle );
+                }
+                if( ImGui::SliderAngle("InnerAngle", &innerAngle, 0.f, glm::degrees(outerAngle)) ) {
+                    spotLight->setInnerAngle( innerAngle );
+                }
+                if( ImGui::SliderFloat("OuterDistance", &outerDist, 0.f, 20.f) ) {
+                    spotLight->setOuterDistance( outerDist );
+                }
+                if( ImGui::SliderFloat("InnerDistance", &innerDist, 0.f, outerDist) ) {
+                    spotLight->setInnerDistance( innerDist );
+                }
+                if( ImGui::SliderFloat("Intensity", &intensity, 0.f, 2.f) ) {
+                    spotLight->setIntensity( intensity );
+                }
+                
+                ImGui::Checkbox( "DebugDraw", &debugDrawInfo.debugLight );
+            }
         }
         ImGui::TreePop();
     }
@@ -565,6 +592,10 @@ void DebugManager::submitDebugDraw()
             if( PointLight *point = dynamic_cast<PointLight*>(object) ) {
                 debugDrawer->drawWireSphere( point->getOuterRadius(), object->getTransform(), glm::vec4(0.2,0.5f,0.2f,0.1f) );
                 debugDrawer->drawWireSphere( point->getInnerRadius(), object->getTransform(), glm::vec4(0.2,0.2f,0.5f,0.1f) );
+            }
+            if( SpotLight *spot = dynamic_cast<SpotLight*>(object) ) {
+                debugDrawer->drawWireConeAngle( spot->getOuterDistance(), spot->getOuterAngle(), object->getTransform(), glm::vec4(0.2,0.5f,0.2f,0.1f) );
+                debugDrawer->drawWireConeAngle( spot->getInnerDistance(), spot->getInnerAngle(), object->getTransform(), glm::vec4(0.2,0.2f,0.5f,0.1f) );
             }
         }
     }

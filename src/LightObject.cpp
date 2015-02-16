@@ -9,6 +9,7 @@
 #include "UniformBlockDefinitions.h"
 
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 PointLight::PointLight( Root *root ) :
     mRoot(root)
@@ -79,5 +80,50 @@ void AmbientLight::queueRenderable( LowLevelRenderer &renderer )
     renderer.queueOperation( params );
 }
 
+SpotLight::SpotLight( Root *root )
+{
+    ResourceManager *resourceMgr = root->getResourceManager();
+    
+    mMesh = resourceMgr->getMeshAutoPack("Cone");
+    mMaterial = resourceMgr->getMaterialAutoPack("SpotLightMaterial");
+        
+    SharedPtr<GpuProgram> program = mMaterial->getProgram();
+    
+    const UniformBlockLayout &block = program->getUniformBlockLayout("SpotLight");
+    const UniformBlockLayout &expectedLayout = SpotLightUniforms::GetUniformBlockLayout();
+    
+    if( !expectedLayout.canBeUsedAs(block) )  {
+        throw std::runtime_error( "SpotLight uniform block doesn't match the expected layout!" );
+    }
+    
+    mBlockLoc = program->getUniformBlockLocation("SpotLight");
+}
 
+void SpotLight::queueRenderable( LowLevelRenderer &renderer )
+{
+    float radie = glm::tan(mOuterAngle)*mOuterDistance;
+    
+    SpotLightUniforms uniforms;
+        uniforms.modelMatrix = glm::scale(getTransform(), glm::vec3(radie,radie,mOuterDistance));
+        uniforms.color = glm::vec4(getColor(),mIntensity);
+        uniforms.distance = glm::vec2( mInnerDistance, mOuterDistance );
+        uniforms.angle = glm::cos(glm::vec2(mInnerAngle, mOuterAngle));
+        
+    QueueOperationParams params;
+        params.indexBuffer = mMesh->getIndexBuffer().get();
+        params.vao = mMesh->getVertexArrayObject().get();
+        params.material = mMaterial.get();
+        params.drawMode = DrawMode::Triangles;
+        params.renderQueue = RQ_Light;
+        params.uniforms[0] = renderer.aquireUniformBuffer(mBlockLoc, uniforms); 
+    
+    
+    const auto &submeshes =  mMesh->getSubMeshes();
+    
+    for( const SubMesh &submesh : submeshes ) {
+        params.vertexStart = submesh.vertexStart;
+        params.vertexCount = submesh.vertexCount;
+        renderer.queueOperation( params );
+    }
+}
 
