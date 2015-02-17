@@ -51,5 +51,19 @@ struct SpotLightUniforms {
     static const UniformBlockLayout& GetUniformBlockLayout();
 };
 
+struct BoxLightUniforms {
+    glm::mat4 modelMatrix;
+    glm::vec4 color;
+    glm::vec3 innerSize;
+    float dummy0;
+    
+    glm::vec3 outerSize;
+    float dummy1;
+
+    static const UniformBlockLayout& GetUniformBlockLayout();
+};
+
+
+
 
 

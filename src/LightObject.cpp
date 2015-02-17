@@ -127,3 +127,49 @@ void SpotLight::queueRenderable( LowLevelRenderer &renderer )
     }
 }
 
+BoxLight::BoxLight( Root *root ) :
+    mRoot(root)
+{
+    ResourceManager *resourceMgr = root->getResourceManager();
+    
+    mMesh = resourceMgr->getMeshAutoPack("Cube");
+    mMaterial = resourceMgr->getMaterialAutoPack("BoxLightMaterial");
+        
+    SharedPtr<GpuProgram> program = mMaterial->getProgram();
+    
+    const UniformBlockLayout &block = program->getUniformBlockLayout("BoxLight");
+    const UniformBlockLayout &expectedLayout = BoxLightUniforms::GetUniformBlockLayout();
+    
+    if( !expectedLayout.canBeUsedAs(block) )  {
+        throw std::runtime_error( "BoxLight uniform block doesn't match the expected layout!" );
+    }
+    
+    mBlockLoc = program->getUniformBlockLocation("BoxLight");
+}
+
+void BoxLight::queueRenderable( LowLevelRenderer &renderer )
+{
+    glm::vec3 scale = glm::vec3(0.5f,0.5f,1.f);
+    
+    BoxLightUniforms uniforms;
+        uniforms.modelMatrix = glm::translate(glm::scale(getTransform(),mOuterSize*scale),glm::vec3(0,0,-1.0));
+        uniforms.color = glm::vec4(getColor(),mIntensity);
+        uniforms.innerSize = mInnerSize*scale;
+        uniforms.outerSize = mOuterSize*scale;
+        
+    QueueOperationParams params;
+        params.indexBuffer = mMesh->getIndexBuffer().get();
+        params.vao = mMesh->getVertexArrayObject().get();
+        params.material = mMaterial.get();
+        params.drawMode = DrawMode::Triangles;
+        params.renderQueue = RQ_Light;
+        params.uniforms[0] = renderer.aquireUniformBuffer(mBlockLoc, uniforms);
+    
+    const auto &submeshes =  mMesh->getSubMeshes();
+    
+    for( const SubMesh &submesh : submeshes ) {
+        params.vertexStart = submesh.vertexStart;
+        params.vertexCount = submesh.vertexCount;
+        renderer.queueOperation( params );
+    }
+}

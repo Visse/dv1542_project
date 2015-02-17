@@ -527,8 +527,7 @@ void DebugManager::showSceneObject( float dt, SceneObject *object )
                 light->setColor( color );
             }
             
-            PointLight *pointLight = dynamic_cast<PointLight*>( light );
-            if( pointLight ) {
+            if( PointLight *pointLight = dynamic_cast<PointLight*>(light) ) {
                 float outerRadius = pointLight->getOuterRadius(),
                       innerRadius = pointLight->getInnerRadius(),
                       intesity = pointLight->getIntensity();
@@ -546,15 +545,14 @@ void DebugManager::showSceneObject( float dt, SceneObject *object )
                 ImGui::Checkbox( "DebugDraw", &debugDrawInfo.debugLight );
             }
             
-            SpotLight *spotLight = dynamic_cast<SpotLight*>( light );
-            if( spotLight ) {
+            if( SpotLight *spotLight = dynamic_cast<SpotLight*>(light) ) {
                 float outerAngle = spotLight->getOuterAngle(),
                       innerAngle = spotLight->getInnerAngle(),
                       outerDist  = spotLight->getOuterDistance(),
                       innerDist  = spotLight->getInnerDistance(),
                       intensity = spotLight->getIntensity();
                       
-                if( ImGui::SliderAngle("OuterAngle", &outerAngle, 0.f, 45.f) ) {
+                if( ImGui::SliderAngle("OuterAngle", &outerAngle, 0.f, 90.f) ) {
                     spotLight->setOuterAngle( outerAngle );
                 }
                 if( ImGui::SliderAngle("InnerAngle", &innerAngle, 0.f, glm::degrees(outerAngle)) ) {
@@ -568,6 +566,36 @@ void DebugManager::showSceneObject( float dt, SceneObject *object )
                 }
                 if( ImGui::SliderFloat("Intensity", &intensity, 0.f, 2.f) ) {
                     spotLight->setIntensity( intensity );
+                }
+                
+                ImGui::Checkbox( "DebugDraw", &debugDrawInfo.debugLight );
+            }
+        
+            if( BoxLight *boxLight = dynamic_cast<BoxLight*>(light) ) {
+                glm::vec3 innerSize = boxLight->getInnerSize(),
+                          outerSize = boxLight->getOuterSize();
+                float intensity = boxLight->getIntensity();
+                
+                if( ImGui::SliderFloat("OuterSizeX", &outerSize.x, 0.f, 20.f) ) {
+                    boxLight->setOuterSize( outerSize );
+                }              
+                if( ImGui::SliderFloat("InnerSizeX", &innerSize.x, 0.f, outerSize.x) ) {
+                    boxLight->setInnerSize( innerSize );
+                }
+                if( ImGui::SliderFloat("OuterSizeY", &outerSize.y, 0.f, 20.f) ) {
+                    boxLight->setOuterSize( outerSize );
+                }              
+                if( ImGui::SliderFloat("InnerSizeY", &innerSize.y, 0.f, outerSize.y) ) {
+                    boxLight->setInnerSize( innerSize );
+                }
+                if( ImGui::SliderFloat("OuterSizeZ", &outerSize.z, 0.f, 20.f) ) {
+                    boxLight->setOuterSize( outerSize );
+                }              
+                if( ImGui::SliderFloat("InnerSizeZ", &innerSize.z, 0.f, outerSize.z) ) {
+                    boxLight->setInnerSize( innerSize );
+                }
+                if( ImGui::SliderFloat("Intensity", &intensity, 0.f, 2.f) ) {
+                    boxLight->setIntensity( intensity );
                 }
                 
                 ImGui::Checkbox( "DebugDraw", &debugDrawInfo.debugLight );
@@ -606,6 +634,15 @@ void DebugManager::submitDebugDraw()
             if( SpotLight *spot = dynamic_cast<SpotLight*>(object) ) {
                 debugDrawer->drawWireConeAngle( spot->getOuterDistance(), spot->getOuterAngle(), object->getTransform(), glm::vec4(0.2,0.5f,0.2f,0.1f) );
                 debugDrawer->drawWireConeAngle( spot->getInnerDistance(), spot->getInnerAngle(), object->getTransform(), glm::vec4(0.2,0.2f,0.5f,0.1f) );
+            }
+            
+            if( BoxLight *boxLight = dynamic_cast<BoxLight*>(object) ) {
+                glm::mat4 transform = boxLight->getTransform();
+                glm::mat4 outerTransform = glm::translate(glm::scale(transform,boxLight->getOuterSize()*glm::vec3(0.5f,0.5f,1.f)),glm::vec3(0.f,0.f,-1.0f)),
+                          innerTransform = glm::translate(glm::scale(transform,boxLight->getInnerSize()*glm::vec3(0.5f,0.5f,1.f)),glm::vec3(0.0,0.0,-1.0f));
+                          
+                debugDrawer->drawWireBox( glm::vec3(1.f), outerTransform, glm::vec4(0.2,0.5f,0.2f,0.1f) );
+                debugDrawer->drawWireBox( glm::vec3(1.f), innerTransform, glm::vec4(0.2,0.2f,0.5f,0.1f) );
             }
         }
     }

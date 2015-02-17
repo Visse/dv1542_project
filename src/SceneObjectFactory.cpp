@@ -97,7 +97,20 @@ SceneObject *LightFactory::createObject( const Yaml::Node &node )
         
         return light;
     }
-    
+    if( StringUtils::equalCaseInsensitive(lightType,"Box") ) {
+        BoxLight *light = new BoxLight( mRoot );
+        
+        glm::vec3 innerSize = config.getFirstValue("InnerSize",false).asValue().getValue<glm::vec3>(light->getInnerSize());
+        glm::vec3 outerSize = config.getFirstValue("OuterSize",false).asValue().getValue<glm::vec3>(light->getOuterSize());
+        float intensity = config.getFirstValue("Intensity",false).asValue().getValue<float>(light->getIntensity());
+        
+        light->setColor( color );
+        light->setInnerSize( innerSize );
+        light->setOuterSize( outerSize );
+        light->setIntensity( intensity );
+        
+        return light;
+    }
     
     /// @todo add proper logging
     std::cerr << "Failed to create light: Unknown light type \"" << lightType << "\".";

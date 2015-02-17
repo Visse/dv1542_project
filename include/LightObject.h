@@ -136,3 +136,44 @@ private:
     float mInnerAngle = 0.392699082, mOuterAngle = 0.785398163, // 22.5 & 45 degrees
           mInnerDistance = 0.5f, mOuterDistance = 1.f;
 };
+
+
+class BoxLight :
+    public LightObject
+{
+public:
+    BoxLight( Root *root );
+        
+    virtual void queueRenderable( LowLevelRenderer &renderer );
+    
+    float getIntensity() {
+        return mIntensity;
+    }
+    const glm::vec3& getInnerSize() {
+        return mInnerSize;
+    }
+    const glm::vec3& getOuterSize() {
+        return mOuterSize;
+    }
+    
+    void setIntensity( float intensity ) {
+        mIntensity = intensity;
+    }
+    void setInnerSize( const glm::vec3 &size ) {
+        mInnerSize = size;
+    }
+    void setOuterSize( const glm::vec3 &size ) {
+        mOuterSize = size;
+    }
+
+private:
+    Root *mRoot;
+    
+    SharedPtr<Mesh> mMesh;
+    SharedPtr<Material> mMaterial;
+    
+    size_t mBlockLoc;
+    
+    float mIntensity = 0.5f;
+    glm::vec3 mInnerSize = glm::vec3(0.5f), mOuterSize = glm::vec3(1.f);
+};

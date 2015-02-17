@@ -104,9 +104,9 @@ void DebugDrawer::drawWireConeAngle( float height, float angle, const glm::mat4 
     drawWireCone( height, radius, transform, color );
 }
 
-void DebugDrawer::drawWireBox( const glm::vec3 &size, const glm::mat4 &transform, const glm::vec4 &color )
+void DebugDrawer::drawWireBox( const glm::vec3 &hsize, const glm::mat4 &transform, const glm::vec4 &color )
 {
-    glm::mat4 t = glm::scale( transform, size/2.f );
+    glm::mat4 t = glm::scale( transform, hsize );
     drawWireFrame( mBoxMesh, t, color );
 }
 
