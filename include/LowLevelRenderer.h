@@ -10,6 +10,7 @@
 #include "GLTypes.h"
 #include "SharedEnums.h"
 #include "UniformBlock.h"
+#include "ValueHistory.h"
 
 class UniformBuffer;
 class FrameBuffer;
@@ -62,6 +63,13 @@ public:
             buffer.setIndex( index );
             buffer.setRawContent( 0, &content, sizeof(Type) );
         return buffer;
+    }
+    
+    const ValueHistory<int>& getDrawCountHistory () {
+        return mDrawCountHistory;
+    }
+    const ValueHistory<int>& getVertexCountHistory () {
+        return mVertexCountHistory;
     }
 
 private:
@@ -125,4 +133,9 @@ private:
         
         bool faceCulling=true, scissorTest=false;
     } mBoundObjects;
+    
+    
+    int mCurrentDrawCount, mCurrentVertexCount;
+    ValueHistory<int> mDrawCountHistory,
+                      mVertexCountHistory;
 };

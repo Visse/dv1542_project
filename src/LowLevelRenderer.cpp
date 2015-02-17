@@ -53,6 +53,9 @@ LowLevelRenderer::LowLevelRenderer( Root *root ) :
     mBufferAllocator = makeSharedPtr<UniformBufferAllocator>();
     
     mSceneUniforms.buffer = 0;
+    
+    mDrawCountHistory.setSize( config->valueHistoryLenght );
+    mVertexCountHistory.setSize( config->valueHistoryLenght );
 }
 
 LowLevelRenderer::~LowLevelRenderer() = default;
@@ -138,6 +141,11 @@ void LowLevelRenderer::flush()
     mBoundObjects.scissorTest = false;
     glEnable( GL_CULL_FACE );
     glDisable( GL_SCISSOR_TEST );
+    
+    mDrawCountHistory.pushValue( mCurrentDrawCount );
+    mVertexCountHistory.pushValue( mCurrentVertexCount );
+    mCurrentDrawCount = 0;
+    mCurrentVertexCount = 0;
 }
 
 UniformBuffer LowLevelRenderer::aquireUniformBuffer( size_t size )
@@ -262,5 +270,8 @@ inline void LowLevelRenderer::performOperation( const LowLevelRenderOperation &o
     else {
         glDrawArrays( mode, operation.vertexStart, operation.vertexCount );
     }
+    
+    mCurrentDrawCount++;
+    mCurrentVertexCount += operation.vertexCount;
 }
 

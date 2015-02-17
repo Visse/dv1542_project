@@ -16,6 +16,7 @@ Entity::Entity( Root *root, const SharedPtr<Mesh> &mesh ) :
     mMesh(mesh)
 {
     setRenderQueue( RQ_DeferredDefault );
+    setBoundingSphere( mMesh->getBoundingSphere() );
     
     const auto &submeshes = mMesh->getSubMeshes();
     

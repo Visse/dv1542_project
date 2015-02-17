@@ -4,6 +4,8 @@
 #include <glm/vec3.hpp>
 #include <glm/gtc/quaternion.hpp>
 
+#include "BoundingSphere.h"
+
 class LowLevelRenderer;
 class Renderable;
 
@@ -34,6 +36,13 @@ public:
         return mRenderQueue;
     }
     
+    void setBoundingSphere( const BoundingSphere &bounds ) {
+        mBoundingSphere = bounds;
+    }
+    const BoundingSphere& getBoundingSphere() {
+        return mBoundingSphere;
+    }
+    
     bool isDirty() {
         return mDirty;
     }
@@ -47,4 +56,5 @@ private:
     
     unsigned int mRenderQueue = 0;
     bool mDirty = false;
+    BoundingSphere mBoundingSphere;
 };

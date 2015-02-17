@@ -28,6 +28,7 @@
 #include <glm/vec3.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_mouse.h>
@@ -153,6 +154,10 @@ void DebugManager::update( float dt )
                 ImGui::PlotLines( "Frame Time", mRoot->getFrameTimeHistory(), 0.1f, 0.1f, ImVec2(0,70) );
                 ImGui::PlotLines( "Frame Rate", mRoot->getFrameRateHistory(), 10.f, 0.f, ImVec2(0,70) );
                 ImGui::PlotLines( "Gpu Time", graphicsMgr->getGpuTimeHistory(), 10, 10, ImVec2(0,70) );
+                
+                LowLevelRenderer &renderer = graphicsMgr->getLowLevelRenderer();
+                ImGui::PlotLines( "Draw Count", renderer.getDrawCountHistory(), 10, 10, ImVec2(0,70) );
+                ImGui::PlotLines( "Vertex Count", renderer.getVertexCountHistory(), 10, 10, ImVec2(0,70) );
             }
             
             SceneManager *sceneMgr = mRoot->getSceneManager();
@@ -436,6 +441,7 @@ void DebugManager::showSceneObject( float dt, SceneObject *object )
             orientation *= glm::quat(rotation*dt);
             object->setOrientation( orientation );
         }
+        ImGui::Checkbox( "Show BoundingSphere", &debugDrawInfo.bounds );
         
         Entity *entity = dynamic_cast<Entity*>(object);
         if( entity ) {
@@ -454,7 +460,6 @@ void DebugManager::showSceneObject( float dt, SceneObject *object )
             ImGui::Checkbox( "WireFrame", &debugDrawInfo.wireFrame );
             ImGui::SameLine();
             ImGui::Checkbox( "Normals", &debugDrawInfo.normals );
-            
         }
         
         ComputeParticleSystem *particleSys = dynamic_cast<ComputeParticleSystem*>(object);
@@ -587,6 +592,11 @@ void DebugManager::submitDebugDraw()
         }
         if( info.mesh && info.normals ) {
             debugDrawer->drawVertexNormals( info.mesh, object->getTransform() );
+        }
+        if( info.bounds ) {
+            const BoundingSphere &bounds = object->getBoundingSphere();
+            glm::mat4 transform = glm::translate( object->getTransform(), bounds.getCenter() );
+            debugDrawer->drawWireSphere( bounds.getRadius(), transform, glm::vec4(0.5f,0.2f,0.2f,0.1f) );
         }
         if( info.debugLight ) {
             if( PointLight *point = dynamic_cast<PointLight*>(object) ) {

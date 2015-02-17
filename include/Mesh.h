@@ -3,6 +3,7 @@
 #include "GpuBuffer.h"
 #include "SharedPtr.h"
 #include "VertexArrayObject.h"
+#include "BoundingSphere.h"
 
 #include <string>
 #include <vector>
@@ -35,7 +36,9 @@ public:
     Mesh( const SharedPtr<VertexArrayObject> &vao, 
           const SharedPtr<GpuBuffer> &vertexBuffer, 
           const SharedPtr<GpuBuffer> &indexBuffer, 
-          const std::vector<SubMesh> &subMeshes );
+          const std::vector<SubMesh> &subMeshes,
+          const BoundingSphere &bounds
+        );
     
     SharedPtr<VertexArrayObject> getVertexArrayObject();
     SharedPtr<GpuBuffer> getVertexBuffer();
@@ -49,6 +52,9 @@ public:
     const std::string& getName() {
         return mName;
     }
+    const BoundingSphere& getBoundingSphere() {
+        return mBoundingSphere;
+    }
     
 private:
     SharedPtr<VertexArrayObject> mVertexArrayObject;
@@ -57,4 +63,5 @@ private:
     std::vector<SubMesh> mSubMeshes;
     
     std::string mName;
+    BoundingSphere mBoundingSphere;
 };

@@ -18,11 +18,13 @@
 Mesh::Mesh( const SharedPtr<VertexArrayObject> &vao, 
           const SharedPtr<GpuBuffer> &vertexBuffer, 
           const SharedPtr<GpuBuffer> &indexBuffer, 
-          const std::vector<SubMesh> &subMeshes ) :
+          const std::vector<SubMesh> &subMeshes,
+          const BoundingSphere &bounds ) :
     mVertexArrayObject(vao),
     mVertexBuffer(vertexBuffer),
     mIndexBuffer(indexBuffer),
-    mSubMeshes(subMeshes)
+    mSubMeshes(subMeshes),
+    mBoundingSphere(bounds)
 {
 }
 
@@ -54,7 +56,8 @@ void generateTangentAndBitangent(
 SharedPtr<Mesh> uploadMeshToGpu(
     const std::vector<Mesh::Vertex> &vertexes,
     const std::vector<GLuint> &indexes,
-    const std::vector<SubMesh> &submeshes
+    const std::vector<SubMesh> &submeshes,
+    const BoundingSphere &bounds
 );
 
 SharedPtr<Mesh> Mesh::LoadMeshFromFile( const std::string &filename, 
@@ -80,7 +83,7 @@ SharedPtr<Mesh> Mesh::LoadMeshFromFile( const std::string &filename,
     );
     
     generateTangentAndBitangent( vert, indexes );
-    return uploadMeshToGpu( vert, indexes, submeshes );
+    return uploadMeshToGpu( vert, indexes, submeshes, loader.getBounds() );
 }
 
 void generateTangentAndBitangent( std::vector<Mesh::Vertex> &vertexes, 
@@ -133,8 +136,9 @@ void generateTangentAndBitangent( std::vector<Mesh::Vertex> &vertexes,
 }
 
 SharedPtr<Mesh> uploadMeshToGpu( const std::vector<Mesh::Vertex> &vertexes, 
-                                   const std::vector<GLuint> &indexes,
-                                   const std::vector<SubMesh> &submeshes )
+                                 const std::vector<GLuint> &indexes,
+                                 const std::vector<SubMesh> &submeshes,
+                                 const BoundingSphere &bounds )
 {
     typedef Mesh::Vertex Vertex;
     
@@ -175,5 +179,5 @@ SharedPtr<Mesh> uploadMeshToGpu( const std::vector<Mesh::Vertex> &vertexes,
     vao->unbindVAO();
     vertexBuffer->unbindBuffer();
     
-    return makeSharedPtr<Mesh>( vao, vertexBuffer, indexBuffer, submeshes );
+    return makeSharedPtr<Mesh>( vao, vertexBuffer, indexBuffer, submeshes, bounds );
 }

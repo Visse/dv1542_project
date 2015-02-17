@@ -34,6 +34,7 @@ void MeshLoaderWavefront::loadFile( const std::string &filename )
     validateFaces();
     sortFaces();
     buildMesh();
+    calculateBounds();
 }
 
 void MeshLoaderWavefront::parseLine( const std::string &line )
@@ -276,4 +277,27 @@ bool MeshLoaderWavefront::VertexEqual::operator()( const MeshLoaderWavefront::Ve
     if( !glm::all(glm::epsilonEqual(v1.normal, v2.normal, VERTEX_EPSILON)) ) return false;
     if( !glm::all(glm::epsilonEqual(v1.texcoord, v2.texcoord, VERTEX_EPSILON)) ) return false;
     return true;
+}
+
+void MeshLoaderWavefront::calculateBounds()
+{
+    if( mMeshInfo.vertexes.empty() ) {
+        return;
+    }
+    
+    glm::vec3 min = mMeshInfo.vertexes[0].position, max = mMeshInfo.vertexes[0].position;
+    
+    for( const Vertex &v : mMeshInfo.vertexes ) {
+        min = glm::min( min, v.position );
+        max = glm::max( max, v.position );
+    }
+    
+    glm::vec3 center = (min + max) / 2.f;
+    float radius = 0.f;
+    
+    for( const Vertex &v : mMeshInfo.vertexes ) {
+        radius = glm::max( radius, glm::distance(center,v.position) );
+    }
+    
+    mMeshInfo.bounds = BoundingSphere( center, radius );
 }

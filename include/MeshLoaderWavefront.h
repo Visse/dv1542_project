@@ -37,6 +37,9 @@ public:
     const std::vector<SubMesh>& getSubmeshes() const {
         return mMeshInfo.submeshes;
     }
+    const BoundingSphere& getBounds() const {
+        return mMeshInfo.bounds;
+    }
     
 private:
     struct Face {
@@ -63,6 +66,7 @@ private: // mesh building helping functions
     void validateFaces();
     void sortFaces();
     void buildMesh();
+    void calculateBounds();
     
         
     struct VertexHash {
@@ -93,6 +97,8 @@ private:
         std::vector<unsigned int> indexes;
         
         std::vector<SubMesh> submeshes;
+        
+        BoundingSphere bounds;
     } mMeshInfo;
     
 };

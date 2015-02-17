@@ -43,7 +43,8 @@ private:
 private:
     struct DebugDrawInfo {
         bool wireFrame = false,
-             normals = false;
+             normals = false,
+             bounds = false;
              
         bool debugLight = false;
         

@@ -37,6 +37,10 @@ public:
         return mGpuTimes;
     }
     
+    LowLevelRenderer& getLowLevelRenderer() {
+        return *mRenderer;
+    }
+    
 private:
     void fireFrameBegun();
     void fireFrameEnded();
