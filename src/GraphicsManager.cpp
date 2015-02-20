@@ -74,22 +74,37 @@ bool GraphicsManager::init( Root *root )
     StartupMesurements *mesurements = mRoot->getStartupMesurements();
     mesurements->graphicsStartup = initTimer.getTimeAsSeconds();
     
-    mQuaryObjects.reserve( 16 );
-    mQuaryObjects.resize(3);
-    
     mGpuTimes.setSize( config->valueHistoryLenght );
+    mSamplePassed.setSize( config->valueHistoryLenght );
     
-    glGenQueries( 3, &mQuaryObjects[0] );
-    for( int i=0; i < 3; ++i ) {
-        glBeginQuery( GL_TIME_ELAPSED, mQuaryObjects[i] );
+    
+    mNumOfQuaryObjects = 3;
+    
+    mTimeQuaryObjects.resize( mNumOfQuaryObjects );
+    mSamplesQuaryObjects.resize( mNumOfQuaryObjects );
+    
+    glGenQueries( mNumOfQuaryObjects, &mTimeQuaryObjects[0] );
+    glGenQueries( mNumOfQuaryObjects, &mSamplesQuaryObjects[0] );
+    
+    // this is to suppress warnings from the graphics driver - 
+    // for trying to quary a object that doesn't have a value get,
+    // this is easier that to keep track of how many of them I've used
+    for( size_t i=0; i < mNumOfQuaryObjects; ++i ) {
+        glBeginQuery( GL_TIME_ELAPSED, mTimeQuaryObjects[i] );
         glEndQuery( GL_TIME_ELAPSED );
     }
+    for( size_t i=0; i < mNumOfQuaryObjects; ++i ) {
+        glBeginQuery( GL_SAMPLES_PASSED, mSamplesQuaryObjects[i] );
+        glEndQuery( GL_SAMPLES_PASSED );
+    }
+    
     return true;
 }
 
 void GraphicsManager::destroy()
 {
-    glDeleteQueries( mQuaryObjects.size(), &mQuaryObjects[0] );
+    glDeleteQueries( mNumOfQuaryObjects, &mTimeQuaryObjects[0] );
+    glDeleteQueries( mNumOfQuaryObjects, &mSamplesQuaryObjects[0] );
     
     delete mRenderer;
     mRenderer = nullptr;
@@ -105,14 +120,15 @@ void GraphicsManager::postInit()
 {
     mRenderer = new LowLevelRenderer( mRoot );
 }
-#include <iostream>
+
 void GraphicsManager::update( float dt )
 {
 }
-
+#include <iostream>
 void GraphicsManager::render()
 {
-    glBeginQuery( GL_TIME_ELAPSED, mQuaryObjects[mCurrentQuary] );
+    glBeginQuery( GL_TIME_ELAPSED, mTimeQuaryObjects[mCurrentQuary] );
+    glBeginQuery( GL_SAMPLES_PASSED, mSamplesQuaryObjects[mCurrentQuary] );
     
     glDepthMask( GL_TRUE );
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
@@ -130,9 +146,11 @@ void GraphicsManager::render()
     
     {
         glEndQuery( GL_TIME_ELAPSED );
+        glEndQuery( GL_SAMPLES_PASSED );
         
         GLint resultAvailable = -1;
-        glGetQueryObjectiv( mQuaryObjects[(mCurrentQuary+1)%mQuaryObjects.size()], GL_QUERY_RESULT_NO_WAIT, &resultAvailable );
+        int index = (mCurrentQuary+1)%mNumOfQuaryObjects;
+        glGetQueryObjectiv( mTimeQuaryObjects[index], GL_QUERY_RESULT_NO_WAIT, &resultAvailable );
         
         if( resultAvailable != -1 ) {
             mGpuTimes.pushValue( (double)(resultAvailable) / 1000000.0 );
@@ -141,8 +159,18 @@ void GraphicsManager::render()
             std::cout << "Need more quary objects!";
         }
         
+        resultAvailable = -1;
+        glGetQueryObjectiv( mSamplesQuaryObjects[index], GL_QUERY_RESULT_NO_WAIT, &resultAvailable );
+        
+        if( resultAvailable != -1 ) {
+            mSamplePassed.pushValue( (double)(resultAvailable)/10000.0 );
+        }
+        else {
+            std::cout << "Need more quary objects!";
+        }
+        
         mCurrentQuary++;
-        mCurrentQuary %= mQuaryObjects.size();
+        mCurrentQuary %= mNumOfQuaryObjects;
     }
     
     SDL_GL_SwapWindow(mWindow);

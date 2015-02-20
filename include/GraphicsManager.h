@@ -36,6 +36,9 @@ public:
     const ValueHistory<float> getGpuTimeHistory() {
         return mGpuTimes;
     }
+    const ValueHistory<float> getSamplesPassed() {
+        return mSamplePassed;
+    }
     
     LowLevelRenderer& getLowLevelRenderer() {
         return *mRenderer;
@@ -58,8 +61,12 @@ private:
     std::vector<FrameListener*> mFrameListeners;
     std::vector<Camera*> mCameras;
     
-    std::vector<GLuint> mQuaryObjects;
+    size_t mNumOfQuaryObjects;
+    std::vector<GLuint> mTimeQuaryObjects,
+                        mSamplesQuaryObjects;
+    
     int mCurrentQuary = 0;
     
     ValueHistory<float> mGpuTimes;
+    ValueHistory<float> mSamplePassed;
 };

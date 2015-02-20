@@ -154,6 +154,7 @@ void DebugManager::update( float dt )
                 ImGui::PlotLines( "Frame Time", mRoot->getFrameTimeHistory(), 0.1f, 0.1f, ImVec2(0,70) );
                 ImGui::PlotLines( "Frame Rate", mRoot->getFrameRateHistory(), 10.f, 0.f, ImVec2(0,70) );
                 ImGui::PlotLines( "Gpu Time", graphicsMgr->getGpuTimeHistory(), 10, 10, ImVec2(0,70) );
+                ImGui::PlotLines( "Samples passed (*10k)", graphicsMgr->getSamplesPassed(), 100, 100, ImVec2(0,70) );
                 
                 LowLevelRenderer &renderer = graphicsMgr->getLowLevelRenderer();
                 ImGui::PlotLines( "Draw Count", renderer.getDrawCountHistory(), 10, 10, ImVec2(0,70) );
