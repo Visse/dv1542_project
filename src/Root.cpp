@@ -99,7 +99,7 @@ void Root::run()
         
         Timer::Duration frameTime = frameTimer.getTimeAsDuration();
         
-        mFrameTimeHistory.pushValue( std::chrono::duration_cast<Timer::Seconds>(frameTime).count() );
+        mFrameTimeHistory.pushValue( std::chrono::duration_cast<Timer::Millisecond>(frameTime).count() );
         
         if( frameTime < targetFrameTime ) {
             std::this_thread::sleep_for( targetFrameTime-frameTime );

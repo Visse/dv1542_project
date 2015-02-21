@@ -7,4 +7,5 @@ void Camera::update( float dt )
     mProjectionMatrix = glm::perspective( 
         mFOV, mAspect, mNearPlane, mFarPlane
     );
+    mFrustrum = Frustrum::FromProjectionMatrix( mProjectionMatrix * mViewMatrix );
 }

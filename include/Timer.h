@@ -9,6 +9,7 @@ public:
     typedef ClockType::duration Duration;
     typedef ClockType::time_point TimePoint;
     typedef std::chrono::duration<float> Seconds;
+    typedef std::chrono::duration<float,std::milli> Millisecond;
 
 public:
     void restart() {

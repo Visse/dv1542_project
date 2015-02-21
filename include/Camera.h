@@ -19,6 +19,9 @@ public:
     glm::mat4 getProjectionMatrix() {
         return mProjectionMatrix;
     }
+    glm::mat4 getViewMatrix() {
+        return mViewMatrix;
+    }
     Frustrum getFrustrum() {
         return mFrustrum;
     }
@@ -42,9 +45,12 @@ public:
     void setFarPlane( float farPlane ) {
         mFarPlane = farPlane;
     }
+    void setViewMatrix( const glm::mat4 &mat ) {
+        mViewMatrix = mat;
+    }
     
 private:
-    glm::mat4 mProjectionMatrix;
+    glm::mat4 mProjectionMatrix, mViewMatrix;
     Frustrum mFrustrum;
     float mAspect, mFOV;
     float mNearPlane, mFarPlane;

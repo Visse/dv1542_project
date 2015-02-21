@@ -56,6 +56,17 @@ void PointLight::queueRenderable( LowLevelRenderer &renderer )
     }
 }
 
+glm::mat4 PointLight::getInnerLightVolumeMatrix()
+{
+    return glm::scale( glm::mat4(), glm::vec3(mInnerRadius) );
+}
+
+glm::mat4 PointLight::getOuterLightVolumeMatrix()
+{
+    return glm::scale( glm::mat4(), glm::vec3(mOuterRadius) );
+}
+
+
 AmbientLight::AmbientLight( Root *root ) :
     mRoot(root)
 {
@@ -66,6 +77,9 @@ AmbientLight::AmbientLight( Root *root ) :
     SharedPtr<GpuProgram> program = mMaterial->getProgram();
 
     mBlockLoc = program->getUniformBlockLocation("AmbientLight");
+    
+    BoundingSphere bounds( glm::vec3(), std::numeric_limits<float>::infinity() );
+    setBoundingSphere( bounds );
 }
 
 void AmbientLight::queueRenderable( LowLevelRenderer &renderer )
@@ -127,6 +141,28 @@ void SpotLight::queueRenderable( LowLevelRenderer &renderer )
     }
 }
 
+glm::mat4 SpotLight::getInnerLightVolumeMatrix()
+{
+    float radie = glm::tan(mInnerAngle)*mInnerDistance;
+    return glm::scale(glm::mat4(), glm::vec3(radie,radie,mInnerDistance));;
+}
+
+glm::mat4 SpotLight::getOuterLightVolumeMatrix()
+{
+    float radie = glm::tan(mOuterAngle)*mOuterDistance;
+    return glm::scale(glm::mat4(), glm::vec3(radie,radie,mOuterDistance));;
+}
+
+void SpotLight::updateBounds()
+{
+    float h = 0.5f*mOuterDistance,
+          w = mOuterDistance*glm::tan(mOuterAngle);
+    
+    float radius = glm::sqrt(h*h+w*w);
+    
+    setBoundingSphere( BoundingSphere(glm::vec3(0,0,-h),radius) );
+}
+
 BoxLight::BoxLight( Root *root ) :
     mRoot(root)
 {
@@ -149,10 +185,11 @@ BoxLight::BoxLight( Root *root ) :
 
 void BoxLight::queueRenderable( LowLevelRenderer &renderer )
 {
-    glm::vec3 scale = glm::vec3(0.5f,0.5f,1.f);
+    glm::vec3 scale(0.25f,0.25f,0.5f);
+    glm::mat4 modelMatrix = glm::translate( glm::scale(getTransform(), mOuterSize*scale), glm::vec3(0.f,0.f,-1.f) );
     
     BoxLightUniforms uniforms;
-        uniforms.modelMatrix = glm::translate(glm::scale(getTransform(),mOuterSize*scale),glm::vec3(0,0,-1.0));
+        uniforms.modelMatrix = modelMatrix;
         uniforms.color = glm::vec4(getColor(),mIntensity);
         uniforms.innerSize = mInnerSize*scale;
         uniforms.outerSize = mOuterSize*scale;
@@ -172,4 +209,26 @@ void BoxLight::queueRenderable( LowLevelRenderer &renderer )
         params.vertexCount = submesh.vertexCount;
         renderer.queueOperation( params );
     }
+}
+
+glm::mat4 BoxLight::getInnerLightVolumeMatrix()
+{
+    glm::vec3 scale = glm::vec3(0.25f,0.25f,0.5f);
+    return glm::translate( glm::scale(glm::mat4(), mInnerSize*scale), glm::vec3(0.f,0.f,-1.f) );
+}
+
+glm::mat4 BoxLight::getOuterLightVolumeMatrix()
+{
+    glm::vec3 scale = glm::vec3(0.25f,0.25f,0.5f);
+    return glm::translate( glm::scale(glm::mat4(), mOuterSize*scale), glm::vec3(0.f,0.f,-1.f) );
+}
+
+void BoxLight::updateBounds()
+{
+    glm::vec3 scale = glm::vec3(0.25f,0.25f,0.5f);
+    glm::vec3 size = mOuterSize * scale;
+    
+    float radius = glm::length(size);
+    
+    setBoundingSphere( BoundingSphere(glm::vec3(0,0,-size.z), radius) );
 }

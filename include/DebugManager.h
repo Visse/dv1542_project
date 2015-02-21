@@ -62,7 +62,8 @@ private:
     
     Int32 mKeyToogleDebug; 
     
-    bool mIsDebugVisible = false;
+    bool mIsDebugVisible = false,
+         mShowSceneBounds = false;
     
     std::map<SceneObject*, DebugDrawInfo> mDebugDrawInfo;
     SharedPtr<GpuBuffer> mVertexBuffer;

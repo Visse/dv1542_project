@@ -7,7 +7,7 @@
 #include "SceneManager.h"
 #include "SceneObjectFactory.h"
 #include "SharedEnums.h"
-
+#include "Frustrum.h"
 
 #include "yaml-cxx/YamlCxx.h"
 
@@ -128,11 +128,11 @@ void Scene::update( float dt )
 
 void Scene::quarySceneObjects( const Frustrum &frustrum, std::vector<SceneObject*> &result )
 {
-    std::transform( mObjects.begin(), mObjects.end(), std::back_inserter(result), 
-        []( const ObjectInfo &info ) {
-            return info.object;
+    for( const ObjectInfo &info : mObjects ) {
+        if( frustrum.isInside(info.object->getBoundingSphere(), info.object->getTransform()) ) {
+            result.push_back( info.object );
         }
-    );
+    }
 }
 
 void Scene::forEachObject( std::function<void(SceneObject*)> callback )

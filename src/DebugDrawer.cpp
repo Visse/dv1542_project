@@ -88,7 +88,7 @@ void DebugDrawer::drawVertexNormals( const SharedPtr<Mesh> &mesh, const glm::mat
 
 void DebugDrawer::drawWireSphere( float radius, const glm::mat4 &transform, const glm::vec4 &color )
 {
-    glm::mat4 t = glm::scale( transform, glm::vec3(radius) );
+    glm::mat4 t = glm::scale( transform, glm::vec3(glm::max(radius,0.001f)) );
     drawWireFrame( mSphereMesh, t, color );
 }
 

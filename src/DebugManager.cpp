@@ -38,6 +38,28 @@
 #include <functional>
 #include <iostream>
 
+#ifdef __GNUC__
+
+#include <cxxabi.h>
+
+std::string demangleName( const char *name )
+{
+    char *demangledName = __cxxabiv1::__cxa_demangle( name, NULL, NULL, NULL );
+    std::string tmp(demangledName);
+    
+    free(demangledName);
+    
+    return tmp;
+}
+
+#else
+
+std::string demangleName( const char *name )
+{
+    return std::string(name);
+}
+
+#endif
 
 class DebugManager::DebugCamera :
     public Camera
@@ -166,6 +188,7 @@ void DebugManager::update( float dt )
             
             if( scene ) {
                 if( ImGui::CollapsingHeader("Scene") ) {
+                    ImGui::Checkbox( "Show Bounds", &mShowSceneBounds );
                 }
                 
                 if( ImGui::CollapsingHeader("SceneObjects") ) {
@@ -417,7 +440,9 @@ void DebugManager::showSceneObject( float dt, SceneObject *object )
     
     DebugDrawInfo &debugDrawInfo = mDebugDrawInfo[object];
     
-    if( ImGui::TreeNode(typeid(*object).name()) ) {
+    std::string objectType = demangleName(typeid(*object).name());
+    
+    if( ImGui::TreeNode(objectType.c_str()) ) {
         glm::vec3 position = object->getPosition();
         
         if( ImGui::InputFloat3("Position", glm::value_ptr(position)) ) {
@@ -542,8 +567,6 @@ void DebugManager::showSceneObject( float dt, SceneObject *object )
                 if( ImGui::SliderFloat("Intensity", &intesity, 0.f, 2.f) ) {
                     pointLight->setIntensity( intesity );
                 }
-                
-                ImGui::Checkbox( "DebugDraw", &debugDrawInfo.debugLight );
             }
             
             if( SpotLight *spotLight = dynamic_cast<SpotLight*>(light) ) {
@@ -568,8 +591,6 @@ void DebugManager::showSceneObject( float dt, SceneObject *object )
                 if( ImGui::SliderFloat("Intensity", &intensity, 0.f, 2.f) ) {
                     spotLight->setIntensity( intensity );
                 }
-                
-                ImGui::Checkbox( "DebugDraw", &debugDrawInfo.debugLight );
             }
         
             if( BoxLight *boxLight = dynamic_cast<BoxLight*>(light) ) {
@@ -598,9 +619,9 @@ void DebugManager::showSceneObject( float dt, SceneObject *object )
                 if( ImGui::SliderFloat("Intensity", &intensity, 0.f, 2.f) ) {
                     boxLight->setIntensity( intensity );
                 }
-                
-                ImGui::Checkbox( "DebugDraw", &debugDrawInfo.debugLight );
             }
+        
+            ImGui::Checkbox( "Light Volume", &debugDrawInfo.debugLight );
         }
         ImGui::TreePop();
     }
@@ -628,23 +649,33 @@ void DebugManager::submitDebugDraw()
             debugDrawer->drawWireSphere( bounds.getRadius(), transform, glm::vec4(0.5f,0.2f,0.2f,0.1f) );
         }
         if( info.debugLight ) {
-            if( PointLight *point = dynamic_cast<PointLight*>(object) ) {
-                debugDrawer->drawWireSphere( point->getOuterRadius(), object->getTransform(), glm::vec4(0.2,0.5f,0.2f,0.1f) );
-                debugDrawer->drawWireSphere( point->getInnerRadius(), object->getTransform(), glm::vec4(0.2,0.2f,0.5f,0.1f) );
+            LightObject *light = dynamic_cast<LightObject*>(object);
+            if( light ) {
+                debugDrawer->drawWireFrame( light->getInnerLightVolumeMesh(), light->getTransform()*light->getInnerLightVolumeMatrix(), glm::vec4(0.2,0.2f,0.5f,0.1f) );
+                debugDrawer->drawWireFrame( light->getOuterLightVolumeMesh(), light->getTransform()*light->getOuterLightVolumeMatrix(), glm::vec4(0.2,0.5f,0.2f,0.1f) );
             }
-            if( SpotLight *spot = dynamic_cast<SpotLight*>(object) ) {
-                debugDrawer->drawWireConeAngle( spot->getOuterDistance(), spot->getOuterAngle(), object->getTransform(), glm::vec4(0.2,0.5f,0.2f,0.1f) );
-                debugDrawer->drawWireConeAngle( spot->getInnerDistance(), spot->getInnerAngle(), object->getTransform(), glm::vec4(0.2,0.2f,0.5f,0.1f) );
-            }
-            
-            if( BoxLight *boxLight = dynamic_cast<BoxLight*>(object) ) {
-                glm::mat4 transform = boxLight->getTransform();
-                glm::mat4 outerTransform = glm::translate(glm::scale(transform,boxLight->getOuterSize()*glm::vec3(0.5f,0.5f,1.f)),glm::vec3(0.f,0.f,-1.0f)),
-                          innerTransform = glm::translate(glm::scale(transform,boxLight->getInnerSize()*glm::vec3(0.5f,0.5f,1.f)),glm::vec3(0.0,0.0,-1.0f));
-                          
-                debugDrawer->drawWireBox( glm::vec3(1.f), outerTransform, glm::vec4(0.2,0.5f,0.2f,0.1f) );
-                debugDrawer->drawWireBox( glm::vec3(1.f), innerTransform, glm::vec4(0.2,0.2f,0.5f,0.1f) );
-            }
+        }
+    }
+
+    if( mShowSceneBounds ) {
+        SceneManager *sceneMgr = mRoot->getSceneManager();
+        Scene *scene = sceneMgr->getScene();
+        
+        if( scene ) {
+            int index = 0;
+            scene->forEachObject(
+                [debugDrawer,&index]( SceneObject *object ) {
+                    
+                    glm::vec4 color( glm::fract(index*0.13f+0.19f), 0.8f, 0.8f, 0.5f );
+                    ImGui::ColorConvertHSVtoRGB( color.r, color.g, color.b, color.r, color.g, color.b );
+                    
+                    BoundingSphere bounds = object->getBoundingSphere();
+                    glm::mat4 transform = glm::translate( object->getTransform(), bounds.getCenter() );
+                    debugDrawer->drawWireSphere( bounds.getRadius(), transform, color );
+                    
+                    index++;
+                }
+            );
         }
     }
 }

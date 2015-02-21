@@ -20,26 +20,22 @@ SceneCamera::SceneCamera( Root *root, const SharedPtr<Scene> &scene, const Share
 
 void SceneCamera::update( float dt )
 {
-    Camera::update( dt );
     if( mController ) {
         mController->update( dt );
+        setViewMatrix( glm::inverse(mController->getTransformation()) );
     }
+    Camera::update( dt );
 }
 
 void SceneCamera::render( LowLevelRenderer &renderer )
 {
     mCulledObjects.clear();
     
-    glm::mat4 cameraTransform;
-    if( mController ) {
-        cameraTransform = mController->getTransformation();
-    }
-    
     SceneRenderUniforms sceneUniforms;
-        sceneUniforms.viewMatrix = glm::inverse(cameraTransform);
+        sceneUniforms.viewMatrix = getViewMatrix();
         sceneUniforms.projectionMatrix = getProjectionMatrix();
         sceneUniforms.viewProjMatrix = sceneUniforms.projectionMatrix * sceneUniforms.viewMatrix;
-        sceneUniforms.inverseViewMatrix = cameraTransform;
+        sceneUniforms.inverseViewMatrix = glm::inverse(getViewMatrix());
         sceneUniforms.inverseProjectionMatrix = glm::inverse( sceneUniforms.projectionMatrix );
         sceneUniforms.inverseViewProjMatrix = glm::inverse( sceneUniforms.viewProjMatrix );
         sceneUniforms.clippingPlanes = glm::vec2( getNearPlane(), getFarPlane() );
