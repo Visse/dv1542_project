@@ -23,6 +23,7 @@
 #include "DebugDrawer.h"
 #include "Camera.h"
 #include "LowLevelRenderer.h"
+#include "SceneGraph.h"
 
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
@@ -189,6 +190,7 @@ void DebugManager::update( float dt )
             if( scene ) {
                 if( ImGui::CollapsingHeader("Scene") ) {
                     ImGui::Checkbox( "Show Bounds", &mShowSceneBounds );
+                    ImGui::Checkbox( "Show SceneGraph", &mShowSceneGraph );
                 }
                 
                 if( ImGui::CollapsingHeader("SceneObjects") ) {
@@ -644,9 +646,8 @@ void DebugManager::submitDebugDraw()
             debugDrawer->drawVertexNormals( info.mesh, object->getTransform() );
         }
         if( info.bounds ) {
-            const BoundingSphere &bounds = object->getBoundingSphere();
-            glm::mat4 transform = glm::translate( object->getTransform(), bounds.getCenter() );
-            debugDrawer->drawWireSphere( bounds.getRadius(), transform, glm::vec4(0.5f,0.2f,0.2f,0.1f) );
+            const BoundingSphere &bounds = object->getTransformedBoundingSphere();
+            debugDrawer->drawWireSphere( bounds.getRadius(), glm::mat4(), glm::vec4(0.5f,0.2f,0.2f,0.1f) );
         }
         if( info.debugLight ) {
             LightObject *light = dynamic_cast<LightObject*>(object);
@@ -669,13 +670,39 @@ void DebugManager::submitDebugDraw()
                     glm::vec4 color( glm::fract(index*0.13f+0.19f), 0.8f, 0.8f, 0.5f );
                     ImGui::ColorConvertHSVtoRGB( color.r, color.g, color.b, color.r, color.g, color.b );
                     
-                    BoundingSphere bounds = object->getBoundingSphere();
-                    glm::mat4 transform = glm::translate( object->getTransform(), bounds.getCenter() );
-                    debugDrawer->drawWireSphere( bounds.getRadius(), transform, color );
+                    const BoundingSphere &bounds = object->getTransformedBoundingSphere();
+                    debugDrawer->drawWireSphere( bounds.getRadius(), glm::translate(glm::mat4(),bounds.getCenter()), color );
                     
                     index++;
                 }
             );
+        }
+    }
+    if( mShowSceneGraph ) {
+        SceneManager *sceneMgr = mRoot->getSceneManager();
+        Scene *scene = sceneMgr->getScene();
+        if( scene ) {
+            SceneGraph *graph = scene->getSceneGraph();
+            
+            std::function<void(int,int,SceneNode*)> visitor;
+            
+            visitor = [&]( int level, int child, SceneNode *node ) {
+                const BoundingSphere &bounds = node->getBounds();
+                
+                glm::vec4 color( glm::fract(level*0.32f+child*0.2f), 0.8f, 0.8f, 0.5f );
+                ImGui::ColorConvertHSVtoRGB( color.r, color.g, color.b, color.r, color.g, color.b );
+                
+                debugDrawer->drawWireBox( glm::vec3(bounds.getRadius()*glm::one_over_root_two<float>()), glm::translate(glm::mat4(),bounds.getCenter()), color );
+                
+                SceneNode *children = node->getChildren();
+                if( children ) {
+                    for( int i=0; i < 8; ++i ) {
+                        visitor( level+1, i, children+i ); 
+                    }
+                }
+            };
+            
+            visitor( 0, 0, graph->getRootNode() );
         }
     }
 }

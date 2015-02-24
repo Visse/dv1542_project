@@ -38,12 +38,25 @@ public:
         Inside
     };
     
-    bool isInside( const BoundingSphere &bounds, const glm::mat4 &transform ) const
+    TestStatus isInside( const BoundingSphere &bounds ) const
     {
-        glm::vec4 center = transform * glm::vec4( bounds.getCenter(), 1.0 );
-        
+        glm::vec4 center = glm::vec4( bounds.getCenter(), 1.0f );
         float radius = bounds.getRadius();
         
+        return isInside( center, radius );
+    }
+    
+    TestStatus isInside( const BoundingSphere &bounds, const glm::mat4 &transform ) const
+    {
+        glm::vec4 center = transform * glm::vec4( bounds.getCenter(), 1.0f );
+        float radius = bounds.getRadius();
+        
+        return isInside( center, radius );
+    }
+    
+private:
+    TestStatus isInside( const glm::vec4 &center, float radius ) const
+    {
         float distances[6];
         for( int i=0; i < 6; ++i ) {
             distances[i] = glm::dot(mPlanes[i], center);
@@ -51,11 +64,14 @@ public:
         
         for( int i=0; i < 6; ++i ) {
             if( distances[i] < -radius ) {
-                return false;
+                return TestStatus::Outside;
+            }
+            if( glm::abs(distances[i]) < radius ) {
+                return TestStatus::Intersecting;
             }
         }
         
-        return true;
+        return TestStatus::Inside;
     }
     
 private:

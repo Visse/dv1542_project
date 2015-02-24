@@ -178,7 +178,7 @@ void FlyingController::setKeyBinding( FlyingController::KeyBinding binding, Int3
 {
     int index = static_cast<int>(binding);
     assert( index >= 0 && index < KB_COUNT );
-    mKeyBindings[binding] = key;
+    mKeyBindings[index] = key;
 }
 
 void FlyingController::loadFromConfig( const FlyingControllConfig &config )

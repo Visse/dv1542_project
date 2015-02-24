@@ -1,15 +1,18 @@
 #pragma once
 
 #include <vector>
+#include <deque>
 #include <functional>
 
 #include <glm/vec3.hpp>
 
 #include "SharedPtr.h"
+#include "UniquePtr.h"
 
 class Root;
 class Frustrum;
 class SceneObject;
+class SceneGraph;
 
 class Scene {
 public:
@@ -17,7 +20,6 @@ public:
     
 public:
     Scene( Root *root );
-    ~Scene();
     
     Scene( const Scene& ) = delete;
     Scene( Scene&& ) = delete;
@@ -31,17 +33,13 @@ public:
     
     void quarySceneObjects( const Frustrum &frustrum, std::vector<SceneObject*> &result );
     
-    void forEachObject( std::function<void(SceneObject*)> callback );
+    void forEachObject( const std::function<void(SceneObject*)> &callback );
     
-private:
-    struct ObjectInfo {
-        SceneObject *object;
-        
-        bool ownsObject;
-    };
-    struct FindSceneInfo;
+    SceneGraph* getSceneGraph() {
+        return mSceneGraph.get();
+    }
     
 private:
     Root *mRoot;
-    std::vector<ObjectInfo> mObjects;
+    UniquePtr<SceneGraph> mSceneGraph;
 };

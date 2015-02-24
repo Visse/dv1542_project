@@ -8,6 +8,7 @@
 #include "SceneObjectFactory.h"
 #include "SharedEnums.h"
 #include "Frustrum.h"
+#include "SceneGraph.h"
 
 #include "yaml-cxx/YamlCxx.h"
 
@@ -15,14 +16,6 @@
 #include <algorithm>
 
 #include <iostream>
-
-struct Scene::FindSceneInfo {
-    SceneObject *object;
-    
-    bool operator () ( const Scene::ObjectInfo &info ) const {
-        return object == info.object;
-    }
-};
 
 SharedPtr<Scene> Scene::LoadFromFile( Root *root, const std::string &filename )
 {
@@ -82,15 +75,7 @@ SharedPtr<Scene> Scene::LoadFromFile( Root *root, const std::string &filename )
 Scene::Scene( Root *root ):
     mRoot(root)
 {
-}
-
-Scene::~Scene()
-{
-    for( const ObjectInfo &info : mObjects ) {
-        if( info.ownsObject ) {
-            delete info.object;
-        }
-    }
+    mSceneGraph = makeUniquePtr<SceneGraph>(mRoot);
 }
 
 void Scene::addObject( SceneObject *object, bool takeOwnership )
@@ -98,46 +83,26 @@ void Scene::addObject( SceneObject *object, bool takeOwnership )
     if( object->isDirty() ) {
         object->_updateTransform();
     }
-    
-    ObjectInfo info;
-        info.object = object;
-        info.ownsObject = takeOwnership;
-    mObjects.push_back( info );
+    object->_setAutoDelete( takeOwnership );
+    mSceneGraph->addObject( object );
 }
 
 void Scene::removeObject( SceneObject *object )
 {
-    auto iter = std::find_if( mObjects.begin(), mObjects.end(), FindSceneInfo{object} );
-    assert( iter != mObjects.end() );
-    
-    // we don't care about the order
-    std::swap( *iter, mObjects.back() );
-    mObjects.pop_back();
+    mSceneGraph->removeObject( object );
 }
 
 void Scene::update( float dt )
 {
-    for( const ObjectInfo &info : mObjects ) {
-        SceneObject *object = info.object;
-        object->update( dt );
-        if( object->isDirty() ) {
-            object->_updateTransform();
-        }
-    }
+    mSceneGraph->update( dt );
 }
 
 void Scene::quarySceneObjects( const Frustrum &frustrum, std::vector<SceneObject*> &result )
 {
-    for( const ObjectInfo &info : mObjects ) {
-        if( frustrum.isInside(info.object->getBoundingSphere(), info.object->getTransform()) ) {
-            result.push_back( info.object );
-        }
-    }
+    mSceneGraph->quaryObjects( frustrum, result );
 }
 
-void Scene::forEachObject( std::function<void(SceneObject*)> callback )
+void Scene::forEachObject( const std::function<void(SceneObject*)> &callback )
 {
-    for( const ObjectInfo &info : mObjects ) {
-        callback( info.object );
-    }
+    mSceneGraph->forEachObject( callback );
 }

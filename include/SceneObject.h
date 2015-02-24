@@ -6,9 +6,9 @@
 
 #include "BoundingSphere.h"
 
+class SceneNode;
 class LowLevelRenderer;
 class Renderable;
-
 
 class SceneObject {
 public:
@@ -18,8 +18,14 @@ public:
     
     virtual void queueRenderable( LowLevelRenderer &renderer ) {}
     
-    void setPosition( const glm::vec3 &position );
-    void setOrientation( const glm::quat &orientation );
+    void setPosition( const glm::vec3 &position ) {
+        mPosition = position;
+        markDirty();
+    }
+    void setOrientation( const glm::quat &orientation ) {
+        mOrientation = orientation;
+        markDirty();
+    }
     void setRenderQueue( unsigned int queue ) {
         mRenderQueue = queue;
     }
@@ -38,23 +44,45 @@ public:
     
     void setBoundingSphere( const BoundingSphere &bounds ) {
         mBoundingSphere = bounds;
+        mDirty = true;
     }
     const BoundingSphere& getBoundingSphere() {
         return mBoundingSphere;
+    }
+    const BoundingSphere& getTransformedBoundingSphere() {
+        return mTransformedBoundingSphere;
     }
     
     bool isDirty() {
         return mDirty;
     }
+    // updates the transform & takes the object from the dirty stage
+    // don't call this manaly
     void _updateTransform();
+    void _setParent( SceneNode *node ) {
+        mParent = node;
+    }
+    SceneNode* _getParent() {
+        return mParent;
+    }
+    void _setAutoDelete( bool autoDelete ) {
+        mAutoDelete = autoDelete;
+    }
+private:
+    void markDirty() {
+        mDirty = true;
+    }
     
 private:
+    SceneNode *mParent = nullptr;
+    
     glm::vec3 mPosition;
     glm::quat mOrientation;
     
     glm::mat4 mTransform;
     
     unsigned int mRenderQueue = 0;
-    bool mDirty = false;
-    BoundingSphere mBoundingSphere;
+    bool mDirty = false, mAutoDelete = false;
+    BoundingSphere mBoundingSphere,
+                   mTransformedBoundingSphere;
 };
