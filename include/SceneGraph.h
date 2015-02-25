@@ -53,5 +53,6 @@ private:
     
     std::vector<SceneObject*> mDirtyObjects;
     
-    int mMinNodeLevel = -2;
+    int mMinNodeLevel = -2,
+        mMaxNodeLevel;
 };

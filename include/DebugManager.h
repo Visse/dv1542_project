@@ -15,7 +15,9 @@ class Material;
 class VertexArrayObject;
 
 class SceneObject;
+class SceneNode;
 class Mesh;
+class Frustrum;
 
 
 class DebugManager :
@@ -35,6 +37,12 @@ private:
     void setInputScreenPos(int x, int y);
     
     void showSceneObject( float dt, SceneObject *object );
+    void showSceneNode( SceneNode *node, const glm::vec4 &color );
+    void showObjectBounds( SceneObject *object, const glm::vec4 &color );
+    void showFrustrumTests( const Frustrum &frustrum, SceneNode *node );
+    void showFrustrumTestNode( const Frustrum &frustrum, SceneNode *node );
+    void showFrustrumTestOutside( SceneNode *node );
+    
     void submitDebugDraw();
     
     void paintDebugOverlay();
@@ -44,7 +52,8 @@ private:
     struct DebugDrawInfo {
         bool wireFrame = false,
              normals = false,
-             bounds = false;
+             bounds = false,
+             parentSceneNodes = false;
              
         bool debugLight = false;
         
@@ -64,7 +73,13 @@ private:
     
     bool mIsDebugVisible = false,
          mShowSceneBounds = false,
-         mShowSceneGraph = false;
+         mShowSceneGraph = false,
+         mShowSceneNodesAsBoxes = true,
+         mShowFrustrumTests = false,
+         mShowFrustrumTestsOnlyObjects = true,
+         mShowFrustrumTestsParents = false,
+         mUseSavedFrustrum = false,
+         mShowSavedFrustrum = false;
     
     std::map<SceneObject*, DebugDrawInfo> mDebugDrawInfo;
     SharedPtr<GpuBuffer> mVertexBuffer;
@@ -75,4 +90,6 @@ private:
     
     UniformBlock mUniforms;
     size_t mUniformBlockLoc;
+    
+    glm::mat4 mSavedViewProjMatrix;
 };

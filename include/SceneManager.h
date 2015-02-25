@@ -22,6 +22,9 @@ public:
     Scene* getScene() {
         return mScene.get();
     }
+    Camera* getCamera() {
+        return mCamera;
+    }
     
     void addFactory( const std::string &type, SceneObjectFactory *factory, bool takeOwnership );
     void removeFactory( const std::string &type );
