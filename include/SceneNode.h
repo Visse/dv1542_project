@@ -9,8 +9,9 @@ class SceneObject;
 
 class SceneNode {
 public:
-    void _init( SceneGraph *graph ) {
+    void _init( SceneGraph *graph, SceneNode *parent ) {
         mGraph = graph;
+        mParent = parent;
     }
     
     void addObject( SceneObject *object );
@@ -18,7 +19,9 @@ public:
     
     void update( float dt );
     
-    
+    SceneNode* getParent() {
+        return mParent;
+    }
     SceneNode* getChildren() {
         return mChildren;
     }
@@ -42,7 +45,7 @@ public:
 private:
     SceneGraph *mGraph;
     // children must either be null, or pointing to an array with 8 entries
-    SceneNode *mChildren = nullptr;
+    SceneNode *mParent, *mChildren = nullptr;
     
     std::vector<SceneObject*> mObjects;
     BoundingSphere mBounds;

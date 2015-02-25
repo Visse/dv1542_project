@@ -29,6 +29,7 @@ public:
 private:
     SceneNode* getOrCreateNodeForBound( const BoundingSphere &bounds );
     SceneNode* createChildrenForNode( SceneNode *node );
+    void cleanEmptyNodes( SceneNode *node );
     
     void quaryObjectsForNode( SceneNode *node, const Frustrum &frustrum, std::vector<SceneObject*> &result );
     void nodeFullyInsideFrustrum( SceneNode *node, std::vector<SceneObject*> &result );
@@ -52,5 +53,5 @@ private:
     
     std::vector<SceneObject*> mDirtyObjects;
     
-    int mMinNodeLevel = 0;
+    int mMinNodeLevel = -2;
 };

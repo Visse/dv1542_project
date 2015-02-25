@@ -10,17 +10,19 @@ SceneGraph::SceneGraph( Root *root, float sceneSize ) :
     mRoot(root)
 {
     mRootNode.reset( new SceneNode );
-    mRootNode->_init( this );
+    mRootNode->_init( this, nullptr );
     
-    mRootNode->_setBounds( BoundingSphere(glm::vec3(),sceneSize) );
+    mRootNode->_setBounds( BoundingSphere(glm::vec3(),sceneSize*2.f) );
     mSceneNodes.push_back( mRootNode.get() );
+    
+    mMaxNodeLevel = glm::ceil( glm::log2(sceneSize) );
 }
 
 void SceneGraph::addObject( SceneObject *object )
 {
     assert( object->_getParent() == nullptr );
     
-    SceneNode *parent = getOrCreateNodeForBound( object->getBoundingSphere() );
+    SceneNode *parent = getOrCreateNodeForBound( object->getTransformedBoundingSphere() );
     parent->addObject( object );
     object->_setParent( parent );
 }
@@ -31,6 +33,8 @@ void SceneGraph::removeObject( SceneObject *object )
     
     SceneNode *parent = object->_getParent();
     parent->removeObject( object );
+
+    cleanEmptyNodes( parent );
 }
 
 void SceneGraph::update( float dt )
@@ -40,10 +44,15 @@ void SceneGraph::update( float dt )
         const BoundingSphere &bounds = object->getTransformedBoundingSphere();
         
         SceneNode *parent = object->_getParent();
-        parent->removeObject( object );
-        
         SceneNode *newParent = getOrCreateNodeForBound( bounds );
-        newParent->addObject( object );
+        
+        if( parent != newParent ) {
+            parent->removeObject( object );
+            newParent->addObject( object );
+            object->_setParent( newParent );
+            
+            cleanEmptyNodes( parent );
+        }
     }
     mDirtyObjects.clear();
     
@@ -116,21 +125,28 @@ void SceneGraph::nodePartalyInsideFrusturm( SceneNode *node, const Frustrum &fru
 
 SceneNode* SceneGraph::getOrCreateNodeForBound( const BoundingSphere &bounds )
 {
-    int level = glm::max<int>( glm::log2(bounds.getRadius()), mMinNodeLevel );
+    float radius = bounds.getRadius();
     glm::vec3 position = bounds.getCenter();
+    int level = mMaxNodeLevel - mMinNodeLevel;
+    if( radius > 0 ) {
+        level = mMaxNodeLevel - glm::max<int>( glm::ceil(glm::log2(radius)), mMinNodeLevel );
+    }
+    if( radius == std::numeric_limits<float>::infinity() ) {
+        level = 0;
+    }
     
     SceneNode *root = mRootNode.get();
     
-    while( level > mMinNodeLevel ) {
-        glm::bvec3 lessThan0 = glm::lessThan( glm::sign(position), glm::vec3(0.f) );
-        int index = lessThan0.x | lessThan0.y<<1 | lessThan0.z<<2;
+    while( level > 0 ) {
+        glm::bvec3 greaterThan0 = glm::greaterThan( glm::sign(position), glm::vec3(0.f) );
+        int index = greaterThan0.x | greaterThan0.y<<1 | greaterThan0.z<<2;
         
         SceneNode *children = root->getChildren();
         if( !children ) {
             children = createChildrenForNode( root );
         }
         
-        position += children[index].getBounds().getCenter() - root->getBounds().getCenter();
+        position -= children[index].getBounds().getCenter() - root->getBounds().getCenter();
 //         position /= 2.f;
         
         root = &children[index];
@@ -163,9 +179,8 @@ SceneNode* SceneGraph::createChildrenForNode( SceneNode *node )
     
     glm::vec3 position = bounds.getCenter();
     float hradius = bounds.getRadius() / 2.f;
-    
-    // Not correct! ( the radius is bigger than the size)
-    float hsize = bounds.getRadius()*glm::one_over_root_two<float>() / 2.f;
+
+    float hsize = hradius*glm::one_over_root_two<float>()/2.f;
     
     
     SceneNode *children = new SceneNode[8];
@@ -173,11 +188,40 @@ SceneNode* SceneGraph::createChildrenForNode( SceneNode *node )
     
     
     for( int i=0; i < 8; ++i ) {
-        children[i]._init( this );
+        children[i]._init( this, node );
         children[i]._setBounds( BoundingSphere(position+offets[i]*hsize, hradius) );
         mSceneNodes.push_back( &children[i] );
     }
     node->_setChildren( children );
     
     return children;
+}
+
+
+void SceneGraph::cleanEmptyNodes( SceneNode *node )
+{
+    SceneNode *parent = node->getParent();
+
+    if( parent ) {
+        SceneNode *children = parent->getChildren();
+        assert( children != nullptr );
+
+        bool isEmpty = true;
+        for( int i=0; i < 8; ++i ) {
+            if( children[i].getChildren() != nullptr) {
+                isEmpty = false;
+                break;
+            }
+            if( children[i].getObjects().empty() == false ) {
+                isEmpty = false;
+                break;
+            }
+        }
+
+        if( isEmpty ) {
+            parent->_setChildren( nullptr );
+            cleanEmptyNodes( parent );
+           // delete[] children;
+        }
+    }
 }
