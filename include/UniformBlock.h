@@ -32,10 +32,18 @@ public:
 public:
     UniformBlockLayout() = default;
     UniformBlockLayout( const UniformBlockLayout& ) = default;
-    UniformBlockLayout( UniformBlockLayout&& ) = default;
+    UniformBlockLayout( UniformBlockLayout &&move ) :
+        mSize(move.mSize),
+        mUniforms(std::move(move.mUniforms))
+    {}
     
     UniformBlockLayout& operator = ( const UniformBlockLayout& ) = default;
-    UniformBlockLayout& operator = ( UniformBlockLayout&& ) = default;
+    UniformBlockLayout& operator = ( UniformBlockLayout &&move )
+    {
+        mSize = move.mSize;
+        mUniforms = std::move(move.mUniforms);
+        return *this;
+    }
 
 public:
     // checks whenether we can use this uniform block instead of 'other'
@@ -76,10 +84,8 @@ class UniformBuffer {
 public:
     UniformBuffer() = default;
     UniformBuffer( const UniformBuffer& ) = default;
-    UniformBuffer( UniformBuffer&& ) = default;
     
     UniformBuffer& operator = ( const UniformBuffer& ) = default;
-    UniformBuffer& operator = ( UniformBuffer&& ) = default;
     
 public:
     UniformBuffer( size_t id, void *memory, size_t size );

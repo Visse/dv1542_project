@@ -10,10 +10,19 @@ template< typename Type >
 class ValueHistory {
 public:
     ValueHistory( const ValueHistory& ) = default;
-    ValueHistory( ValueHistory&& ) = default;
+    ValueHistory( ValueHistory &&move ) :
+        mValues(std::move(move.mValues)),
+        mNextIndex(move.mNextIndex),
+        mSize(move.mSize)
+    {}
     
     ValueHistory& operator = ( const ValueHistory& ) = default;
-    ValueHistory& operator = ( ValueHistory&& ) = default;
+    ValueHistory& operator = ( ValueHistory &&move )
+    {
+        mValues = std::move(move.mValues);
+        mNextIndex = move.mNextIndex;
+        mSize = move.mSize;
+    }
     
     explicit ValueHistory( size_t size = 0 ) :
         mSize(size)
