@@ -109,7 +109,7 @@ void SceneGraph::nodePartalyInsideFrusturm( SceneNode *node, const Frustrum &fru
 {
     const auto &objects = node->getObjects();
     for( SceneObject *object : objects ) {
-        if( frustrum.isInside(object->getBoundingSphere()) != Frustrum::TestStatus::Outside ) {
+        if( frustrum.isInside(object->getTransformedBoundingSphere()) != Frustrum::TestStatus::Outside ) {
             result.push_back( object );
         }
     }

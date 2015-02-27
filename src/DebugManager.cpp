@@ -62,6 +62,22 @@ std::string demangleName( const char *name )
 
 #endif
 
+static const glm::vec4 COLOR_WIREFRAME = glm::vec4(0.1f,1.f,0.5f,1.f),
+                       COLOR_NORMAL = glm::vec4(0.5f,0.2f,0.2f,1.f),
+                       COLOR_TANGENT = glm::vec4(0.2f,0.5f,0.2f,1.f),
+                       COLOR_BITANGENT = glm::vec4(0.2f,0.2f,0.5f,1.f),
+                       COLOR_BOUNDS = glm::vec4(0.5f,0.2f,0.2f,1.f),
+                       COLOR_INNER_LIGHT_VOLUME = glm::vec4(0.2,0.2f,0.5f,1.f),
+                       COLOR_OUTER_LIGHT_VOLUME = glm::vec4(0.2,0.5f,0.2f,1.f),
+                       COLOR_PARENT_SCENENODES =  glm::vec4(0.5f,0.5f,0.2f,1.f),
+                       COLOR_SAVED_FRUSTRUM =  glm::vec4(0.8f,0.3f,0.8f,1.f),
+                       COLOR_FRUSTUM_TEST_OUTSIDE = glm::vec4(0.8f,0.3f,0.3f,1.f),
+                       COLOR_FRUSTUM_TEST_INTERSECTING = glm::vec4(0.4f,0.2f,0.8f,1.f),
+                       COLOR_FRUSTUM_TEST_INSIDE = glm::vec4(0.3f,0.8f,0.5f,1.f);
+
+static const float NORMAL_LENGHT = 0.1f;
+                       
+
 class DebugManager::DebugCamera :
     public Camera
 {
@@ -193,13 +209,11 @@ void DebugManager::update( float dt )
                     
                     ImGui::Checkbox( "Show SceneGraph", &mShowSceneGraph );
                     ImGui::SameLine();
-                    ImGui::Checkbox( "As Boxes", &mShowSceneNodesAsBoxes );
+                    ImGui::Checkbox( "Color Test", &mShowBoundsInFrustrumColor );
                     
-                    ImGui::Checkbox( "Show Frustrum Tests", &mShowFrustrumTests );
+                    ImGui::Checkbox( "Nodes As Boxes", &mShowSceneNodesAsBoxes );
                     ImGui::SameLine();
-                    ImGui::Checkbox( "Only Objects", &mShowFrustrumTestsOnlyObjects );
-                    ImGui::SameLine();
-                    ImGui::Checkbox( "Parents", &mShowFrustrumTestsParents );
+                    ImGui::Checkbox( "Adjust Size", &mAdjustSceneNodesSize );
                     
                     ImGui::Checkbox( "Used Saved Frustrum", &mUseSavedFrustrum );
                     ImGui::SameLine();
@@ -207,6 +221,7 @@ void DebugManager::update( float dt )
                         Camera *camera = sceneMgr->getCamera();
                         if( camera ) {
                             mSavedViewProjMatrix = camera->getProjectionMatrix() * camera->getViewMatrix();
+                            mSavedFrustrum = Frustrum::FromProjectionMatrix( mSavedViewProjMatrix );
                         }
                     }
                     ImGui::SameLine();
@@ -223,6 +238,18 @@ void DebugManager::update( float dt )
         }
         ImGui::End();
     }
+    
+    if( mUseSavedFrustrum ) {
+        mCurrentFrustrum = mSavedFrustrum;
+    }
+    else {
+        SceneManager *sceneMgr = mRoot->getSceneManager();
+        Camera *camera = sceneMgr->getCamera();
+        if( camera ) {
+            mCurrentFrustrum = camera->getFrustrum();
+        }
+    }
+    
     submitDebugDraw();
 }
 
@@ -663,26 +690,25 @@ void DebugManager::submitDebugDraw()
         SceneObject *object = entry.first;
         
         if( info.mesh && info.wireFrame ) {
-            debugDrawer->drawWireFrame( info.mesh, object->getTransform() );
+            debugDrawer->drawWireFrame( info.mesh, object->getTransform(), COLOR_WIREFRAME );
         }
         if( info.mesh && info.normals ) {
-            debugDrawer->drawVertexNormals( info.mesh, object->getTransform() );
+            debugDrawer->drawVertexNormals( info.mesh, object->getTransform(), NORMAL_LENGHT, COLOR_NORMAL, COLOR_TANGENT, COLOR_BITANGENT );
         }
         if( info.bounds ) {
-            const BoundingSphere &bounds = object->getTransformedBoundingSphere();
-            debugDrawer->drawWireSphere( bounds.getRadius(), glm::translate(glm::mat4(),bounds.getCenter()), glm::vec4(0.5f,0.2f,0.2f,0.1f) );
+            showObjectBounds( object, COLOR_BOUNDS );
         }
         if( info.debugLight ) {
             LightObject *light = dynamic_cast<LightObject*>(object);
             if( light ) {
-                debugDrawer->drawWireFrame( light->getInnerLightVolumeMesh(), light->getTransform()*light->getInnerLightVolumeMatrix(), glm::vec4(0.2,0.2f,0.5f,0.1f) );
-                debugDrawer->drawWireFrame( light->getOuterLightVolumeMesh(), light->getTransform()*light->getOuterLightVolumeMatrix(), glm::vec4(0.2,0.5f,0.2f,0.1f) );
+                debugDrawer->drawWireFrame( light->getInnerLightVolumeMesh(), light->getTransform()*light->getInnerLightVolumeMatrix(), COLOR_INNER_LIGHT_VOLUME );
+                debugDrawer->drawWireFrame( light->getOuterLightVolumeMesh(), light->getTransform()*light->getOuterLightVolumeMatrix(), COLOR_OUTER_LIGHT_VOLUME );
             }
         }
         if( info.parentSceneNodes ) {
             SceneNode *node = object->_getParent();
             while( node ) {
-                showSceneNode( node, glm::vec4(0.5f,0.5f,0.2f,0.1f) );
+                showSceneNode( node, COLOR_PARENT_SCENENODES );
                 node  = node->getParent();
             }
         }
@@ -695,14 +721,11 @@ void DebugManager::submitDebugDraw()
         if( scene ) {
             int index = 0;
             scene->forEachObject(
-                [debugDrawer,&index]( SceneObject *object ) {
-                    
+                [&]( SceneObject *object ) {
                     glm::vec4 color( glm::fract(index*0.13f+0.19f), 0.8f, 0.8f, 0.5f );
                     ImGui::ColorConvertHSVtoRGB( color.r, color.g, color.b, color.r, color.g, color.b );
                     
-                    const BoundingSphere &bounds = object->getTransformedBoundingSphere();
-                    debugDrawer->drawWireSphere( bounds.getRadius(), glm::translate(glm::mat4(),bounds.getCenter()), color );
-                    
+                    showObjectBounds( object, color );
                     index++;
                 }
             );
@@ -733,28 +756,9 @@ void DebugManager::submitDebugDraw()
             visitor( 0, 0, graph->getRootNode() );
         }
     }
-    if( mShowFrustrumTests ) {
-        SceneManager *sceneMgr = mRoot->getSceneManager();
-        Camera *camera = sceneMgr->getCamera();
-        Scene *scene = sceneMgr->getScene();
-        
-        if( scene && camera ) {
-            SceneGraph *graph = scene->getSceneGraph();
-            SceneNode *root = graph->getRootNode();
-            
-            if( mUseSavedFrustrum ) {
-                Frustrum frustrum = Frustrum::FromProjectionMatrix( mSavedViewProjMatrix );
-                showFrustrumTests( frustrum, root );
-            }
-            else {
-                showFrustrumTests( camera->getFrustrum(), root );
-            }
-            
-        }
-    }
     if( mShowSavedFrustrum ) {
         glm::mat4 modelMatrix = glm::inverse( mSavedViewProjMatrix );
-        debugDrawer->drawWireBox( glm::vec3(1.f), modelMatrix, glm::vec4(0.8f,0.3f,0.8f,0.1f) );
+        debugDrawer->drawWireBox( glm::vec3(1.f), modelMatrix, COLOR_SAVED_FRUSTRUM );
     }
 }
 
@@ -763,11 +767,21 @@ void DebugManager::showSceneNode( SceneNode *node, const glm::vec4 &color )
     const BoundingSphere &bounds = node->getBounds();
     DebugDrawer *debugDrawer = mRoot->getDebugDrawer();
     
+    float radius = bounds.getRadius();
+    if( mAdjustSceneNodesSize ) {
+        radius *= 0.5f;
+    }
+    
+    glm::vec4 realColor = color;
+    if( mShowBoundsInFrustrumColor ) {
+        realColor = getColorFromFrustrumTest( bounds );
+    }
+    
     if( mShowSceneNodesAsBoxes ) {
-        debugDrawer->drawWireBox( glm::vec3(bounds.getRadius()*glm::one_over_root_two<float>()), glm::translate(glm::mat4(),bounds.getCenter()), color );
+        debugDrawer->drawWireBox( glm::vec3(radius*glm::one_over_root_two<float>()), glm::translate(glm::mat4(),bounds.getCenter()), realColor );
     }
     else {
-        debugDrawer->drawWireSphere( bounds.getRadius(), glm::translate(glm::mat4(),bounds.getCenter()), color );
+        debugDrawer->drawWireSphere( radius, glm::translate(glm::mat4(),bounds.getCenter()), realColor );
     }
 }
 
@@ -776,89 +790,28 @@ void DebugManager::showObjectBounds( SceneObject *object, const glm::vec4 &color
     const BoundingSphere &bounds = object->getTransformedBoundingSphere();
     DebugDrawer *debugDrawer = mRoot->getDebugDrawer();
     
-    debugDrawer->drawWireSphere( bounds.getRadius(), glm::translate(glm::mat4(),bounds.getCenter()), color );
+    glm::vec4 realColor = color;
+    if( mShowBoundsInFrustrumColor ) {
+        realColor = getColorFromFrustrumTest( bounds );
+    }
+    
+    debugDrawer->drawWireSphere( bounds.getRadius(), glm::translate(glm::mat4(),bounds.getCenter()), realColor );
 }
 
-
-void DebugManager::showFrustrumTests( const Frustrum &frustrum, SceneNode *node )
+glm::vec4 DebugManager::getColorFromFrustrumTest( const BoundingSphere &bounds )
 {
-    bool isOutside = frustrum.isInside(node->getBounds()) == Frustrum::TestStatus::Outside;
-    if( isOutside ) {
-        showFrustrumTestOutside( node );
-        return;
-    }
-    
-    if( !mShowFrustrumTestsOnlyObjects ) {
-        showFrustrumTestNode( frustrum, node );
-    }
-    
-    for( SceneObject *object : node->getObjects() ) {
-        Frustrum::TestStatus result = frustrum.isInside( object->getTransformedBoundingSphere() );
-        
-        switch( result ) {
-        case( Frustrum::TestStatus::Outside ):
-            showObjectBounds( object, glm::vec4(0.8f,0.3f,0.3f,0.1f) );
-            break;
-        case( Frustrum::TestStatus::Intersecting ):
-            showObjectBounds( object, glm::vec4(0.4f,0.2f,0.8f,0.1f) );
-            break;
-        case( Frustrum::TestStatus::Inside ):
-            showObjectBounds( object, glm::vec4(0.3f,0.8f,0.5f,0.1f) );
-            break;
-        }
-        
-        if( mShowFrustrumTestsParents ) {
-            SceneNode *parent = node;
-            while( parent ) {
-                showFrustrumTestNode( frustrum, parent );
-                parent = parent->getParent();
-            }
-        }
-    }
-    
-    SceneNode *children = node->getChildren();
-    if( children ) {
-        for( int i=0; i < 8; ++i ) {
-            showFrustrumTests( frustrum, &children[i] );
-        }
-    }
-}
-
-void DebugManager::showFrustrumTestNode( const Frustrum &frustrum, SceneNode *node )
-{
-    Frustrum::TestStatus result = frustrum.isInside( node->getBounds() );
- 
+    Frustrum::TestStatus result = mCurrentFrustrum.isInside( bounds );
     switch( result ) {
     case( Frustrum::TestStatus::Outside ):
-        showSceneNode( node, glm::vec4(0.5f,0.2f,0.2f,0.1f) );
-        break;
+        return COLOR_FRUSTUM_TEST_OUTSIDE;
     case( Frustrum::TestStatus::Intersecting ):
-        showSceneNode( node, glm::vec4(0.5f,0.2f,0.5f,0.1f) );
-        break;
+        return COLOR_FRUSTUM_TEST_INTERSECTING;
     case( Frustrum::TestStatus::Inside ):
-        showSceneNode( node, glm::vec4(0.2f,0.5f,0.5f,0.1f) );
-        break;
+        return COLOR_FRUSTUM_TEST_INSIDE;
     }
+    
+    return glm::vec4();
 }
-
-void DebugManager::showFrustrumTestOutside( SceneNode *node )
-{
-    showSceneNode( node, glm::vec4(0.5f,0.2f,0.2f,0.1f) );
-    
-    SceneNode *children = node->getChildren();
-    if( children ) {
-        for( int i=0; i < 8; ++i ) {
-            showFrustrumTestOutside( children+i );
-        }
-    }
-    
-    for( SceneObject *object : node->getObjects() ) {
-        showObjectBounds( object, glm::vec4(0.8f,0.3f,0.3f,0.1f) );
-    }
-    
-}
-
-
 
 void RenderImGuiDrawLists( ImDrawList** const draw_lists, int count )
 {

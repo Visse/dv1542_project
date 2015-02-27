@@ -3,6 +3,7 @@
 #include "BaseManager.h"
 #include "FixedSizeTypes.h"
 #include "SharedPtr.h"
+#include "Frustrum.h"
 
 #include <map>
 #include <glm/mat4x4.hpp>
@@ -17,7 +18,6 @@ class VertexArrayObject;
 class SceneObject;
 class SceneNode;
 class Mesh;
-class Frustrum;
 
 
 class DebugManager :
@@ -39,9 +39,8 @@ private:
     void showSceneObject( float dt, SceneObject *object );
     void showSceneNode( SceneNode *node, const glm::vec4 &color );
     void showObjectBounds( SceneObject *object, const glm::vec4 &color );
-    void showFrustrumTests( const Frustrum &frustrum, SceneNode *node );
-    void showFrustrumTestNode( const Frustrum &frustrum, SceneNode *node );
-    void showFrustrumTestOutside( SceneNode *node );
+    
+    glm::vec4 getColorFromFrustrumTest( const BoundingSphere &bounds );
     
     void submitDebugDraw();
     
@@ -74,10 +73,9 @@ private:
     bool mIsDebugVisible = false,
          mShowSceneBounds = false,
          mShowSceneGraph = false,
+         mShowBoundsInFrustrumColor = false,
          mShowSceneNodesAsBoxes = true,
-         mShowFrustrumTests = false,
-         mShowFrustrumTestsOnlyObjects = true,
-         mShowFrustrumTestsParents = false,
+         mAdjustSceneNodesSize = false,
          mUseSavedFrustrum = false,
          mShowSavedFrustrum = false;
     
@@ -91,5 +89,7 @@ private:
     UniformBlock mUniforms;
     size_t mUniformBlockLoc;
     
+    Frustrum mCurrentFrustrum,
+             mSavedFrustrum;
     glm::mat4 mSavedViewProjMatrix;
 };
