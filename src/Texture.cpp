@@ -8,10 +8,16 @@
 
 #include <FreeImage.h>
 
-GLint getBoundTexture()
+GLint getBoundTexture2D()
 {
     GLint boundTexture;
     glGetIntegerv( GL_TEXTURE_BINDING_2D, &boundTexture );
+    return boundTexture;
+}
+GLint getBoundTextureCube()
+{
+    GLint boundTexture;
+    glGetIntegerv( GL_TEXTURE_BINDING_CUBE_MAP, &boundTexture );
     return boundTexture;
 }
 
@@ -44,6 +50,9 @@ TextureType stringToTextureType( const std::string &str )
     if( StringUtils::equalCaseInsensitive(str,"RGBA_SNORM") ) {
         return TextureType::RGBA_SNORM;
     }
+    if( StringUtils::equalCaseInsensitive(str,"CubeMap_RGB") ) {
+        return TextureType::CubeMap_RGB;
+    }
     
     throw std::runtime_error( StringUtils::strjoin("String isn't a TextureType (\"",str,"\")") );
 }
@@ -57,6 +66,7 @@ GLint typeToGLFormat( TextureType type )
     case( TextureType::RG ):
         return GL_RG8;
     case( TextureType::RGB ):
+    case( TextureType::CubeMap_RGB ):
         return GL_RGB8;
     case( TextureType::RGBA ):
         return GL_RGBA8;
@@ -74,7 +84,17 @@ GLint typeToGLFormat( TextureType type )
     throw std::runtime_error("Invalid texture type!");
 }
 
-GLint mipmapForSize( const glm::ivec2 &size )
+bool isCubeMap( TextureType type )
+{
+    switch( type ) {
+    case( TextureType::CubeMap_RGB ):
+        return true;
+    default:
+        return false;
+    }
+}
+
+GLint mipmapForSize( const glm::uvec2 &size )
 {
     int tmp = size.x | size.y;
     int levels = 1;
@@ -83,7 +103,7 @@ GLint mipmapForSize( const glm::ivec2 &size )
     
 }
 
-Texture::Texture( TextureType type, const glm::ivec2& size, GLuint glTexture ) :
+Texture::Texture( TextureType type, const glm::uvec2& size, GLuint glTexture ) :
     mGLTexture(glTexture),
     mType(type),
     mSize(size)
@@ -99,57 +119,77 @@ void Texture::bindTexture( int unit )
 {
     assert( unit >= 0 && unit < 15 );
     glActiveTexture( GL_TEXTURE0 + unit );
-    glBindTexture( GL_TEXTURE_2D, mGLTexture );
+    if( isCubeMap(mType) ) {
+        glBindTexture( GL_TEXTURE_CUBE_MAP, mGLTexture );
+    }
+    else {
+        glBindTexture( GL_TEXTURE_2D, mGLTexture );
+    }
 }
 
 void Texture::unbindTexture( int unit )
 {    
     assert( unit >= 0 && unit < 15 );
     glActiveTexture( GL_TEXTURE0 + unit );
+    if( isCubeMap(mType) ) {
 #ifdef USE_DEBUG_NORMAL
-    assert( getBoundTexture() == mGLTexture );
+        assert( getBoundTextureCube() == mGLTexture );
 #endif
-    glBindTexture( GL_TEXTURE_2D, 0 );
+        glBindTexture( GL_TEXTURE_CUBE_MAP, mGLTexture );
+    }
+    else {
+#ifdef USE_DEBUG_NORMAL
+        assert( getBoundTexture2D() == mGLTexture );
+#endif
+        glBindTexture( GL_TEXTURE_2D, 0 );
+    }
 }
 
-SharedPtr<Texture> createTextureFromFipImage( TextureType type, FIBITMAP *image, const std::string& source )
-{
+/// @todo FIXME this code needs some serius clean up....
+
+bool loadImageToGLTexture( GLint target, FIBITMAP *image, const glm::uvec2 &size )
+{    
     // not 100% sure that this is needed, but it makes it easier to know that the pixels is in bgra format :)
     image = FreeImage_ConvertTo32Bits(image);
     if( !image )
     {
-        throw std::runtime_error( StringUtils::strjoin("Failed to convert texture from ",source," to 32 bit!") );
+        return false;
     }
+    FreeImage_FlipVertical( image );
+    BYTE *bits = FreeImage_GetBits( image );
     
-    FreeImage_FlipVertical(image);
+    glTexSubImage2D( target, 0, 0, 0, size.x, size.y, GL_BGRA, GL_UNSIGNED_BYTE, bits );
+    FreeImage_Unload( image );
     
-    glm::ivec2 size( FreeImage_GetWidth(image), FreeImage_GetHeight(image) );
+    return true;
+}
+
+SharedPtr<Texture> createTextureFromFipImage( TextureType type, FIBITMAP *image )
+{
+    glm::uvec2 size( FreeImage_GetWidth(image), FreeImage_GetHeight(image) );
+    GLint mipmaps = mipmapForSize( size );
+    GLint internalFormat = typeToGLFormat( type );
     
     GLuint glTexture;
     glGenTextures( 1, &glTexture );
     glBindTexture( GL_TEXTURE_2D, glTexture );
     
-    GLint internalFormat = typeToGLFormat( type );
-    
-    int mipmaps = mipmapForSize( size );
-    BYTE *bits = FreeImage_GetBits( image );
-    
     glTexStorage2D( GL_TEXTURE_2D, mipmaps, internalFormat, size.x, size.y );
-    glTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, size.x, size.y, GL_BGRA, GL_UNSIGNED_BYTE, bits );
-//     glTexImage2D( GL_TEXTURE_2D, 0, internalFormat, size.x, size.y, 0, GL_BGRA, GL_UNSIGNED_BYTE, image.accessPixels() );
-
+    
+    if( !loadImageToGLTexture(GL_TEXTURE_2D, image, size) ) {
+        glDeleteTextures( 1, &glTexture );
+        return SharedPtr<Texture>();
+    }
+    
     glGenerateMipmap( GL_TEXTURE_2D );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
     
-    FreeImage_Unload( image );
-    
     return std::make_shared<Texture>( type, size, glTexture );
 }
 
-SharedPtr<Texture> Texture::LoadTexture( TextureType type, const std::string& filename )
+FIBITMAP* loadTexture( const std::string &filename ) 
 {
-    
     FREE_IMAGE_FORMAT filetype = FreeImage_GetFileType( filename.c_str() );
     if( filetype == FIF_UNKNOWN ){
         filetype = FreeImage_GetFIFFromFilename( filename.c_str() );
@@ -158,37 +198,121 @@ SharedPtr<Texture> Texture::LoadTexture( TextureType type, const std::string& fi
         throw std::runtime_error( StringUtils::strjoin("Failed to detect image format for file \"",filename,"\"") );
     }
     
-    FIBITMAP *image = FreeImage_Load( filetype, filename.c_str() );
-    
-    if( !image ) {
+    FIBITMAP *texture = FreeImage_Load( filetype, filename.c_str() );
+    if( !texture ) {
         throw std::runtime_error( StringUtils::strjoin("Failed to load texture from file \"",filename,"\"") );
     }
     
-    SharedPtr<Texture> texture = createTextureFromFipImage( type, image, StringUtils::strjoin("file \"",filename,"\"") );
+    return texture;
+}
+
+SharedPtr<Texture> createCubeMapTexture( TextureType type, const std::string &filename )
+{
+    std::string imageName, extension;
+    
+    {
+        size_t nameEnd = filename.find_last_of('.');
+        if( nameEnd != std::string::npos ) {
+            extension = filename.substr( nameEnd );
+        }
+        imageName = filename.substr( 0, nameEnd );
+    }
+    
+    
+    static const std::string FACE_NAMES[6] = 
+        {"Right", "Left", "Top", "Bottom", "Front", "Back"};
+        
+    GLuint texture;
+    glGenTextures( 1, &texture );
+    glBindTexture( GL_TEXTURE_CUBE_MAP, texture );
+    
+    bool createdTexture = false;
+    glm::uvec2 size;
+    
+    GLint internalFormat = typeToGLFormat( type );
+    
+    for( int i=0; i < 6; ++i ) {
+        std::string textureFaceName = StringUtils::strjoin( imageName, FACE_NAMES[i], extension );
+        
+        FIBITMAP *image = loadTexture( textureFaceName );
+        
+        if( !createdTexture ) {
+            size.x = FreeImage_GetWidth( image );
+            size.y = FreeImage_GetHeight( image );
+            
+            if( size.x != size.y ) {
+                FreeImage_Unload( image );
+                glDeleteTextures( 1, &texture );
+                throw std::runtime_error( "Invalid image size! - a cube map only accepts square textures." );
+            }
+            
+            GLint mipmaps = mipmapForSize( size );
+            glTexStorage2D( GL_TEXTURE_CUBE_MAP, mipmaps, internalFormat, size.x, size.y );
+            createdTexture = true;
+        }
+        
+        if( size.x != FreeImage_GetWidth(image) || size.y != FreeImage_GetHeight(image) ) {
+            FreeImage_Unload( image );
+            glDeleteTextures( 1, &texture );
+            throw std::runtime_error( "Invalid image size! - all images in the cubemap must have the same size." );
+        }
+        
+        if( !loadImageToGLTexture(GL_TEXTURE_CUBE_MAP_POSITIVE_X+i, image, size) ) {
+            FreeImage_Unload( image );
+            glDeleteTextures( 1, &texture );
+            throw std::runtime_error( "Failed to load image to cube face!" );
+        }   
+    }
+    
+    glGenerateMipmap( GL_TEXTURE_CUBE_MAP );
+    return makeSharedPtr<Texture>( type, size, texture );
+}
+
+SharedPtr<Texture> Texture::LoadTexture( TextureType type, const std::string& filename )
+{
+    if( isCubeMap(type) ) {
+        return createCubeMapTexture( type, filename );
+    }
+    
+    FIBITMAP *image = loadTexture( filename );
+    
+    SharedPtr<Texture> texture = createTextureFromFipImage( type, image );
     FreeImage_Unload( image );
+    
+    if( !texture ) {
+        throw std::runtime_error( StringUtils::strjoin("Failed to load image from file \"", filename,"\".") );
+    }
     
     return texture;
 }
 
 SharedPtr<Texture> Texture::LoadTextureFromMemory( TextureType type, const void *memory, size_t size )
 {
+    if( isCubeMap(type) ) {
+        throw std::runtime_error( "Cube maps isn't supported to be loaded from memory!" );
+    }
+    
     FIMEMORY *fimemory = FreeImage_OpenMemory( reinterpret_cast<BYTE*>(const_cast<void*>(memory)), size );
     
     FREE_IMAGE_FORMAT filetype = FreeImage_GetFileTypeFromMemory( fimemory );
     if( filetype == FIF_UNKNOWN ) {
+        FreeImage_CloseMemory( fimemory );
         throw std::runtime_error( StringUtils::strjoin("Failed to detect image format for memory!") );
     }
     
     FIBITMAP *image = FreeImage_LoadFromMemory( filetype, fimemory );
     FreeImage_CloseMemory( fimemory );
     
-    
     if( !image ) {
         throw std::runtime_error( "Failed to load texture from memory!" );
     }
-    SharedPtr<Texture> texture =  createTextureFromFipImage( type, image, "memory" );
-    
+    SharedPtr<Texture> texture =  createTextureFromFipImage( type, image );
     FreeImage_Unload( image );
+    
+    if( !texture ) {
+        throw std::runtime_error( "Failed to create texture from memory!" );
+    }
+    
     return texture;
 }
 
@@ -200,7 +324,7 @@ SharedPtr<Texture> Texture::LoadTextureFromRawMemory( TextureType type, const vo
     
     GLint internalFormat = typeToGLFormat( type );
     
-    glm::ivec2 size(width,height);
+    glm::uvec2 size(width,height);
     int mipmaps = mipmapForSize( size );
     
     glTexStorage2D( GL_TEXTURE_2D, mipmaps, internalFormat, size.x, size.y );
@@ -213,7 +337,7 @@ SharedPtr<Texture> Texture::LoadTextureFromRawMemory( TextureType type, const vo
     return makeSharedPtr<Texture>( type, size, glTexture );
 }
 
-SharedPtr<Texture> Texture::CreateTexture( TextureType type, const glm::ivec2& size, GLuint mipmaps )
+SharedPtr<Texture> Texture::CreateTexture( TextureType type, const glm::uvec2& size, GLuint mipmaps )
 {
     GLuint glTexture;
     GLint internalFormat = typeToGLFormat( type );
@@ -226,8 +350,6 @@ SharedPtr<Texture> Texture::CreateTexture( TextureType type, const glm::ivec2& s
     }
     
     glTexStorage2D( GL_TEXTURE_2D, mipmaps, internalFormat, size.x, size.y );
-//     glTexImage2D( GL_TEXTURE_2D, 0, format, size.x, size.y, 0, format, GL_UNSIGNED_BYTE, NULL );
-//     glGenerateMipmap( GL_TEXTURE_2D );
     
     if( mipmaps > 1 ) {
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );

@@ -47,7 +47,18 @@ class LightFactory :
 {
 public:
     LightFactory( Root *root );
-    virtual SceneObject *createObject(const Yaml::Node& node);
+    virtual SceneObject *createObject( const Yaml::Node& node ) override;
+    
+private:
+    Root *mRoot;
+};
+
+class SkyBoxFactory :
+    public SceneObjectFactory
+{
+public:
+    SkyBoxFactory( Root *root );
+    virtual SceneObject* createObject( const Yaml::Node& node ) override;
     
 private:
     Root *mRoot;

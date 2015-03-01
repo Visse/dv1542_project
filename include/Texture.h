@@ -22,21 +22,23 @@ enum class TextureType
     
     // [-1,1] 8 bits formats
     RGB_SNORM,
-    RGBA_SNORM
+    RGBA_SNORM,
+    
+    CubeMap_RGB
 };
 
 TextureType stringToTextureType( const std::string &str );
-    
+
 class Texture
 {
 public:
     static SharedPtr<Texture> LoadTexture( TextureType type, const std::string &filename );
     static SharedPtr<Texture> LoadTextureFromMemory( TextureType, const void *memory, size_t size );
     static SharedPtr<Texture> LoadTextureFromRawMemory( TextureType, const void *pixels, size_t width, size_t height );
-    static SharedPtr<Texture> CreateTexture( TextureType type, const glm::ivec2 &size, GLuint mipmaps = 0 );
+    static SharedPtr<Texture> CreateTexture( TextureType type, const glm::uvec2 &size, GLuint mipmaps = 0 );
 
 public:
-    Texture( TextureType type, const glm::ivec2 &size, GLuint glTexture );
+    Texture( TextureType type, const glm::uvec2 &size, GLuint glTexture );
     ~Texture();
     
     Texture( const Texture& ) = delete;
@@ -56,7 +58,7 @@ public:
 private:
     GLuint mGLTexture;
     TextureType mType;
-    glm::ivec2 mSize;
+    glm::uvec2 mSize;
 };
 
 #endif

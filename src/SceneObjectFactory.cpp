@@ -5,6 +5,7 @@
 #include "ResourceManager.h"
 #include "ComputeParticleSystem.h"
 #include "LightObject.h"
+#include "SkyBox.h"
 
 #include <yaml-cxx/YamlCxx.h>
 
@@ -117,4 +118,27 @@ SceneObject *LightFactory::createObject( const Yaml::Node &node )
     return nullptr;
 }
 
+
+SkyBoxFactory::SkyBoxFactory( Root *root ) :
+    mRoot(root)
+{
+}
+
+SceneObject *SkyBoxFactory::createObject( const Yaml::Node &node )
+{
+    Yaml::MappingNode config = node.asMapping();
+    
+    ResourceManager *resourceMgr = mRoot->getResourceManager();
+    
+    std::string materialName = config.getFirstValue("Material").asValue().getValue();
+    SharedPtr<Material> material = resourceMgr->getMaterialAutoPack( materialName );
+    
+    if( material ) {
+        return new SkyBox( mRoot, material );
+    }
+    
+    /// @todo add proper logging
+    std::cerr << "Failed to create SkyBox: Failed to load material \"" << materialName << "\"." << std::endl;
+    return nullptr;
+}
 

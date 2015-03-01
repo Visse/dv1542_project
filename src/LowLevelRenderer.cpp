@@ -37,7 +37,7 @@ LowLevelRenderer::LowLevelRenderer( Root *root ) :
     unsigned int width = config->defferedBufferWidth,
                  height = config->defferedBufferHeight;
          
-    glm::ivec2 size( width, height );
+    glm::uvec2 size( width, height );
          
     mDeferredDiffuseTexture  = Texture::CreateTexture( TextureType::RGBA, size, 1 );
     mDeferredNormalTexture   = Texture::CreateTexture( TextureType::RGB_SNORM, size, 1 );

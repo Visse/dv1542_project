@@ -6,16 +6,25 @@
 
 #include <cassert>
 
-SceneGraph::SceneGraph( Root *root, float sceneSize ) :
+SceneGraph::SceneGraph( Root *root, const BoundingSphere &rootBounds ) :
     mRoot(root)
 {
     mRootNode.reset( new SceneNode );
     mRootNode->_init( this, nullptr );
+   
     
-    mRootNode->_setBounds( BoundingSphere(glm::vec3(),sceneSize*2.f) );
+    glm::vec3 center = rootBounds.getCenter();
+    float radius = rootBounds.getRadius();
+    
+    // we need to be a power of 2
+    float maxNodeLevel = glm::ceil( glm::log2(radius) );
+    radius = glm::pow( 2.f, maxNodeLevel );
+    
+    mRootNode->_setBounds( BoundingSphere(center, radius) );
     mSceneNodes.push_back( mRootNode.get() );
     
-    mMaxNodeLevel = glm::ceil( glm::log2(sceneSize) );
+    mMaxNodeLevel = ((int)maxNodeLevel) - 1 ;
+    mRootPosition = rootBounds.getCenter();
 }
 
 void SceneGraph::addObject( SceneObject *object )
@@ -126,7 +135,8 @@ void SceneGraph::nodePartalyInsideFrusturm( SceneNode *node, const Frustrum &fru
 SceneNode* SceneGraph::getOrCreateNodeForBound( const BoundingSphere &bounds )
 {
     float radius = bounds.getRadius();
-    glm::vec3 position = bounds.getCenter();
+    glm::vec3 position = bounds.getCenter() - mRootPosition;
+    
     int level = mMaxNodeLevel - mMinNodeLevel;
     if( radius > 0 ) {
         level = mMaxNodeLevel - glm::max<int>( glm::ceil(glm::log2(radius)), mMinNodeLevel );

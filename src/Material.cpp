@@ -334,7 +334,7 @@ SharedPtr<Material> Material::LoadFromFile( const std::string &filename, Resourc
         }
         else {
             // @todo add propper logging for missing texture
-            std::cerr << "Missing texture \"" << textureName << "\" for material \"" << filename;
+            std::cerr << "Missing texture \"" << textureName << "\" for material \"" << filename << std::endl;
         }
     }
     

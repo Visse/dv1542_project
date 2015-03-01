@@ -67,6 +67,10 @@ SharedPtr<Scene> Scene::LoadFromFile( Root *root, const std::string &filename )
                 scene->addObject( object, true );
             }
         }
+        else {
+            /// @todo add proper logging
+            std::cerr << "[Scene] No factory registred for type \"" << type << "\"." << std::endl;
+        }
     }
     
     return scene;

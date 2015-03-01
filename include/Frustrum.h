@@ -62,13 +62,11 @@ private:
             distances[i] = glm::dot(mPlanes[i], center);
         }
         
-        for( int i=0; i < 6; ++i ) {
-            if( distances[i] < -radius ) {
-                return TestStatus::Outside;
-            }
-            if( glm::abs(distances[i]) < radius ) {
-                return TestStatus::Intersecting;
-            }
+        for( float d : distances ) {
+            if( d < -radius ) return TestStatus::Outside;
+        }
+        for( float d : distances ) {
+            if( glm::abs(d) < radius ) return TestStatus::Intersecting;
         }
         
         return TestStatus::Inside;

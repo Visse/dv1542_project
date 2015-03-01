@@ -9,7 +9,7 @@ class Frustrum;
 
 class SceneGraph {
 public:
-    SceneGraph( Root *root, float sceneSize = 30.f );
+    SceneGraph( Root *root, const BoundingSphere &rootBounds = BoundingSphere(glm::vec3(-10,-10,-10),64.f) );
     
     void addObject( SceneObject *object );
     void removeObject( SceneObject *object );
@@ -48,6 +48,7 @@ private:
 private:
     Root *mRoot;
     SceneNodePtr mRootNode;
+    glm::vec3 mRootPosition;
     std::vector<SceneNode*> mSceneNodes;
     std::vector<SceneNodeBlockPtr> mChildBlocks;
     
