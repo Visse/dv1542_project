@@ -25,6 +25,7 @@ class DebugManager :
 {
 public:
     virtual bool init( Root *root ) override;
+    virtual void postInit() override;
     virtual void destroy() override;
     
     virtual void update( float dt );
@@ -63,6 +64,12 @@ private:
         glm::mat4 projectionMatrix;
     };
     
+    enum class GBufferDebug {
+        None,
+        Normal,
+        Depth
+    };
+    
     class DebugCamera;
 private:
     Root *mRoot = nullptr;
@@ -92,4 +99,7 @@ private:
     Frustrum mCurrentFrustrum,
              mSavedFrustrum;
     glm::mat4 mSavedViewProjMatrix;
+    
+    GBufferDebug mGBufferDebug = GBufferDebug::None;
+    SharedPtr<Material> mGBufferNormalMaterial, mGBufferDepthMaterial;
 };

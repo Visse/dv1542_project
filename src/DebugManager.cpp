@@ -147,10 +147,25 @@ bool DebugManager::init( Root *root )
     GraphicsManager *graphicsMgr = mRoot->getGraphicsManager();
     graphicsMgr->addCamera( mCamera );
     
+    mGBufferNormalMaterial = resourceMgr->getMaterialAutoPack( "GBufferDebugNormalMaterial" );
+    mGBufferDepthMaterial = resourceMgr->getMaterialAutoPack( "GBufferDebugDepthMaterial" );
+
     StartupMesurements *mesurements = mRoot->getStartupMesurements();
     mesurements->debugStartup = initTimer.getTimeAsSeconds();
     
     return true;
+}
+
+void DebugManager::postInit()
+{    
+    GraphicsManager *graphicsMgr = mRoot->getGraphicsManager();
+    LowLevelRenderer &renderer = graphicsMgr->getLowLevelRenderer();
+    if( mGBufferNormalMaterial ) {
+        mGBufferNormalMaterial->setTexture( "NormalTexture", 0, renderer.getDeferredNormalTexture() );
+    }
+    if( mGBufferDepthMaterial ) {
+        mGBufferDepthMaterial->setTexture( "DepthTexture", 0, renderer.getDeferredDepthTexture() );
+    }
 }
 
 void DebugManager::destroy()
@@ -226,6 +241,19 @@ void DebugManager::update( float dt )
                     }
                     ImGui::SameLine();
                     ImGui::Checkbox( "Show Saved Frustrum", &mShowSavedFrustrum );
+                    
+                    if( ImGui::TreeNode("Show GBuffer") ) {
+                        if( ImGui::RadioButton("None", mGBufferDebug == GBufferDebug::None) ) {
+                            mGBufferDebug = GBufferDebug::None;
+                        }
+                        if( ImGui::RadioButton("Normals", mGBufferDebug == GBufferDebug::Normal) ) {
+                            mGBufferDebug = GBufferDebug::Normal;
+                        }
+                        if( ImGui::RadioButton("Depth", mGBufferDebug == GBufferDebug::Depth) ) {
+                            mGBufferDebug = GBufferDebug::Depth;
+                        }
+                        ImGui::TreePop();
+                    }
                 }
                 
                 
@@ -396,35 +424,59 @@ struct ImGuiRenderData {
 
 void DebugManager::render( LowLevelRenderer &renderer )
 {
-    if( !mIsDebugVisible ) return;
+    if( mIsDebugVisible ) {
+        
+        ImGui::Render();
+        
+        QueueOperationParams params;
+            params.material = mMaterial.get();
+            params.vao = mVAO.get();
+            params.drawMode = DrawMode::Triangles;
+            params.renderQueue = RQ_Overlay;
+            params.scissorTest = true;
+            params.faceCulling = false;
+            
+            
+        auto uniforms = renderer.aquireUniformBuffer( sizeof(UniformBlock) );
+        uniforms.setIndex( mUniformBlockLoc );
+        uniforms.setRawContent( 0, &mUniforms, sizeof(UniformBlock) );
+        params.uniforms[0] = uniforms;
+            
+        ImGuiIO &io = ImGui::GetIO();
+        ImGuiRenderData *renderData = static_cast<ImGuiRenderData*>(io.UserData);
+        
+        for( const DrawInfo &draw : renderData->draws ) {
+            params.vertexStart = draw.vertexStart;
+            params.vertexCount = draw.vertexCount;
+            
+            params.scissorPos = glm::vec2( draw.scissorPos.x, mHeight-draw.scissorPos.y );
+            params.scissorSize = draw.scissorSize;
+            
+            renderer.queueOperation( params );
+        }
+    }
     
-    ImGui::Render();
-    
-    QueueOperationParams params;
-        params.material = mMaterial.get();
-        params.vao = mVAO.get();
-        params.drawMode = DrawMode::Triangles;
-        params.renderQueue = RQ_Overlay;
-        params.scissorTest = true;
-        params.faceCulling = false;
-        
-        
-    auto uniforms = renderer.aquireUniformBuffer( sizeof(UniformBlock) );
-    uniforms.setIndex( mUniformBlockLoc );
-    uniforms.setRawContent( 0, &mUniforms, sizeof(UniformBlock) );
-    params.uniforms[0] = uniforms;
-        
-    ImGuiIO &io = ImGui::GetIO();
-    ImGuiRenderData *renderData = static_cast<ImGuiRenderData*>(io.UserData);
-    
-    for( const DrawInfo &draw : renderData->draws ) {
-        params.vertexStart = draw.vertexStart;
-        params.vertexCount = draw.vertexCount;
-        
-        params.scissorPos = glm::vec2( draw.scissorPos.x, mHeight-draw.scissorPos.y );
-        params.scissorSize = draw.scissorSize;
+    switch( mGBufferDebug ) {
+    case( GBufferDebug::None ):
+        break;
+    case( GBufferDebug::Normal ): {
+        QueueOperationParams params;
+            params.material = mGBufferNormalMaterial.get();
+            params.drawMode = DrawMode::Points;
+            params.renderQueue = RQ_OverlayFirst;
+            params.vertexCount = 1;
+            
+        renderer.queueOperation( params );
+      } break;
+    case( GBufferDebug::Depth ): {
+        QueueOperationParams params;
+            params.material = mGBufferDepthMaterial.get();
+            params.drawMode = DrawMode::Points;
+            params.renderQueue = RQ_OverlayFirst;
+            params.vertexCount = 1;
         
         renderer.queueOperation( params );
+      } break;
     }
 }
 

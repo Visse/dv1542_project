@@ -71,7 +71,14 @@ public:
     const ValueHistory<int>& getVertexCountHistory () {
         return mVertexCountHistory;
     }
-
+    
+    SharedPtr<Texture> getDeferredNormalTexture() {
+        return mDeferredNormalTexture;
+    }
+    SharedPtr<Texture> getDeferredDepthTexture() {
+        return mDeferredDepthTexture;
+    }
+    
 private:
     struct UniformBlockInfo {
         GLuint buffer;
