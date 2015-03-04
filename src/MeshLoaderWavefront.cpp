@@ -99,20 +99,29 @@ void MeshLoaderWavefront::parseVertexNormal( const std::string &line )
 void MeshLoaderWavefront::parseFace( const std::string &line )
 {
     auto vertexes = StringUtils::split( line, std::vector<std::string>{" "} );
-    if( vertexes.size() != 4 ) { // f [v1] [v2] [v3]
+    if( vertexes.size() < 4 ) { // f [v1] [v2] [v3]
         throw std::runtime_error( StringUtils::strjoin("Invalid face!, expected format is \"f [v1] [v2] [v3]\", line ",mParseInfo.currentLine," says: \"",line,"\".") );
     }
     auto iter = vertexes.begin(), end = vertexes.end();
     int index = 0;
     Face face;
+    face.material = mParseInfo.currentMaterial;
     for( ++iter; iter != end; ++iter, ++index ) {
         if( !parseVertex(*iter, index, face) ) {
             throw std::runtime_error( StringUtils::strjoin("Invalid face vertex!, expected format is \"[position]/[texcoord]/[normal]\", line ",mParseInfo.currentLine," says: \"",line,"\".") );
         }
+        if( index == 2 ) {
+            mParseInfo.faces.push_back( face );
+            
+            // for faces wiht more than 3 vertexes, we split it up using a triangle fan
+            // aka the first triangle have the vertexes [0][1][2], the second [0][2][3], and so fourth
+            face.position[1] = face.position[2];
+            face.normal[1] = face.normal[2];
+            face.texcoord[1] = face.texcoord[2];
+            
+            index--;
+        }
     }
-    
-    face.material = mParseInfo.currentMaterial;
-    mParseInfo.faces.push_back( face );
 }
 
 bool MeshLoaderWavefront::parseVec2( const std::string &line, glm::vec2 &vec )
