@@ -58,10 +58,8 @@ public:
         
         glGenBuffers( 1, &buffer.buffer );
         glBindBuffer( GL_UNIFORM_BUFFER, buffer.buffer );
-        
-        glBufferStorage( GL_UNIFORM_BUFFER, bufSize, NULL, 
-                         GL_MAP_WRITE_BIT // we will write to it by mapping it
-        );
+
+        glBufferData( GL_UNIFORM_BUFFER, bufSize, NULL, GL_DYNAMIC_DRAW );
         mBuffers.push_back( buffer );
         
         BufferInfo &tmp = mBuffers.back();

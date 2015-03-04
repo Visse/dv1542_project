@@ -148,26 +148,15 @@ void GraphicsManager::render()
         glEndQuery( GL_TIME_ELAPSED );
         glEndQuery( GL_SAMPLES_PASSED );
         
-        GLint resultAvailable = -1;
+        GLint result = -1;
         int index = (mCurrentQuary+1)%mNumOfQuaryObjects;
-        glGetQueryObjectiv( mTimeQuaryObjects[index], GL_QUERY_RESULT_NO_WAIT, &resultAvailable );
+        glGetQueryObjectiv( mTimeQuaryObjects[index], GL_QUERY_RESULT, &result );
         
-        if( resultAvailable != -1 ) {
-            mGpuTimes.pushValue( (double)(resultAvailable) / 1000000.0 );
-        }
-        else {
-            std::cout << "Need more quary objects!";
-        }
+        mGpuTimes.pushValue( (double)(result) / 1000000.0 );
         
-        resultAvailable = -1;
-        glGetQueryObjectiv( mSamplesQuaryObjects[index], GL_QUERY_RESULT_NO_WAIT, &resultAvailable );
+        glGetQueryObjectiv( mSamplesQuaryObjects[index], GL_QUERY_RESULT, &result );
         
-        if( resultAvailable != -1 ) {
-            mSamplePassed.pushValue( (double)(resultAvailable)/10000.0 );
-        }
-        else {
-            std::cout << "Need more quary objects!";
-        }
+        mSamplePassed.pushValue( (double)(result)/10000.0 );
         
         mCurrentQuary++;
         mCurrentQuary %= mNumOfQuaryObjects;
