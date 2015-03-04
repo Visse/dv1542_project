@@ -142,7 +142,7 @@ void ComputeParticleSystem::queueRenderable( LowLevelRenderer &renderer )
         uniforms.modelMatrix = getTransform();
         uniforms.intensityAndSize = glm::vec2(mIntensity,mPointSize);
     
-    QueueOperationParams params;
+    LowLevelOperationParams params;
         params.material = mMaterial.get();
         params.vao = &mVAO;
         params.vertexStart = 0;
@@ -157,7 +157,7 @@ void ComputeParticleSystem::queueRenderable( LowLevelRenderer &renderer )
         AttractorUniformBlock uniforms;
             uniforms.modelMatrix = getTransform();
         
-        QueueOperationParams params;
+        LowLevelOperationParams params;
             params.material = mAttractorMaterial.get();
             params.vao = &mAttractorVAO;
             params.vertexStart = 0;

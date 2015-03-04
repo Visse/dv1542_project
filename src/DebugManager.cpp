@@ -428,7 +428,7 @@ void DebugManager::render( LowLevelRenderer &renderer )
         
         ImGui::Render();
         
-        QueueOperationParams params;
+        LowLevelOperationParams params;
             params.material = mMaterial.get();
             params.vao = mVAO.get();
             params.drawMode = DrawMode::Triangles;
@@ -460,7 +460,7 @@ void DebugManager::render( LowLevelRenderer &renderer )
     case( GBufferDebug::None ):
         break;
     case( GBufferDebug::Normal ): {
-        QueueOperationParams params;
+        LowLevelOperationParams params;
             params.material = mGBufferNormalMaterial.get();
             params.drawMode = DrawMode::Points;
             params.renderQueue = RQ_OverlayFirst;
@@ -469,7 +469,7 @@ void DebugManager::render( LowLevelRenderer &renderer )
         renderer.queueOperation( params );
       } break;
     case( GBufferDebug::Depth ): {
-        QueueOperationParams params;
+        LowLevelOperationParams params;
             params.material = mGBufferDepthMaterial.get();
             params.drawMode = DrawMode::Points;
             params.renderQueue = RQ_OverlayFirst;

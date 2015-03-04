@@ -26,7 +26,7 @@ class UniformBufferAllocator;
 static const size_t MAX_UNIFORM_BLOCK_COUNT = 8;
 
 
-struct QueueOperationParams {
+struct LowLevelOperationParams {
     Material *material = nullptr;
     VertexArrayObject *vao = nullptr;
     GpuBuffer *indexBuffer = nullptr;
@@ -50,7 +50,7 @@ public:
     LowLevelRenderer( Root *root );
     ~LowLevelRenderer();
     
-    void queueOperation( const QueueOperationParams &params );
+    void queueOperation( const LowLevelOperationParams &params );
     void flush();
     
     // returns a temporary buffer that is valid until flush() is called.

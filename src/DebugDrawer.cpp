@@ -118,7 +118,7 @@ void DebugDrawer::queueRenderable( LowLevelRenderer &renderer )
 
 void DebugDrawer::queueWireframe( LowLevelRenderer &renderer )
 {
-    QueueOperationParams params;
+    LowLevelOperationParams params;
         params.drawMode = DrawMode::Triangles;
         params.faceCulling = false;
         params.material = mWireFrameMaterial.get();
@@ -147,7 +147,7 @@ void DebugDrawer::queueWireframe( LowLevelRenderer &renderer )
 
 void DebugDrawer::queueNormals( LowLevelRenderer &renderer )
 {
-    QueueOperationParams params;
+    LowLevelOperationParams params;
         params.drawMode = DrawMode::Points;
         params.faceCulling = false;
         params.material = mNormalMaterial.get();

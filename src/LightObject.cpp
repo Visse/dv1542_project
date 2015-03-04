@@ -39,7 +39,7 @@ void PointLight::queueRenderable( LowLevelRenderer &renderer )
         uniforms.radius = glm::vec2( mInnerRadius, mOuterRadius );
         uniforms.color = glm::vec4(getColor(),mIntensity);
     
-    QueueOperationParams params;
+    LowLevelOperationParams params;
         params.indexBuffer = mMesh->getIndexBuffer().get();
         params.vao = mMesh->getVertexArrayObject().get();
         params.material = mMaterial.get();
@@ -84,7 +84,7 @@ AmbientLight::AmbientLight( Root *root ) :
 
 void AmbientLight::queueRenderable( LowLevelRenderer &renderer )
 {
-    QueueOperationParams params;
+    LowLevelOperationParams params;
         params.material = mMaterial.get();
         params.drawMode = DrawMode::Points;
         params.renderQueue = RQ_LightFirst;
@@ -123,7 +123,7 @@ void SpotLight::queueRenderable( LowLevelRenderer &renderer )
         uniforms.distance = glm::vec2( mInnerDistance, mOuterDistance );
         uniforms.angle = glm::cos(glm::vec2(mInnerAngle, mOuterAngle));
         
-    QueueOperationParams params;
+    LowLevelOperationParams params;
         params.indexBuffer = mMesh->getIndexBuffer().get();
         params.vao = mMesh->getVertexArrayObject().get();
         params.material = mMaterial.get();
@@ -194,7 +194,7 @@ void BoxLight::queueRenderable( LowLevelRenderer &renderer )
         uniforms.innerSize = mInnerSize*scale;
         uniforms.outerSize = mOuterSize*scale;
         
-    QueueOperationParams params;
+    LowLevelOperationParams params;
         params.indexBuffer = mMesh->getIndexBuffer().get();
         params.vao = mMesh->getVertexArrayObject().get();
         params.material = mMaterial.get();

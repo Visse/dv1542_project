@@ -60,7 +60,7 @@ LowLevelRenderer::LowLevelRenderer( Root *root ) :
 
 LowLevelRenderer::~LowLevelRenderer() = default;
 
-void LowLevelRenderer::queueOperation( const QueueOperationParams &params )
+void LowLevelRenderer::queueOperation( const LowLevelOperationParams &params )
 {
     LowLevelRenderOperation operation;
         operation.material = params.material;

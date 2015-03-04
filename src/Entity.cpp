@@ -53,7 +53,7 @@ void Entity::queueRenderable( LowLevelRenderer &renderer )
 {
     unsigned int renderQueue = getRenderQueue();
     
-    QueueOperationParams params;
+    LowLevelOperationParams params;
         params.indexBuffer = mMesh->getIndexBuffer().get();
         params.vao = mMesh->getVertexArrayObject().get();
         params.drawMode = DrawMode::Triangles;

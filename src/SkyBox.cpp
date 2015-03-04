@@ -17,7 +17,7 @@ SkyBox::SkyBox( Root *root, const SharedPtr<Material> &material ) :
 
 void SkyBox::queueRenderable( LowLevelRenderer &renderer )
 {
-    QueueOperationParams params;
+    LowLevelOperationParams params;
         params.indexBuffer = mMesh->getIndexBuffer().get();
         params.vao = mMesh->getVertexArrayObject().get();
         params.drawMode = DrawMode::Triangles;
