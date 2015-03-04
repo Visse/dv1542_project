@@ -42,12 +42,10 @@ LowLevelRenderer::LowLevelRenderer( Root *root ) :
     mDeferredDiffuseTexture  = Texture::CreateTexture( TextureType::RGBA, size, 1 );
     mDeferredNormalTexture   = Texture::CreateTexture( TextureType::RGB, size, 1 );
     mDeferredDepthTexture    = Texture::CreateTexture( TextureType::Depth, size, 1 );
-    mDeferredPositionTexture = Texture::CreateTexture( TextureType::RGBF, size, 1 );
     
     mDeferredFrameBuffer = makeUniquePtr<FrameBuffer>();
     mDeferredFrameBuffer->attachColorTexture( mDeferredDiffuseTexture, getDefaultOutputLocation(DefaultOutputLocations::Diffuse) );
     mDeferredFrameBuffer->attachColorTexture( mDeferredNormalTexture, getDefaultOutputLocation(DefaultOutputLocations::Normal) );
-    mDeferredFrameBuffer->attachColorTexture( mDeferredPositionTexture, getDefaultOutputLocation(DefaultOutputLocations::Position) );
     mDeferredFrameBuffer->setDepthTexture( mDeferredDepthTexture );
     
     mBufferAllocator = makeSharedPtr<UniformBufferAllocator>();
@@ -124,8 +122,6 @@ void LowLevelRenderer::flush()
     mDeferredNormalTexture->bindTexture( loc );
     loc = getDefaultGBufferBinding( DefaultGBufferBinding::Depth );
     mDeferredDepthTexture->bindTexture( loc );
-    loc = getDefaultGBufferBinding( DefaultGBufferBinding::Position );
-    mDeferredPositionTexture->bindTexture( loc );
     
     for( unsigned int i=RQ_LightFirst; i <= RQ_LightLast; ++i ) {    
         renderLightQueue( i );

@@ -125,8 +125,7 @@ private:
     
     SharedPtr<Texture> mDeferredDiffuseTexture,
                        mDeferredDepthTexture,
-                       mDeferredNormalTexture,
-                       mDeferredPositionTexture;
+                       mDeferredNormalTexture;
     
     SharedPtr<UniformBufferAllocator> mBufferAllocator;
     std::vector<UniformBlockInfo> mBlockInfo;
