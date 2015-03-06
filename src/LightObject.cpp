@@ -35,7 +35,7 @@ PointLight::PointLight( Root *root ) :
 void PointLight::queueRenderable( LowLevelRenderer &renderer )
 {
     PointLightUniforms uniforms;
-        uniforms.modelMatrix = getTransform();
+        uniforms.modelMatrix = glm::scale(getTransform(),glm::vec3(mOuterRadius)) ;
         uniforms.radius = glm::vec2( mInnerRadius, mOuterRadius );
         uniforms.color = glm::vec4(getColor(),mIntensity);
     
