@@ -26,6 +26,12 @@ bool GraphicsManager::init( Root *root )
     
     mRoot = root;
     const Config *config = mRoot->getConfig();
+        
+    SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 4 );
+    SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 3 );
+    if( config->openglDebug ) {
+        SDL_GL_SetAttribute( SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG );
+    }
     
     mWindow = SDL_CreateWindow( config->windowTitle.c_str(), 
                       SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 
@@ -34,12 +40,6 @@ bool GraphicsManager::init( Root *root )
                     );
     if( !mWindow ) {
         return false;
-    }
-    
-    SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 4 );
-    SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 3 );
-    if( config->openglDebug ) {
-        SDL_GL_SetAttribute( SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG );
     }
     
     mGLContext = SDL_GL_CreateContext( mWindow );
