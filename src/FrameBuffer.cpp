@@ -27,7 +27,8 @@ void FrameBuffer::attachColorTexture( const SharedPtr<Texture> &texture, int ind
 {
     assert( index >= 0 && index < 8 );
     glBindFramebuffer( GL_FRAMEBUFFER, mFrameBuffer );
-    glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0+index, GL_TEXTURE_2D, texture->getGLTexture(), 0 );
+    glFramebufferTexture( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0+index, texture->getGLTexture(), 0 );
+    
     GLenum status = glCheckFramebufferStatus( GL_FRAMEBUFFER );
     
     glColorMaski( index, GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
@@ -56,7 +57,7 @@ void FrameBuffer::attachColorTexture( const SharedPtr<Texture> &texture, int ind
 void FrameBuffer::setDepthTexture( const SharedPtr<Texture> &texture )
 {
     glBindFramebuffer( GL_FRAMEBUFFER, mFrameBuffer );
-    glFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, texture->getGLTexture(), 0 );
+    glFramebufferTexture( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, texture->getGLTexture(), 0 );
     
     GLenum status = glCheckFramebufferStatus( GL_FRAMEBUFFER );
     glBindFramebuffer( GL_FRAMEBUFFER, 0 );

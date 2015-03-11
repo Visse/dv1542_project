@@ -30,7 +30,8 @@ enum class TextureType
     RGB_SNORM,
     RGBA_SNORM,
     
-    CubeMap_RGB
+    CubeMap_RGB,
+    CubeMap_Depth
 };
 
 TextureType stringToTextureType( const std::string &str );
@@ -61,6 +62,8 @@ public:
     GLuint getGLTexture() {
         return mGLTexture;
     }
+    
+    bool isCubeMap();
 private:
     GLuint mGLTexture;
     TextureType mType;

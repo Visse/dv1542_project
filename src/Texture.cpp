@@ -65,6 +65,9 @@ TextureType stringToTextureType( const std::string &str )
     if( StringUtils::equalCaseInsensitive(str,"CubeMap_RGB") ) {
         return TextureType::CubeMap_RGB;
     }
+    if( StringUtils::equalCaseInsensitive(str,"CubeMap_Depth") ) {
+        return TextureType::CubeMap_Depth;
+    }
     
     throw std::runtime_error( StringUtils::strjoin("String isn't a TextureType (\"",str,"\")") );
 }
@@ -93,6 +96,7 @@ GLint typeToGLFormat( TextureType type )
         return GL_RGBA16;
         
     case( TextureType::Depth ):
+    case( TextureType::CubeMap_Depth ):
         return GL_DEPTH_COMPONENT16;
     case( TextureType::RGBF ):
         return GL_RGB16F;
@@ -106,10 +110,11 @@ GLint typeToGLFormat( TextureType type )
     throw std::runtime_error("Invalid texture type!");
 }
 
-bool isCubeMap( TextureType type )
+bool isTypeCubeMap( TextureType type )
 {
     switch( type ) {
     case( TextureType::CubeMap_RGB ):
+    case( TextureType::CubeMap_Depth ):
         return true;
     default:
         return false;
@@ -141,7 +146,7 @@ void Texture::bindTexture( int unit )
 {
     assert( unit >= 0 && unit < 15 );
     glActiveTexture( GL_TEXTURE0 + unit );
-    if( isCubeMap(mType) ) {
+    if( isTypeCubeMap(mType) ) {
         glBindTexture( GL_TEXTURE_CUBE_MAP, mGLTexture );
     }
     else {
@@ -153,7 +158,7 @@ void Texture::unbindTexture( int unit )
 {    
     assert( unit >= 0 && unit < 15 );
     glActiveTexture( GL_TEXTURE0 + unit );
-    if( isCubeMap(mType) ) {
+    if( isTypeCubeMap(mType) ) {
 #ifdef USE_DEBUG_NORMAL
         assert( getBoundTextureCube() == mGLTexture );
 #endif
@@ -166,6 +171,12 @@ void Texture::unbindTexture( int unit )
         glBindTexture( GL_TEXTURE_2D, 0 );
     }
 }
+
+bool Texture::isCubeMap()
+{
+    return isTypeCubeMap( mType );
+}
+
 
 /// @todo FIXME this code needs some serius clean up....
 
@@ -294,7 +305,7 @@ SharedPtr<Texture> createCubeMapTexture( TextureType type, const std::string &fi
 
 SharedPtr<Texture> Texture::LoadTexture( TextureType type, const std::string& filename )
 {
-    if( isCubeMap(type) ) {
+    if( isTypeCubeMap(type) ) {
         return createCubeMapTexture( type, filename );
     }
     
@@ -312,7 +323,7 @@ SharedPtr<Texture> Texture::LoadTexture( TextureType type, const std::string& fi
 
 SharedPtr<Texture> Texture::LoadTextureFromMemory( TextureType type, const void *memory, size_t size )
 {
-    if( isCubeMap(type) ) {
+    if( isTypeCubeMap(type) ) {
         throw std::runtime_error( "Cube maps isn't supported to be loaded from memory!" );
     }
     
@@ -365,23 +376,28 @@ SharedPtr<Texture> Texture::CreateTexture( TextureType type, const glm::uvec2& s
 {
     GLuint glTexture;
     GLint internalFormat = typeToGLFormat( type );
-
+    
+    GLenum target = GL_TEXTURE_2D;
+    if( isTypeCubeMap(type) ) {
+        target = GL_TEXTURE_CUBE_MAP;
+    }
+    
     glGenTextures( 1, &glTexture );
-    glBindTexture( GL_TEXTURE_2D, glTexture );
+    glBindTexture( target, glTexture );
     
     if( mipmaps == 0 ) {
         mipmaps = mipmapForSize( size );
     }
     
-    glTexStorage2D( GL_TEXTURE_2D, mipmaps, internalFormat, size.x, size.y );
+    glTexStorage2D( target, mipmaps, internalFormat, size.x, size.y );
     
     if( mipmaps > 1 ) {
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+        glTexParameteri( target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+        glTexParameteri( target, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
     }
     else {
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+        glTexParameteri( target, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+        glTexParameteri( target, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
     }
     
     return std::make_shared<Texture>( type, size, glTexture );
