@@ -7,28 +7,23 @@
 #include "VertexArrayObject.h"
 #include "GLinclude.h"
 #include "GpuProgram.h"
-#include "GpuShader.h"
 #include "Config.h"
 #include "ImGuiHelpers.h"
 #include "StartupMesurements.h"
 #include "Timer.h"
-#include "Material.h"
 #include "ResourceManager.h"
 #include "SceneManager.h"
 #include "Scene.h"
-#include "DeferredEntity.h"
-#include "Mesh.h"
-#include "ComputeParticleSystem.h"
-#include "LightObject.h"
 #include "DebugDrawer.h"
 #include "Camera.h"
 #include "SceneGraph.h"
 #include "Renderable.h"
+#include "Renderer.h"
+#include "SceneObject.h"
+#include "LightObject.h"
 
-#include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
-#include <glm/gtc/quaternion.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include <glm/vec4.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <SDL2/SDL_events.h>
@@ -39,43 +34,10 @@
 #include <functional>
 #include <iostream>
 
-#ifdef __GNUC__
 
-#include <cxxabi.h>
-
-std::string demangleName( const char *name )
-{
-    char *demangledName = __cxxabiv1::__cxa_demangle( name, NULL, NULL, NULL );
-    std::string tmp(demangledName);
-    
-    free(demangledName);
-    
-    return tmp;
-}
-
-#else
-
-std::string demangleName( const char *name )
-{
-    return std::string(name);
-}
-
-#endif
-
-static const glm::vec4 COLOR_WIREFRAME = glm::vec4(0.1f,1.f,0.5f,1.f),
-                       COLOR_NORMAL = glm::vec4(0.5f,0.2f,0.2f,1.f),
-                       COLOR_TANGENT = glm::vec4(0.2f,0.5f,0.2f,1.f),
-                       COLOR_BITANGENT = glm::vec4(0.2f,0.2f,0.5f,1.f),
-                       COLOR_BOUNDS = glm::vec4(0.5f,0.2f,0.2f,1.f),
-                       COLOR_INNER_LIGHT_VOLUME = glm::vec4(0.2,0.2f,0.5f,1.f),
-                       COLOR_OUTER_LIGHT_VOLUME = glm::vec4(0.2,0.5f,0.2f,1.f),
-                       COLOR_PARENT_SCENENODES =  glm::vec4(0.5f,0.5f,0.2f,1.f),
-                       COLOR_SAVED_FRUSTRUM =  glm::vec4(0.8f,0.3f,0.8f,1.f),
-                       COLOR_FRUSTUM_TEST_OUTSIDE = glm::vec4(0.8f,0.3f,0.3f,1.f),
+static const glm::vec4 COLOR_FRUSTUM_TEST_OUTSIDE = glm::vec4(0.8f,0.3f,0.3f,1.f),
                        COLOR_FRUSTUM_TEST_INTERSECTING = glm::vec4(0.4f,0.2f,0.8f,1.f),
                        COLOR_FRUSTUM_TEST_INSIDE = glm::vec4(0.3f,0.8f,0.5f,1.f);
-
-static const float NORMAL_LENGHT = 0.1f;
 
 class DebugManager::DebugFrameListener :
     public FrameListener
@@ -232,9 +194,9 @@ void DebugManager::update( float dt )
             if( ImGui::CollapsingHeader("Mesurements") ) {
                 GraphicsManager *graphicsMgr = mRoot->getGraphicsManager();
                 
-                ImGui::PlotLines( "Frame Time", mRoot->getFrameTimeHistory(), 0.1f, 0.1f, ImVec2(0,70) );
+                ImGui::PlotLines( "Frame Time", mRoot->getFrameTimeHistory(), 1.f, 1.f, ImVec2(0,70) );
                 ImGui::PlotLines( "Frame Rate", mRoot->getFrameRateHistory(), 10.f, 0.f, ImVec2(0,70) );
-                ImGui::PlotLines( "Gpu Time", graphicsMgr->getGpuTimeHistory(), 10, 10, ImVec2(0,70) );
+                ImGui::PlotLines( "Gpu Time", graphicsMgr->getGpuTimeHistory(), 1.0f, 1.0f, ImVec2(0,70) );
                 ImGui::PlotLines( "Samples passed (*10k)", graphicsMgr->getSamplesPassed(), 100, 100, ImVec2(0,70) );
 
             }
@@ -546,255 +508,6 @@ void DebugManager::setInputScreenPos( int x, int y )
     rect.x = x;
     rect.y = y;
     SDL_SetTextInputRect( &rect );
-}
-
-void DebugManager::showSceneObject( float dt, SceneObject *object )
-{
-    ImGui::PushID( object );
-    
-    DebugDrawInfo &debugDrawInfo = mDebugDrawInfo[object];
-    
-    std::string objectType = demangleName(typeid(*object).name());
-    
-    if( ImGui::TreeNode(objectType.c_str()) ) {
-        glm::vec3 position = object->getPosition();
-        
-        if( ImGui::InputFloat3("Position", glm::value_ptr(position)) ) {
-            object->setPosition( position );
-        }
-        
-        glm::vec3 deltaPos;
-        
-        if( ImGui::SliderFloat3("Move", glm::value_ptr(deltaPos),-1.f, 1.f) ) {
-            position += deltaPos * dt;
-            object->setPosition( position );
-        }
-        
-        glm::quat orientation = object->getOrientation();
-        glm::vec3 rotation;
-        glm::vec3 eulerRotation = glm::degrees(glm::eulerAngles(orientation));
-        
-        if( ImGui::InputFloat3("Orientation", glm::value_ptr(eulerRotation)) ) {
-            object->setOrientation( glm::quat(glm::radians(eulerRotation)) );
-        }
-        if( ImGui::SliderFloat3("Rotate", glm::value_ptr(rotation), -glm::half_pi<float>(), glm::half_pi<float>() ) ) {
-            orientation *= glm::quat(rotation*dt);
-            object->setOrientation( orientation );
-        }
-        ImGui::Checkbox( "Show BoundingSphere", &debugDrawInfo.bounds );
-        ImGui::SameLine();
-        ImGui::Checkbox( "Show Parent Nodes", &debugDrawInfo.parentSceneNodes );
-        
-        DeferredEntity *entity = dynamic_cast<DeferredEntity*>(object);
-        if( entity ) {
-            SharedPtr<Mesh> mesh = entity->getMesh();
-            const std::string &meshName = mesh->getName();
-            
-            debugDrawInfo.mesh = mesh;
-            
-            if( !meshName.empty() ) {
-                ImGui::LabelText( "Mesh", meshName.c_str() );
-            }
-            else {
-                ImGui::LabelText( "Mesh", "Unknown" );
-            }
-            
-            ImGui::Checkbox( "WireFrame", &debugDrawInfo.wireFrame );
-            ImGui::SameLine();
-            ImGui::Checkbox( "Normals", &debugDrawInfo.normals );
-        }
-        
-        ComputeParticleSystem *particleSys = dynamic_cast<ComputeParticleSystem*>(object);
-        if( particleSys ) {
-            float speed = particleSys->getSpeed();
-            if( ImGui::SliderFloat("Speed", &speed, 0.f, 4.f) ) {
-                particleSys->setSpeed( speed );
-            }
-            
-            float distMod = particleSys->getDistMod();
-            if( ImGui::SliderFloat("DistMod", &distMod, 0.f, 10.f) ) {
-                particleSys->setDistMod( distMod );
-            }
-            
-            float weightMod = particleSys->getWeightMod();
-            if( ImGui::SliderFloat("WeightMod", &weightMod, 0.f, 20.f) ) {
-                particleSys->setWeightMod( weightMod );
-            }
-            
-            float lifeTime = particleSys->getLifeTime();
-            if( ImGui::SliderFloat("LifeTime", &lifeTime, 0.f, 30.f) ) {
-                particleSys->setLifeTime( lifeTime );
-            }
-            
-            float damping = particleSys->getDamping();
-            if( ImGui::SliderFloat("Damping", &damping, 0.0f, 2.0f) ) {
-                particleSys->setDamping( damping );
-            }
-            
-            float intensity = particleSys->getIntensity();
-            if( ImGui::SliderFloat("Intensity", &intensity, 0.f, 5.f) ) {
-                particleSys->setIntensity( intensity );
-            }
-            
-            float pointSize = particleSys->getPointSize();
-            if( ImGui::SliderFloat("PointSize", &pointSize, 0.f, 15.f) ) {
-                particleSys->setPointSize( pointSize );
-            }
-            
-            int groupCount = particleSys->getParticleGroupCount();
-            int maxGroups = particleSys->getMaxParticleGroupCount();
-            if( ImGui::SliderInt("Amount", &groupCount, 1, maxGroups) ) {
-                particleSys->setParticleGroupCount( groupCount );
-            }
-            
-            int attractorCount = particleSys->getAttractorCount();
-            int maxAttractors = particleSys->getMaxAttractorCount();
-            if( ImGui::SliderInt("Attractors", &attractorCount, 0, maxAttractors ) ) {
-                particleSys->setAttractorCount( attractorCount );
-            }
-            
-            bool showAttractors = particleSys->getShowAttractors();
-            if( ImGui::Checkbox( "Show Attractors", &showAttractors) ) {
-                particleSys->setShowAttractors( showAttractors );
-            }
-            
-            unsigned int particleCount = particleSys->getParticleCount();
-            ImGui::Value( "Particle Count", particleCount );
-        }
-        
-        LightObject *light = dynamic_cast<LightObject*>(object);
-        if( light ) {
-            glm::vec3 color = light->getColor();
-            if( ImGui::ColorEdit3("Color", glm::value_ptr(color)) ) {
-                light->setColor( color );
-            }
-            
-            if( PointLight *pointLight = dynamic_cast<PointLight*>(light) ) {
-                float outerRadius = pointLight->getOuterRadius(),
-                      innerRadius = pointLight->getInnerRadius(),
-                      intesity = pointLight->getIntensity();
-                    
-                if( ImGui::SliderFloat("OuterRadius", &outerRadius, 0.f, 20.f) ) {
-                    pointLight->setOuterRadius( outerRadius );
-                }
-                if( ImGui::SliderFloat("InnerRadius", &innerRadius, 0.f, outerRadius) ) {
-                    pointLight->setInnerRadius( innerRadius );
-                }
-                if( ImGui::SliderFloat("Intensity", &intesity, 0.f, 2.f) ) {
-                    pointLight->setIntensity( intesity );
-                }
-            }
-            
-            if( SpotLight *spotLight = dynamic_cast<SpotLight*>(light) ) {
-                float outerAngle = spotLight->getOuterAngle(),
-                      innerAngle = spotLight->getInnerAngle(),
-                      outerDist  = spotLight->getOuterDistance(),
-                      innerDist  = spotLight->getInnerDistance(),
-                      intensity = spotLight->getIntensity();
-                      
-                if( ImGui::SliderAngle("OuterAngle", &outerAngle, 0.f, 90.f) ) {
-                    spotLight->setOuterAngle( outerAngle );
-                }
-                if( ImGui::SliderAngle("InnerAngle", &innerAngle, 0.f, glm::degrees(outerAngle)) ) {
-                    spotLight->setInnerAngle( innerAngle );
-                }
-                if( ImGui::SliderFloat("OuterDistance", &outerDist, 0.f, 20.f) ) {
-                    spotLight->setOuterDistance( outerDist );
-                }
-                if( ImGui::SliderFloat("InnerDistance", &innerDist, 0.f, outerDist) ) {
-                    spotLight->setInnerDistance( innerDist );
-                }
-                if( ImGui::SliderFloat("Intensity", &intensity, 0.f, 2.f) ) {
-                    spotLight->setIntensity( intensity );
-                }
-            }
-        
-            ImGui::Checkbox( "Light Volume", &debugDrawInfo.debugLight );
-        }
-        ImGui::TreePop();
-    }
-
-    ImGui::PopID();
-}
-
-void DebugManager::submitDebugDraw()
-{
-    DebugDrawer *debugDrawer = mRoot->getDebugDrawer();
-    
-    for( const auto &entry : mDebugDrawInfo ) {
-        const DebugDrawInfo &info = entry.second;
-        SceneObject *object = entry.first;
-        
-        if( info.mesh && info.wireFrame ) {
-            debugDrawer->drawWireFrame( info.mesh, object->getTransform(), COLOR_WIREFRAME );
-        }
-        if( info.mesh && info.normals ) {
-            debugDrawer->drawVertexNormals( info.mesh, object->getTransform(), NORMAL_LENGHT, COLOR_NORMAL, COLOR_TANGENT, COLOR_BITANGENT );
-        }
-        if( info.bounds ) {
-            showObjectBounds( object, COLOR_BOUNDS );
-        }
-        if( info.debugLight ) {
-            LightObject *light = dynamic_cast<LightObject*>(object);
-            if( light ) {
-#pragma message "FIXME"
-            }
-        }
-        if( info.parentSceneNodes ) {
-            SceneNode *node = object->_getParent();
-            while( node ) {
-                showSceneNode( node, COLOR_PARENT_SCENENODES );
-                node  = node->getParent();
-            }
-        }
-    }
-
-    if( mShowSceneBounds ) {
-        SceneManager *sceneMgr = mRoot->getSceneManager();
-        Scene *scene = sceneMgr->getScene();
-        
-        if( scene ) {
-            int index = 0;
-            scene->forEachObject(
-                [&]( SceneObject *object ) {
-                    glm::vec4 color( glm::fract(index*0.13f+0.19f), 0.8f, 0.8f, 0.5f );
-                    ImGui::ColorConvertHSVtoRGB( color.r, color.g, color.b, color.r, color.g, color.b );
-                    
-                    showObjectBounds( object, color );
-                    index++;
-                }
-            );
-        }
-    }
-    if( mShowSceneGraph ) {
-        SceneManager *sceneMgr = mRoot->getSceneManager();
-        Scene *scene = sceneMgr->getScene();
-        if( scene ) {
-            SceneGraph *graph = scene->getSceneGraph();
-            
-            std::function<void(int,int,SceneNode*)> visitor;
-            
-            visitor = [&]( int level, int child, SceneNode *node ) {
-                glm::vec4 color( glm::fract(level*0.16f+child*0.05f), 0.8f, 0.8f, 0.5f );
-                ImGui::ColorConvertHSVtoRGB( color.r, color.g, color.b, color.r, color.g, color.b );
-                
-                showSceneNode( node, color );
-                
-                SceneNode *children = node->getChildren();
-                if( children ) {
-                    for( int i=0; i < 8; ++i ) {
-                        visitor( level+1, i, children+i ); 
-                    }
-                }
-            };
-            
-            visitor( 0, 0, graph->getRootNode() );
-        }
-    }
-    if( mShowSavedFrustrum ) {
-        glm::mat4 modelMatrix = glm::inverse( mSavedViewProjMatrix );
-        debugDrawer->drawWireBox( glm::vec3(1.f), modelMatrix, COLOR_SAVED_FRUSTRUM );
-    }
 }
 
 void DebugManager::showSceneNode( SceneNode *node, const glm::vec4 &color )
