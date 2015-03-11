@@ -11,6 +11,11 @@
 
 #include <iostream>
 
+void SceneObjectFactory::destroyObject( SceneObject *object )
+{
+    delete object;
+}
+
 DeferredEntityFactory::DeferredEntityFactory( Root *root ) :
     mRoot(root)
 {
@@ -34,7 +39,7 @@ SceneObject* DeferredEntityFactory::createObject( const Yaml::Node &node )
     material.normalMap = resourceMgr->getTextureAutoPack( normalMapName );
     
     if( mesh ) {
-        DeferredEntity *entity = new DeferredEntity( mRoot, mesh, material );
+        DeferredEntity *entity = new DeferredEntity( this, mRoot, mesh, material );
         
         return entity;
     }
@@ -52,7 +57,7 @@ SceneObject* ComputeParticleFactory::createObject( const Yaml::Node &node )
 {
     Yaml::MappingNode config = node.asMapping();
     
-    ComputeParticleSystem *particleSys = new ComputeParticleSystem( mRoot );
+    ComputeParticleSystem *particleSys = new ComputeParticleSystem( this, mRoot );
 
     return particleSys;
 }
@@ -69,7 +74,7 @@ SceneObject *LightFactory::createObject( const Yaml::Node &node )
     glm::vec3 color = config.getFirstValue("Color",false).asValue().getValue<glm::vec3>(glm::vec3(1.f));
     
     if( StringUtils::equalCaseInsensitive(lightType,"Point") ) {
-        PointLight *light = new PointLight( mRoot );
+        PointLight *light = new PointLight( this, mRoot );
         
         float innerRadius = config.getFirstValue("InnerRadius",false).asValue().getValue<float>(light->getInnerRadius());
         float outerRadius = config.getFirstValue("OuterRadius",false).asValue().getValue<float>(light->getOuterRadius());
@@ -83,7 +88,7 @@ SceneObject *LightFactory::createObject( const Yaml::Node &node )
         return light;
     }
     if( StringUtils::equalCaseInsensitive(lightType,"Spot") ) {
-        SpotLight *light = new SpotLight( mRoot );
+        SpotLight *light = new SpotLight( this, mRoot );
         
         float innerAngle = config.getFirstValue("InnerAngle",false).asValue().getValue<float>(light->getInnerAngle());
         float outerAngle = config.getFirstValue("OuterAngle",false).asValue().getValue<float>(light->getOuterAngle());
@@ -122,7 +127,7 @@ SceneObject *SkyBoxFactory::createObject( const Yaml::Node &node )
     SharedPtr<Material> material = resourceMgr->getMaterialAutoPack( materialName );
     
     if( material ) {
-        return new SkyBox( mRoot, material );
+        return new SkyBox( this, mRoot, material );
     }
     
     /// @todo add proper logging

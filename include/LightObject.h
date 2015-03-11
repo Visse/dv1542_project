@@ -16,6 +16,9 @@ class LightObject :
     public SceneObject
 {
 public:
+    LightObject( SceneObjectFactory* factory ) :
+        SceneObject(factory)
+    {}
     void setColor( const glm::vec3 &color ) {
         mColor = color;
     }    
@@ -39,7 +42,7 @@ class PointLight :
     public LightObject
 {
 public:
-    PointLight( Root *root );
+    PointLight( SceneObjectFactory* factory, Root *root );
     
     void setOuterRadius( float radius ) {
         BoundingSphere bounds( glm::vec3(), radius );
@@ -80,7 +83,7 @@ class SpotLight :
     public LightObject
 {
 public:
-    SpotLight( Root *root );
+    SpotLight( SceneObjectFactory* factory, Root *root );
     
     float getIntensity() {
         return mIntensity;

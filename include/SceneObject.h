@@ -6,6 +6,7 @@
 
 #include "BoundingSphere.h"
 
+class SceneObjectFactory;
 class Renderer;
 class SceneNode;
 class LowLevelRenderer;
@@ -13,6 +14,9 @@ class Renderable;
 
 class SceneObject {
 public:
+    SceneObject( SceneObjectFactory *factory ) :
+        mFactory(factory)
+    {}
     virtual ~SceneObject() = default;
    
     virtual void update( float dt ) {}
@@ -73,6 +77,10 @@ public:
     bool _getAutoDelete() {
         return mAutoDelete;
     }
+    
+    SceneObjectFactory* getFactory() {
+        return mFactory;
+    }
 private:
     void markDirty() {
         mDirty = true;
@@ -80,6 +88,7 @@ private:
     
 private:
     SceneNode *mParent = nullptr;
+    SceneObjectFactory *mFactory;
     
     glm::vec3 mPosition;
     glm::quat mOrientation;

@@ -11,7 +11,7 @@ class SkyBox :
     public SceneObject
 {
 public:
-    SkyBox( Root *root, const SharedPtr<Material> &material );
+    SkyBox( SceneObjectFactory *factory, Root *root, const SharedPtr<Material> &material );
     
 //     virtual void queueRenderable( LowLevelRenderer &renderer ) override;
     

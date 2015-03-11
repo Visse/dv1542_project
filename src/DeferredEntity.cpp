@@ -12,7 +12,8 @@
 #include <glm/gtc/type_ptr.hpp>
 
 
-DeferredEntity::DeferredEntity( Root *root, const SharedPtr<Mesh> &mesh, const DeferredMaterial &material  ) :
+DeferredEntity::DeferredEntity( SceneObjectFactory* factory, Root *root, const SharedPtr<Mesh> &mesh, const DeferredMaterial &material  ) :
+    SceneObject(factory),
     mMesh(mesh),
     mMaterial(material)
 {

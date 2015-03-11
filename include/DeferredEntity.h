@@ -19,7 +19,7 @@ class DeferredEntity :
     friend class SubMeshRenderer;
     
 public:
-    DeferredEntity( Root *root, const SharedPtr<Mesh> &mesh, const DeferredMaterial &material );
+    DeferredEntity( SceneObjectFactory* factory, Root *root, const SharedPtr<Mesh> &mesh, const DeferredMaterial &material );
     
     virtual void submitRenderer( Renderer& renderer ) override;
     

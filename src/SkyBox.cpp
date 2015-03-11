@@ -3,7 +3,8 @@
 #include "ResourceManager.h"
 #include "Mesh.h"
 
-SkyBox::SkyBox( Root *root, const SharedPtr<Material> &material ) :
+SkyBox::SkyBox( SceneObjectFactory *factory, Root *root, const SharedPtr<Material> &material ) :
+    SceneObject(factory),
     mRoot(root),
     mMaterial(material)
 {

@@ -17,7 +17,7 @@ class ComputeParticleSystem :
     public SceneObject
 {
 public:
-    ComputeParticleSystem( Root *root );
+    ComputeParticleSystem( SceneObjectFactory* factory, Root *root );
     virtual void update( float dt ) override;
 
     float getSpeed() {

@@ -11,7 +11,8 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-PointLight::PointLight( Root *root ) :
+PointLight::PointLight( SceneObjectFactory* factory, Root *root ) :
+    LightObject(factory),
     mRoot(root)
 {
 }
@@ -20,6 +21,7 @@ void PointLight::submitRenderer( Renderer &renderer )
 {
     PointLightUniforms uniforms;
         uniforms.color = getColor();
+        uniforms.intensity = mIntensity;
         uniforms.modelMatrix = glm::scale( getTransform(), glm::vec3(mOuterRadius) );
         uniforms.radius = glm::vec2(mInnerRadius,mOuterRadius);
         
@@ -29,7 +31,9 @@ void PointLight::submitRenderer( Renderer &renderer )
 
 
 
-SpotLight::SpotLight( Root *root )
+SpotLight::SpotLight( SceneObjectFactory* factory, Root *root ) :
+    LightObject(factory),
+    mRoot(root)
 {
     ResourceManager *resourceMgr = root->getResourceManager();
     

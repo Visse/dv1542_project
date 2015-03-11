@@ -54,13 +54,7 @@ bool SceneManager::init( Root *root )
 
 void SceneManager::destroy()
 {
-    for( const auto &entry : mSceneObjectFactories ) {
-        const SceneObjectFactoryInfo &info = entry.second;
-        if( info.ownsFactory) {
-            delete info.factory;
-        }
-    }
-    mSceneObjectFactories.clear();
+    mScene.reset();
     
     GraphicsManager *graphicsMgr = mRoot->getGraphicsManager();
     graphicsMgr->removeCamera( mCamera );
@@ -69,6 +63,14 @@ void SceneManager::destroy()
     mCamera = nullptr;
     
     mRoot = nullptr;
+    
+    for( const auto &entry : mSceneObjectFactories ) {
+        const SceneObjectFactoryInfo &info = entry.second;
+        if( info.ownsFactory) {
+            delete info.factory;
+        }
+    }
+    mSceneObjectFactories.clear();
 }
 
 void SceneManager::update( float dt )

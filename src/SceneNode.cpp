@@ -1,6 +1,7 @@
 #include "SceneNode.h"
 #include "SceneObject.h"
 #include "SceneGraph.h"
+#include "SceneObjectFactory.h"
 
 #include <algorithm>
 #include <cassert>
@@ -9,7 +10,7 @@ SceneNode::~SceneNode()
 {
     for( SceneObject *object : mObjects ) {
         if( object->_getAutoDelete() ) {
-            delete object;
+            object->getFactory()->destroyObject( object );
         }
     }
 }

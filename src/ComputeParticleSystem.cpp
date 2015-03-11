@@ -12,7 +12,8 @@
 
 #pragma message "FIXME"
 
-ComputeParticleSystem::ComputeParticleSystem( Root *root ) :
+ComputeParticleSystem::ComputeParticleSystem( SceneObjectFactory *factory, Root *root ) :
+    SceneObject(factory),
     mRoot(root)
 {
     ResourceManager *resourceMgr = mRoot->getResourceManager();

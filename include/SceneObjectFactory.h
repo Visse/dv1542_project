@@ -16,6 +16,7 @@ public:
     SceneObjectFactory& operator = ( SceneObjectFactory&& ) = delete;
     
     virtual SceneObject *createObject( const Yaml::Node &node ) = 0;
+    virtual void destroyObject( SceneObject *object );
 };
 
 
