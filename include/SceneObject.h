@@ -70,6 +70,9 @@ public:
     void _setAutoDelete( bool autoDelete ) {
         mAutoDelete = autoDelete;
     }
+    bool _getAutoDelete() {
+        return mAutoDelete;
+    }
 private:
     void markDirty() {
         mDirty = true;

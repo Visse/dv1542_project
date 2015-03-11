@@ -9,6 +9,8 @@ class SceneObject;
 
 class SceneNode {
 public:
+    ~SceneNode();
+    
     void _init( SceneGraph *graph, SceneNode *parent ) {
         mGraph = graph;
         mParent = parent;

@@ -5,6 +5,15 @@
 #include <algorithm>
 #include <cassert>
 
+SceneNode::~SceneNode()
+{
+    for( SceneObject *object : mObjects ) {
+        if( object->_getAutoDelete() ) {
+            delete object;
+        }
+    }
+}
+
 void SceneNode::addObject( SceneObject *object )
 {
     auto iter = std::lower_bound( mObjects.begin(), mObjects.end(), object );

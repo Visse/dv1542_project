@@ -32,7 +32,7 @@ public:
     
 private:
     glm::vec3 mColor;
-    bool mCastShadow;
+    bool mCastShadow = false;
 };
 
 class PointLight :

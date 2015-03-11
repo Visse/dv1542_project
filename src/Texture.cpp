@@ -283,7 +283,9 @@ SharedPtr<Texture> createCubeMapTexture( TextureType type, const std::string &fi
             FreeImage_Unload( image );
             glDeleteTextures( 1, &texture );
             throw std::runtime_error( "Failed to load image to cube face!" );
-        }   
+        }
+        
+        FreeImage_Unload( image );
     }
     
     glGenerateMipmap( GL_TEXTURE_CUBE_MAP );
