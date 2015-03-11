@@ -58,7 +58,10 @@ struct Config
          
     unsigned int defferedBufferWidth = 720,
 				 defferedBufferHeight = 1280;
-         
+                 
+    unsigned int ssaoBufferWidth  = 360,
+                 ssaoBufferHeight = 640 / 4;
+    
     float fov = 90.f,
           nearPlane = 0.1f,
           farPlane  = 100.f;

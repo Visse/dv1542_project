@@ -5,7 +5,7 @@
 #include "GLinclude.h"
 #include "Timer.h"
 #include "StartupMesurements.h"
-#include "LowLevelRenderer.h"
+#include "Renderer.h"
 #include "Camera.h"
 
 #include <SDL2/SDL.h>
@@ -118,13 +118,13 @@ void GraphicsManager::destroy()
 
 void GraphicsManager::postInit()
 {
-    mRenderer = new LowLevelRenderer( mRoot );
+    mRenderer = new Renderer( mRoot );
 }
 
 void GraphicsManager::update( float dt )
 {
 }
-#include <iostream>
+
 void GraphicsManager::render()
 {
     glBeginQuery( GL_TIME_ELAPSED, mTimeQuaryObjects[mCurrentQuary] );
@@ -140,7 +140,6 @@ void GraphicsManager::render()
         camera->render( *mRenderer );
         firePostCamera( camera );
     }
-    mRenderer->flush();
     
     fireFrameEnded();
     
@@ -222,7 +221,6 @@ void GraphicsManager::firePreCamera( Camera *camera )
     for( FrameListener *listener : mFrameListeners ) {
         listener->onPreCameraDraw( camera );
     }
-
 }
 
 void GraphicsManager::firePostCamera( Camera *camera )
@@ -230,7 +228,6 @@ void GraphicsManager::firePostCamera( Camera *camera )
     for( FrameListener *listener : mFrameListeners ) {
         listener->onPostCameraDraw( camera );
     }
-
 }
 
 

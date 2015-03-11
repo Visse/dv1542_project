@@ -20,7 +20,7 @@ bool SceneManager::init( Root *root )
     
     mRoot = root;
     
-    addFactory( "Entity", new EntityFactory(mRoot), true );
+    addFactory( "DeferredEntity", new DeferredEntityFactory(mRoot), true );
     addFactory( "ComputeParticle", new ComputeParticleFactory(mRoot), true );
     addFactory( "Light", new LightFactory(mRoot), true );
     addFactory( "SkyBox", new SkyBoxFactory(mRoot), true );

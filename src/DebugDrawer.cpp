@@ -8,35 +8,75 @@
 #include "Material.h"
 #include "GLinclude.h"
 #include "GpuProgram.h"
-#include "LowLevelRenderer.h"
+#include "Renderable.h"
+#include "Renderer.h"
+#include "FrameListener.h"
 
 #include <iostream>
 
 #include <glm/gtc/matrix_transform.hpp>
+
+class DebugDrawer::DebugFrameListener :
+    public FrameListener
+{
+public:
+    DebugFrameListener( DebugDrawer *drawer, const SharedPtr<GpuProgram> &wireFrameShader, const SharedPtr<GpuProgram> &normalShader ) :
+        mWireFrameShader(wireFrameShader),
+        mNormalShader(normalShader)
+    {
+        mGraphicsMgr = drawer->mRoot->getGraphicsManager();
+        mRenderer = mGraphicsMgr->getRenderer();
+        
+        mGraphicsMgr->addFrameListener( this );
+        
+        mWireRenderable.drawer = drawer;
+        mNormalRenderable.drawer = drawer;
+    }
+    virtual ~DebugFrameListener()
+    {
+        mGraphicsMgr->removeFrameListener( this );
+    }
+    
+    virtual void onFrameBegun() {
+        CustomRenderableSettings settings;
+            settings.blendMode = BlendMode::Replace;
+            settings.program = mWireFrameShader;
+        mRenderer->addCustomRenderable( settings, &mWireRenderable );
+        
+        settings.program = mNormalShader;
+        mRenderer->addCustomRenderable( settings, &mNormalRenderable );
+    }
+    
+private:
+    struct : public Renderable {
+        virtual void render( Renderer &renderer ) {
+            drawer->renderWireFrames();
+        }
+        
+        DebugDrawer *drawer;
+    } mWireRenderable;
+    struct : public Renderable {
+        virtual void render( Renderer &renderer ) {
+            drawer->renderNormals();
+        }
+        
+        DebugDrawer *drawer;
+    } mNormalRenderable;
+    
+private:
+    GraphicsManager *mGraphicsMgr;
+    Renderer *mRenderer;
+    SharedPtr<GpuProgram> mWireFrameShader,
+                          mNormalShader;
+};
+
 
 bool DebugDrawer::init( Root *root )
 {
     mRoot = root;
     
     ResourceManager *resourceMgr = mRoot->getResourceManager();
-    mWireFrameMaterial = resourceMgr->getMaterialAutoPack( "DebugDrawerWireMaterial" );
-    mNormalMaterial = resourceMgr->getMaterialAutoPack( "DebugDrawerNormalMaterial" );
-    
-    if( !mWireFrameMaterial ) {
-        std::cerr << "Failed to load debug wireframe material!" << std::endl;
-        return false;
-    }
-    if( !mNormalMaterial ) {
-        std::cerr << "Failed to load debug wireframe material!" << std::endl;
-        return false;
-    }
-    
-    SharedPtr<GpuProgram> program = mWireFrameMaterial->getProgram();
-    mWireUniformBlockLoc = program->getUniformBlockLocation( "DebugWireframe" );
-    
-    program = mNormalMaterial->getProgram();
-    mNormalUniformBlockLoc = program->getUniformBlockLocation( "DebugNormal" );
-    
+
     mSphereMesh = resourceMgr->getMeshAutoPack( "Sphere" );
     mConeMesh = resourceMgr->getMeshAutoPack( "Cone" );
     mBoxMesh = resourceMgr->getMeshAutoPack( "Cube" );
@@ -44,15 +84,26 @@ bool DebugDrawer::init( Root *root )
     return true;
 }
 
+void DebugDrawer::postInit()
+{
+    ResourceManager *resourceMgr = mRoot->getResourceManager();
+    
+    SharedPtr<GpuProgram> wireFrameShader = resourceMgr->getGpuProgramAutoPack( "DebugDrawerWireShader" );
+    SharedPtr<GpuProgram> normalShader = resourceMgr->getGpuProgramAutoPack( "DebugDrawerNormalShader" );;
+    
+    mRenderer = mRoot->getGraphicsManager()->getRenderer();
+    mFrameListener = new DebugFrameListener( this, wireFrameShader, normalShader );
+}
+
 void DebugDrawer::destroy()
 {
+    delete mFrameListener;
+    mFrameListener = nullptr;
+    
     mRoot = nullptr;
     
     mWireFramesDraws.clear();
     mNormalDraws.clear();
-    
-    mWireFrameMaterial.reset();
-    mNormalMaterial.reset();
 }
 
 void DebugDrawer::update( float dt )
@@ -63,10 +114,13 @@ void DebugDrawer::update( float dt )
 
 void DebugDrawer::drawWireFrame( const SharedPtr<Mesh> &mesh, const glm::mat4 &transform, const glm::vec4 &color )
 {
-    DebugDraw draw;
+    WireDrawUniformBlock uniforms;
+        uniforms.modelMatrix = transform;
+        uniforms.color = color;
+    
+    DebugWireDraw draw;
         draw.mesh = mesh;
-        draw.transform = transform;
-        draw.color = color;
+        draw.uniforms = mRenderer->aquireUniformBuffer( uniforms );
         
     mWireFramesDraws.push_back( draw );
 }
@@ -75,13 +129,16 @@ void DebugDrawer::drawVertexNormals( const SharedPtr<Mesh> &mesh, const glm::mat
                             const glm::vec4 &normalColor, const glm::vec4 &tangentColor, const glm::vec4 &bitangentColor
                           )
 {
+    NormalDrawUniformBlock uniforms;
+        uniforms.modelMatrix = transform;
+        uniforms.normalColor = normalColor;
+        uniforms.tangentColor = tangentColor;
+        uniforms.bitangentColor = bitangentColor;
+        uniforms.length = length;
+    
     DebugNormalDraw draw;
         draw.mesh = mesh;
-        draw.transform = transform;
-        draw.normalColor = normalColor;
-        draw.tangentColor = tangentColor;
-        draw.bitangentColor = bitangentColor;
-        draw.length = length;
+        draw.uniforms = mRenderer->aquireUniformBuffer( uniforms );
         
     mNormalDraws.push_back( draw );
 }
@@ -110,70 +167,42 @@ void DebugDrawer::drawWireBox( const glm::vec3 &hsize, const glm::mat4 &transfor
     drawWireFrame( mBoxMesh, t, color );
 }
 
-void DebugDrawer::queueRenderable( LowLevelRenderer &renderer )
+void DebugDrawer::renderWireFrames()
 {
-    queueWireframe( renderer );
-    queueNormals( renderer );
-}
-
-void DebugDrawer::queueWireframe( LowLevelRenderer &renderer )
-{
-    LowLevelOperationParams params;
-        params.drawMode = DrawMode::Triangles;
-        params.faceCulling = false;
-        params.material = mWireFrameMaterial.get();
-        params.renderQueue = RQ_Overlay-1;
-    
-    for( const DebugDraw &draw : mWireFramesDraws ) {
-        WireDrawUniformBlock uniforms;
-            uniforms.color = glm::vec4(draw.color);
-            uniforms.modelMatrix = draw.transform;
-            
-        params.uniforms[0] = renderer.aquireUniformBuffer( mWireUniformBlockLoc, uniforms );
-        
-        params.indexBuffer = draw.mesh->getIndexBuffer().get();
-        params.vao = draw.mesh->getVertexArrayObject().get();
-        
-        const auto &subMeshes = draw.mesh->getSubMeshes();
-        
-        for( const SubMesh &submesh : subMeshes ) {
-            params.vertexStart = submesh.vertexStart;
-            params.vertexCount = submesh.vertexCount;
-            
-            renderer.queueOperation( params );
-        }
+    for( const DebugWireDraw &draw : mWireFramesDraws ) {
+        glBindBufferRange( GL_UNIFORM_BUFFER, 1, draw.uniforms.getBuffer(), draw.uniforms.getOffset(), draw.uniforms.getSize() );
+        renderMesh( draw.mesh, GL_TRIANGLES );
     }
 }
 
-void DebugDrawer::queueNormals( LowLevelRenderer &renderer )
+void DebugDrawer::renderNormals()
 {
-    LowLevelOperationParams params;
-        params.drawMode = DrawMode::Points;
-        params.faceCulling = false;
-        params.material = mNormalMaterial.get();
-        params.renderQueue = RQ_Overlay-1;
-    
     for( const DebugNormalDraw &draw : mNormalDraws ) {
-        NormalDrawUniformBlock uniforms;
-            uniforms.modelMatrix = draw.transform;
-            uniforms.normalColor = draw.normalColor;
-            uniforms.tangentColor = draw.tangentColor;
-            uniforms.bitangentColor = draw.bitangentColor;
-            uniforms.lenght = draw.length;
-            
-        params.uniforms[0] = renderer.aquireUniformBuffer( mNormalUniformBlockLoc, uniforms );
-        params.indexBuffer = draw.mesh->getIndexBuffer().get();
-        params.vao = draw.mesh->getVertexArrayObject().get();
-        
-        const auto &subMeshes = draw.mesh->getSubMeshes();
-        
-        for( const SubMesh &submesh : subMeshes ) {
-            params.vertexStart = submesh.vertexStart;
-            params.vertexCount = submesh.vertexCount;
-            
-            renderer.queueOperation( params );
-        }
+        glBindBufferRange( GL_UNIFORM_BUFFER, 1, draw.uniforms.getBuffer(), draw.uniforms.getOffset(), draw.uniforms.getSize() );
+        renderMesh( draw.mesh, GL_POINTS );
     }
 }
 
+void DebugDrawer::renderMesh( const SharedPtr<Mesh> &mesh, GLenum mode )
+{
+    mesh->getVertexArrayObject()->bindVAO();
+    auto indexBuffer = mesh->getIndexBuffer();
+    
+    if( indexBuffer ) {
+        indexBuffer->bindBuffer();
+    }
+    
+    for( const SubMesh &submesh : mesh->getSubMeshes() )
+    {
+        if( indexBuffer ) {
+            glDrawElements( mode, submesh.vertexCount, GL_UNSIGNED_INT, reinterpret_cast<GLvoid*>(sizeof(GLint)*submesh.vertexStart) );
+        }
+        else {
+            glDrawArrays( mode, submesh.vertexStart, submesh.vertexCount );
+        }
+    }
+    
+}
 
+
+           

@@ -13,7 +13,7 @@ class SkyBox :
 public:
     SkyBox( Root *root, const SharedPtr<Material> &material );
     
-    virtual void queueRenderable( LowLevelRenderer &renderer );
+//     virtual void queueRenderable( LowLevelRenderer &renderer ) override;
     
 private:
     Root *mRoot;

@@ -33,12 +33,17 @@ struct EntityUniforms {
     static const UniformBlockLayout& GetUniformBlockLayout();
 };
 
+struct AmbientUniforms {
+    glm::vec3 color;
+    float dummy0;
+};
 
 struct PointLightUniforms {
     glm::mat4 modelMatrix;
-    glm::vec4 color;
+    glm::vec3 color;
+    float dummy0;
     glm::vec2 radius;
-    float dummy0[2];
+    float dummy1[2];
 
     static const UniformBlockLayout& GetUniformBlockLayout();
 };

@@ -9,7 +9,7 @@
 
 class Root;
 class FrameListener;
-class LowLevelRenderer;
+class Renderer;
 class Camera;
 
 typedef void* SDL_GLContext;
@@ -40,8 +40,8 @@ public:
         return mSamplePassed;
     }
     
-    LowLevelRenderer& getLowLevelRenderer() {
-        return *mRenderer;
+    Renderer* getRenderer() {
+        return mRenderer;
     }
     
 private:
@@ -56,7 +56,7 @@ private:
     SDL_Window *mWindow = nullptr;
     SDL_GLContext mGLContext = nullptr;
     
-    LowLevelRenderer *mRenderer = nullptr;
+    Renderer *mRenderer = nullptr;
     
     std::vector<FrameListener*> mFrameListeners;
     std::vector<Camera*> mCameras;

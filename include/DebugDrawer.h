@@ -3,16 +3,19 @@
 #include "BaseManager.h"
 #include "SharedPtr.h"
 #include "GLTypes.h"
+#include "UniformBuffer.h"
 
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
 
 #include <vector>
 
-class LowLevelRenderer;
+class VertexArrayObject;
+class GpuBuffer;
 class Material;
 class Camera;
 class Mesh;
+class Renderer;
 
 class Renderable;
 
@@ -21,6 +24,7 @@ class DebugDrawer :
 {
 public:
     virtual bool init( Root *root );
+    virtual void postInit();
     virtual void destroy();
     
     virtual void update( float dt );
@@ -30,27 +34,13 @@ public:
                             const glm::vec4 &normalColor = glm::vec4(0.5f,0.2f,0.2f,1.f), const glm::vec4 &tangentColor = glm::vec4(0.2f,0.5f,0.2f,1.f),
                             const glm::vec4 &bitangentColor = glm::vec4(0.2f,0.2f,0.5f,1.f)
                           );
-    void queueRenderable( LowLevelRenderer &renderer );
     
     void drawWireSphere( float radius, const glm::mat4 &transform, const glm::vec4 &color = glm::vec4(0.1f,1.f,0.5f,1.f) );
     void drawWireCone( float height, float radius, const glm::mat4 &transform, const glm::vec4 &color = glm::vec4(0.1f,1.f,0.5f,1.f) );
     void drawWireConeAngle( float height, float angle, const glm::mat4 &transform, const glm::vec4 &color = glm::vec4(0.1f,1.f,0.5f,1.f) );
     void drawWireBox( const glm::vec3 &hsize, const glm::mat4 &transform, const glm::vec4 &color = glm::vec4(0.1f,1.f,0.5f,1.f) );
     
-private:
-    struct DebugDraw {
-        SharedPtr<Mesh> mesh;
-        glm::mat4 transform;
-        glm::vec4 color;
-    };
-    struct DebugNormalDraw {
-        SharedPtr<Mesh> mesh;
-        glm::mat4 transform;
-        glm::vec4 normalColor,
-                  tangentColor,
-                  bitangentColor;
-        float length;
-    };
+private:    
     struct WireDrawUniformBlock {
         glm::mat4 modelMatrix;
         glm::vec4 color;
@@ -60,25 +50,46 @@ private:
         glm::vec4 normalColor,
                   tangentColor,
                   bitangentColor;
-        float lenght;
+        float length;
     };
+    struct DebugWireDraw {
+        SharedPtr<Mesh> mesh;
+        UniformBuffer uniforms;
+    };
+    struct DebugNormalDraw {
+        SharedPtr<Mesh> mesh;
+        UniformBuffer uniforms;
+    };
+
+    
+    class DebugFrameListener;
     
 private:
-    void queueWireframe( LowLevelRenderer &renderer );
-    void queueNormals( LowLevelRenderer &renderer );
+    struct Vertex {
+        glm::vec3 position;
+        glm::vec3 normal;
+        glm::vec4 color;
+    };
+    
+    static std::vector<Vertex> SPHERE_MESH,
+                               CONE_MESH,
+                               BOX_MESH;
+private:
+    void renderWireFrames();
+    void renderNormals();
+    
+    void renderMesh( const SharedPtr<Mesh> &mesh, GLenum mode );
+  
     
 private:
     Root *mRoot = nullptr;
+    Renderer *mRenderer = nullptr;
     
-    std::vector<DebugDraw> mWireFramesDraws;
+    DebugFrameListener *mFrameListener;
+    
+    std::vector<DebugWireDraw> mWireFramesDraws;
     std::vector<DebugNormalDraw> mNormalDraws;
     
-    SharedPtr<Material> mWireFrameMaterial;
-    SharedPtr<Material> mNormalMaterial;
-    
-    size_t mWireUniformBlockLoc,
-           mNormalUniformBlockLoc;
-           
     SharedPtr<Mesh> mSphereMesh,
                     mConeMesh,
                     mBoxMesh;

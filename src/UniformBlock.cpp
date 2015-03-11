@@ -186,21 +186,3 @@ bool UniformBlockLayout::canBeUsedAs( const UniformBlockLayout &other ) const
     }
     return true;
 }
-
-
-UniformBuffer::UniformBuffer( size_t id, void *memory, size_t size ) :
-    mId(id), mMemory(memory), mSize(size)
-{
-}
-
-void UniformBuffer::setRawContent( size_t offset, const void *uniform, size_t size )
-{
-    if( (offset+size) > mSize ) {
-        throw std::runtime_error( "UniformBuffer::setUniform - out of bounds!" );
-    }
-    
-    // if mMemory is null, then mSize is 0 - and the check above failed
-    void *dest = (void*)((uintptr_t)mMemory + offset);
-    memcpy( dest, uniform, size );
-}
-

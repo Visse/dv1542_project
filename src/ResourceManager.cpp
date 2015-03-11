@@ -270,26 +270,28 @@ void ResourceManager::loadUncompressedResourcePack( const std::string &name, con
     for( Yaml::Node programNode : programs ) {
         Yaml::MappingNode settings = programNode.asMapping();
         
-        std::string progName = settings.getValues("Name").at(0).asValue().getValue();
+        std::string progName = settings.getFirstValue("Name",false).asValue().getValue();
+        std::string source  = settings.getFirstValue("Source",false).asValue().getValue();
         
-        Yaml::SequenceNode sources = settings.getValues("Shaders").at(0).asSequence();
-        
+        std::string filename = resourcePrefix + source;
         try {
-            std::vector<SharedPtr<GpuShader>> shaders;
-            for( size_t i=0, count=sources.getCount(); i < count; ++i ) {
-                Yaml::MappingNode shaderNode = sources.getValue(i).asMapping();
-                
-                std::string strType = shaderNode.getValues("Type",false).at(0).asValue().getValue();
-                std::string source  = shaderNode.getValues("Source",false).at(0).asValue().getValue();
-                
-                ShaderType type = stringToShaderType(strType);
-                
-                std::string filename = resourcePrefix + source;
-                SharedPtr<GpuShader> shader = GpuShader::LoadShaderFromFile(type,filename);
-                shaders.push_back( shader );
-            }
+            GpuProgramPtr program = GpuProgram::LoadProgram( filename );
             
-            GpuProgramPtr program = GpuProgram::CreateProgram( shaders );
+//             std::vector<SharedPtr<GpuShader>> shaders;
+//             for( size_t i=0, count=sources.getCount(); i < count; ++i ) {
+//                 Yaml::MappingNode shaderNode = sources.getValue(i).asMapping();
+//                 
+//                 std::string strType = shaderNode.getValues("Type",false).at(0).asValue().getValue();
+//                 std::string source  = shaderNode.getValues("Source",false).at(0).asValue().getValue();
+//                 
+//                 ShaderType type = stringToShaderType(strType);
+//                 
+//                 std::string filename = resourcePrefix + source;
+//                 SharedPtr<GpuShader> shader = GpuShader::LoadShaderFromFile(type,filename);
+//                 shaders.push_back( shader );
+//             }
+//             
+//             GpuProgramPtr program = GpuProgram::CreateProgram( shaders );
             
             if( program ) {
                 pack.programs.emplace( progName, program );
@@ -301,25 +303,25 @@ void ResourceManager::loadUncompressedResourcePack( const std::string &name, con
         }
     }
     
-    for( Yaml::Node materialNode : materials ) {
-        Yaml::MappingNode settings = materialNode.asMapping();
-        
-        std::string matName = settings.getValues("Name").at(0).asValue().getValue();
-        std::string source = settings.getValues("Source").at(0).asValue().getValue();
-        
-        try {
-            std::string filename = resourcePrefix + source;
-            MaterialPtr material = Material::LoadFromFile( filename, this );
-            
-            if( material ) {
-                pack.materials.emplace( matName, material );
-                
-                std::clog << "[ResourceManager] Loaded material \"" << matName << "\" in resource pack \"" << name << "\"" << std::endl;
-            }
-        } catch( const std::exception &e ) {
-            std::cerr << "[ResourceManager] Failed to load material \"" << matName << "\" in resource pack \"" << name << "\", error: " << e.what() << std::endl;
-        }
-    }
+//     for( Yaml::Node materialNode : materials ) {
+//         Yaml::MappingNode settings = materialNode.asMapping();
+//         
+//         std::string matName = settings.getValues("Name").at(0).asValue().getValue();
+//         std::string source = settings.getValues("Source").at(0).asValue().getValue();
+//         
+//         try {
+//             std::string filename = resourcePrefix + source;
+//             MaterialPtr material = Material::LoadFromFile( filename, this );
+//             
+//             if( material ) {
+//                 pack.materials.emplace( matName, material );
+//                 
+//                 std::clog << "[ResourceManager] Loaded material \"" << matName << "\" in resource pack \"" << name << "\"" << std::endl;
+//             }
+//         } catch( const std::exception &e ) {
+//             std::cerr << "[ResourceManager] Failed to load material \"" << matName << "\" in resource pack \"" << name << "\", error: " << e.what() << std::endl;
+//         }
+//     }
     
     for( Yaml::Node meshNode : meshes ) {
         Yaml::MappingNode settings = meshNode.asMapping();

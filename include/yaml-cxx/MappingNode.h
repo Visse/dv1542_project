@@ -21,6 +21,8 @@ namespace Yaml
         std::pair<Node,Node> getValue ( size_t index ) const;
         std::vector<Node> getValues( const std::string &name, bool caseSensitive = true ) const;
         Node getFirstValue( const std::string &name, bool caseSensitive = true ) const;
+        
+        using Node::operator bool;
     };
 }
 

@@ -16,14 +16,14 @@
 #include "ResourceManager.h"
 #include "SceneManager.h"
 #include "Scene.h"
-#include "Entity.h"
+#include "DeferredEntity.h"
 #include "Mesh.h"
 #include "ComputeParticleSystem.h"
 #include "LightObject.h"
 #include "DebugDrawer.h"
 #include "Camera.h"
-#include "LowLevelRenderer.h"
 #include "SceneGraph.h"
+#include "Renderable.h"
 
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
@@ -76,16 +76,61 @@ static const glm::vec4 COLOR_WIREFRAME = glm::vec4(0.1f,1.f,0.5f,1.f),
                        COLOR_FRUSTUM_TEST_INSIDE = glm::vec4(0.3f,0.8f,0.5f,1.f);
 
 static const float NORMAL_LENGHT = 0.1f;
-                       
 
-class DebugManager::DebugCamera :
-    public Camera
+class DebugManager::DebugFrameListener :
+    public FrameListener
 {
 public:
-    DebugManager *debugMgr;
-    virtual void render( LowLevelRenderer &renderer ) {
-        debugMgr->render( renderer );
+    DebugFrameListener( DebugManager *debugMgr, const SharedPtr<Texture> &texture, 
+                        const SharedPtr<GpuProgram> &shader, const SharedPtr<VertexArrayObject> &vao ) :
+        mDebugMgr(debugMgr),
+        mTexture(texture),
+        mShader(shader),
+        mVAO(vao)
+    {
+        mGraphicsMgr = mDebugMgr->mRoot->getGraphicsManager();
+        mRenderer = mGraphicsMgr->getRenderer();
+        mRenderable.debugMgr = debugMgr;
+        
+        mGraphicsMgr->addFrameListener( this );
     }
+    
+    virtual ~DebugFrameListener()
+    {
+        mGraphicsMgr->removeFrameListener( this );
+    }
+    
+    virtual void onFrameBegun() override
+    {
+        CustomRenderableSettings settings;
+            settings.vao = mVAO;
+            settings.program = mShader;
+            settings.textures[0] = mTexture;
+            settings.uniforms[0] = mRenderer->aquireUniformBuffer( mDebugMgr->mUniforms );
+            settings.blendMode = BlendMode::AlphaBlend;
+        
+        mRenderer->addCustomRenderable( settings, &mRenderable );
+    }
+    
+private:
+    struct :   
+        public Renderable
+    {
+        DebugManager *debugMgr;
+        
+        virtual void render( Renderer &renderer )
+        {
+            debugMgr->render( );
+        }
+    } mRenderable;
+    
+    DebugManager *mDebugMgr;
+    GraphicsManager *mGraphicsMgr;
+    Renderer *mRenderer;
+    
+    SharedPtr<Texture> mTexture;
+    SharedPtr<GpuProgram> mShader;
+    SharedPtr<VertexArrayObject> mVAO;
 };
 
 bool DebugManager::init( Root *root )
@@ -97,24 +142,7 @@ bool DebugManager::init( Root *root )
     const Config *config = mRoot->getConfig();
     mKeyToogleDebug = config->keyBindings.toogleDebug;
     
-    
-    ResourceManager *resourceMgr = mRoot->getResourceManager();
-    mMaterial = resourceMgr->getMaterialAutoPack("DebugGuiMaterial");
-    
-    if( !mMaterial ) {
-        std::cerr << "Failed to load debug gui material!" << std::endl;
-        return false;
-    }
-    
     mHeight = config->windowHeight;
-    
-    SharedPtr<GpuProgram> program = mMaterial->getProgram();
-    
-    GLint posLocation = program->getAttribLocation("Position"),
-          uvLocation  = program->getAttribLocation("UV"),
-          colourLocation = program->getAttribLocation("Colour");
-          
-    mUniformBlockLoc = program->getUniformBlockLocation("Debug");
     
     float width = config->windowWidth,
           height = config->windowHeight;
@@ -127,29 +155,11 @@ bool DebugManager::init( Root *root )
     );
     
     mVertexBuffer = GpuBuffer::CreateBuffer( BufferType::Vertexes, 20000, BufferUsage::WriteOnly, BufferUpdate::Dynamic );
-    
-    mVAO = makeSharedPtr<VertexArrayObject>();
-    mVAO->bindVAO();
-    mVertexBuffer->bindBuffer();
-    
-    mVAO->setVertexAttribPointer( posLocation, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), offsetof(ImDrawVert, pos) );
-    mVAO->setVertexAttribPointer( uvLocation, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), offsetof(ImDrawVert, uv) );
-    mVAO->setVertexAttribPointer( colourLocation, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), offsetof(ImDrawVert, col)) ;
-    
-    mVAO->unbindVAO();
-    mVertexBuffer->unbindBuffer();
+
     
     initImGui();
-    
-    mCamera = new DebugCamera;
-    mCamera->debugMgr = this;
-    
-    GraphicsManager *graphicsMgr = mRoot->getGraphicsManager();
-    graphicsMgr->addCamera( mCamera );
-    
-    mGBufferNormalMaterial = resourceMgr->getMaterialAutoPack( "GBufferDebugNormalMaterial" );
-    mGBufferDepthMaterial = resourceMgr->getMaterialAutoPack( "GBufferDebugDepthMaterial" );
 
+    
     StartupMesurements *mesurements = mRoot->getStartupMesurements();
     mesurements->debugStartup = initTimer.getTimeAsSeconds();
     
@@ -158,25 +168,42 @@ bool DebugManager::init( Root *root )
 
 void DebugManager::postInit()
 {    
-    GraphicsManager *graphicsMgr = mRoot->getGraphicsManager();
-    LowLevelRenderer &renderer = graphicsMgr->getLowLevelRenderer();
-    if( mGBufferNormalMaterial ) {
-        mGBufferNormalMaterial->setTexture( "NormalTexture", 0, renderer.getDeferredNormalTexture() );
-    }
-    if( mGBufferDepthMaterial ) {
-        mGBufferDepthMaterial->setTexture( "DepthTexture", 0, renderer.getDeferredDepthTexture() );
-    }
+    SharedPtr<VertexArrayObject> vao = makeSharedPtr<VertexArrayObject>();
+    vao->bindVAO();
+    mVertexBuffer->bindBuffer();
+    
+    vao->setVertexAttribPointer( 0, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), offsetof(ImDrawVert, pos) );
+    vao->setVertexAttribPointer( 1, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), offsetof(ImDrawVert, uv) );
+    vao->setVertexAttribPointer( 2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), offsetof(ImDrawVert, col)) ;
+    
+    vao->unbindVAO();
+    mVertexBuffer->unbindBuffer();
+
+    unsigned char *pixels;
+    int texWidth, texHeight;
+    
+    ImGuiIO &io = ImGui::GetIO();
+    io.Fonts->GetTexDataAsRGBA32( &pixels, &texWidth, &texHeight );
+    
+    SharedPtr<Texture> texture = Texture::LoadTextureFromRawMemory( TextureType::RGBA, pixels, texWidth, texHeight );
+
+    texture->bindTexture(0);
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+    texture->unbindTexture(0);
+    
+    ResourceManager *resourceMgr = mRoot->getResourceManager();
+    SharedPtr<GpuProgram> shader = resourceMgr->getGpuProgramAutoPack("DebugGuiShader");
+    
+    mFrameListener = new DebugFrameListener( this, texture, shader, vao );
 }
 
 void DebugManager::destroy()
 {
+    delete mFrameListener;
+    mFrameListener = nullptr;
+    
     destroyImGui();
-    
-    GraphicsManager *graphicsMgr = mRoot->getGraphicsManager();
-    graphicsMgr->removeCamera( mCamera );
-    
-    delete mCamera;
-    mCamera = nullptr;
     
     mRoot = nullptr;
 }
@@ -209,10 +236,7 @@ void DebugManager::update( float dt )
                 ImGui::PlotLines( "Frame Rate", mRoot->getFrameRateHistory(), 10.f, 0.f, ImVec2(0,70) );
                 ImGui::PlotLines( "Gpu Time", graphicsMgr->getGpuTimeHistory(), 10, 10, ImVec2(0,70) );
                 ImGui::PlotLines( "Samples passed (*10k)", graphicsMgr->getSamplesPassed(), 100, 100, ImVec2(0,70) );
-                
-                LowLevelRenderer &renderer = graphicsMgr->getLowLevelRenderer();
-                ImGui::PlotLines( "Draw Count", renderer.getDrawCountHistory(), 10, 10, ImVec2(0,70) );
-                ImGui::PlotLines( "Vertex Count", renderer.getVertexCountHistory(), 10, 10, ImVec2(0,70) );
+
             }
             
             SceneManager *sceneMgr = mRoot->getSceneManager();
@@ -422,40 +446,29 @@ struct ImGuiRenderData {
 };
 
 
-void DebugManager::render( LowLevelRenderer &renderer )
+void DebugManager::render()
 {
     if( mIsDebugVisible ) {
-        
         ImGui::Render();
         
-        LowLevelOperationParams params;
-            params.material = mMaterial.get();
-            params.vao = mVAO.get();
-            params.drawMode = DrawMode::Triangles;
-            params.renderQueue = RQ_Overlay;
-            params.scissorTest = true;
-            params.faceCulling = false;
-            
-            
-        auto uniforms = renderer.aquireUniformBuffer( sizeof(UniformBlock) );
-        uniforms.setIndex( mUniformBlockLoc );
-        uniforms.setRawContent( 0, &mUniforms, sizeof(UniformBlock) );
-        params.uniforms[0] = uniforms;
-            
         ImGuiIO &io = ImGui::GetIO();
         ImGuiRenderData *renderData = static_cast<ImGuiRenderData*>(io.UserData);
         
-        for( const DrawInfo &draw : renderData->draws ) {
-            params.vertexStart = draw.vertexStart;
-            params.vertexCount = draw.vertexCount;
-            
-            params.scissorPos = glm::vec2( draw.scissorPos.x, mHeight-draw.scissorPos.y );
-            params.scissorSize = draw.scissorSize;
-            
-            renderer.queueOperation( params );
+        glEnable( GL_SCISSOR_TEST );
+        glDisable( GL_CULL_FACE );
+        glDisable( GL_DEPTH_TEST );
+        
+        for( const DrawInfo &draw : renderData->draws )
+        {
+            glScissor( draw.scissorPos.x, mHeight-draw.scissorPos.y, draw.scissorSize.x, draw.scissorSize.y );
+            glDrawArrays( GL_TRIANGLES, draw.vertexStart, draw.vertexCount );
         }
+        
+        glDisable( GL_SCISSOR_TEST );
+        glEnable( GL_CULL_FACE );
+        glEnable( GL_DEPTH_TEST );
     }
-    
+    /*
     switch( mGBufferDebug ) {
     case( GBufferDebug::None ):
         break;
@@ -478,6 +491,7 @@ void DebugManager::render( LowLevelRenderer &renderer )
         renderer.queueOperation( params );
       } break;
     }
+    */
 }
 
 void RenderImGuiDrawLists( ImDrawList** const draw_lists, int count );
@@ -515,8 +529,6 @@ void DebugManager::initImGui()
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
     texture->unbindTexture(0);
-    
-    mMaterial->setTexture( "Texture", 0, texture );
     
     ImGui::NewFrame();
 }
@@ -573,7 +585,7 @@ void DebugManager::showSceneObject( float dt, SceneObject *object )
         ImGui::SameLine();
         ImGui::Checkbox( "Show Parent Nodes", &debugDrawInfo.parentSceneNodes );
         
-        Entity *entity = dynamic_cast<Entity*>(object);
+        DeferredEntity *entity = dynamic_cast<DeferredEntity*>(object);
         if( entity ) {
             SharedPtr<Mesh> mesh = entity->getMesh();
             const std::string &meshName = mesh->getName();
@@ -697,34 +709,6 @@ void DebugManager::showSceneObject( float dt, SceneObject *object )
                 }
             }
         
-            if( BoxLight *boxLight = dynamic_cast<BoxLight*>(light) ) {
-                glm::vec3 innerSize = boxLight->getInnerSize(),
-                          outerSize = boxLight->getOuterSize();
-                float intensity = boxLight->getIntensity();
-                
-                if( ImGui::SliderFloat("OuterSizeX", &outerSize.x, 0.f, 20.f) ) {
-                    boxLight->setOuterSize( outerSize );
-                }              
-                if( ImGui::SliderFloat("InnerSizeX", &innerSize.x, 0.f, outerSize.x) ) {
-                    boxLight->setInnerSize( innerSize );
-                }
-                if( ImGui::SliderFloat("OuterSizeY", &outerSize.y, 0.f, 20.f) ) {
-                    boxLight->setOuterSize( outerSize );
-                }              
-                if( ImGui::SliderFloat("InnerSizeY", &innerSize.y, 0.f, outerSize.y) ) {
-                    boxLight->setInnerSize( innerSize );
-                }
-                if( ImGui::SliderFloat("OuterSizeZ", &outerSize.z, 0.f, 20.f) ) {
-                    boxLight->setOuterSize( outerSize );
-                }              
-                if( ImGui::SliderFloat("InnerSizeZ", &innerSize.z, 0.f, outerSize.z) ) {
-                    boxLight->setInnerSize( innerSize );
-                }
-                if( ImGui::SliderFloat("Intensity", &intensity, 0.f, 2.f) ) {
-                    boxLight->setIntensity( intensity );
-                }
-            }
-        
             ImGui::Checkbox( "Light Volume", &debugDrawInfo.debugLight );
         }
         ImGui::TreePop();
@@ -753,8 +737,7 @@ void DebugManager::submitDebugDraw()
         if( info.debugLight ) {
             LightObject *light = dynamic_cast<LightObject*>(object);
             if( light ) {
-                debugDrawer->drawWireFrame( light->getInnerLightVolumeMesh(), light->getTransform()*light->getInnerLightVolumeMatrix(), COLOR_INNER_LIGHT_VOLUME );
-                debugDrawer->drawWireFrame( light->getOuterLightVolumeMesh(), light->getTransform()*light->getOuterLightVolumeMatrix(), COLOR_OUTER_LIGHT_VOLUME );
+#pragma message "FIXME"
             }
         }
         if( info.parentSceneNodes ) {

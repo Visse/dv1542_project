@@ -12,7 +12,6 @@
 #include "Mesh.h"
 
 class ResourceManager;
-class Material;
 
 class MeshLoaderWavefront
 {
@@ -48,7 +47,6 @@ private:
             texcoord[3];
             
         glm::vec3 tangent, bitangent;
-        SharedPtr<Material> material;
     };
     
 private: // parser helper functions
@@ -80,7 +78,6 @@ private:
     ResourceManager *mResourceMgr;
     struct {
         int currentLine;
-        SharedPtr<Material> currentMaterial;
         
         std::deque<glm::vec3> positions,
                               normals,

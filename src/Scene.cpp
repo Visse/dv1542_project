@@ -2,13 +2,13 @@
 #include "SceneObject.h"
 #include "Root.h"
 #include "ResourceManager.h"
-#include "Entity.h"
 #include "GlmStream.h"
 #include "SceneManager.h"
 #include "SceneObjectFactory.h"
 #include "SharedEnums.h"
 #include "Frustrum.h"
 #include "SceneGraph.h"
+#include "UniformBlockDefinitions.h"
 
 #include "yaml-cxx/YamlCxx.h"
 
@@ -26,11 +26,13 @@ SharedPtr<Scene> Scene::LoadFromFile( Root *root, const std::string &filename )
     SceneManager *sceneMgr = root->getSceneManager();
     ResourceManager *resourceMgr = root->getResourceManager();
     
+    glm::vec3 ambient = sceneCfg.getFirstValue("AmbientColor",false).asValue().getValue<glm::vec3>(scene->getAmbientColor());
+    scene->setAmbientColor( ambient );
+    
     auto resourcePackList = sceneCfg.getValues("ResourcePack");
     for( Yaml::Node packNode : resourcePackList ) {
         resourceMgr->loadResourcePack( packNode.asValue().getValue() );
     }
-    
     
     auto objectList = sceneCfg.getValues("Object");
     for( Yaml::Node objectNode : objectList ) {
@@ -39,7 +41,12 @@ SharedPtr<Scene> Scene::LoadFromFile( Root *root, const std::string &filename )
         
         SceneObjectFactory *factory = sceneMgr->getFactory( type );
         if( factory ) {
-            SceneObject *object = factory->createObject( objectNode );
+            SceneObject *object = nullptr;
+            try {
+                 object = factory->createObject( objectNode );
+            } catch( const std::exception &e ) {
+                std::cerr << "[Scene] Failed to create object of type \"" << type << "\", error: " << e.what() << std::endl;
+            }
             
             if( object ) {
                 Yaml::ValueNode positionNode = config.getFirstValue("Position",false).asValue(),
@@ -109,4 +116,11 @@ void Scene::quarySceneObjects( const Frustrum &frustrum, std::vector<SceneObject
 void Scene::forEachObject( const std::function<void(SceneObject*)> &callback )
 {
     mSceneGraph->forEachObject( callback );
+}
+
+AmbientUniforms Scene::getAmbientUniforms()
+{
+    AmbientUniforms uniforms;
+    uniforms.color = mAmbientColor;
+    return uniforms;
 }

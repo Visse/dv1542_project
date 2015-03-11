@@ -1,5 +1,5 @@
 #include "SceneObjectFactory.h"
-#include "Entity.h"
+#include "DeferredEntity.h"
 #include "GlmStream.h"
 #include "Root.h"
 #include "ResourceManager.h"
@@ -11,22 +11,30 @@
 
 #include <iostream>
 
-EntityFactory::EntityFactory( Root *root ) :
+DeferredEntityFactory::DeferredEntityFactory( Root *root ) :
     mRoot(root)
 {
 }
 
-SceneObject* EntityFactory::createObject( const Yaml::Node &node )
+SceneObject* DeferredEntityFactory::createObject( const Yaml::Node &node )
 {
     Yaml::MappingNode config = node.asMapping();
     
     std::string meshName = config.getFirstValue("Mesh",false).asValue().getValue();
     
+    std::string diffuseName = config.getFirstValue("DiffuseTexture",false).asValue().getValue();
+    std::string normalMapName = config.getFirstValue("NormalMap",false).asValue().getValue();
+    
     ResourceManager *resourceMgr = mRoot->getResourceManager();
     
     SharedPtr<Mesh> mesh = resourceMgr->getMeshAutoPack( meshName );
+    
+    DeferredMaterial material;
+    material.diffuseTexture = resourceMgr->getTextureAutoPack( diffuseName );
+    material.normalMap = resourceMgr->getTextureAutoPack( normalMapName );
+    
     if( mesh ) {
-        Entity *entity = new Entity( mRoot, mesh );
+        DeferredEntity *entity = new DeferredEntity( mRoot, mesh, material );
         
         return entity;
     }
@@ -74,12 +82,6 @@ SceneObject *LightFactory::createObject( const Yaml::Node &node )
         
         return light;
     }
-    if( StringUtils::equalCaseInsensitive(lightType,"Ambient") ) {
-        AmbientLight *light = new AmbientLight( mRoot );
-        light->setColor( color );
-        
-        return light;
-    }
     if( StringUtils::equalCaseInsensitive(lightType,"Spot") ) {
         SpotLight *light = new SpotLight( mRoot );
         
@@ -94,20 +96,6 @@ SceneObject *LightFactory::createObject( const Yaml::Node &node )
         light->setOuterAngle( outerAngle );
         light->setInnerDistance( innerDistance );
         light->setOuterDistance( outerDistance );
-        light->setIntensity( intensity );
-        
-        return light;
-    }
-    if( StringUtils::equalCaseInsensitive(lightType,"Box") ) {
-        BoxLight *light = new BoxLight( mRoot );
-        
-        glm::vec3 innerSize = config.getFirstValue("InnerSize",false).asValue().getValue<glm::vec3>(light->getInnerSize());
-        glm::vec3 outerSize = config.getFirstValue("OuterSize",false).asValue().getValue<glm::vec3>(light->getOuterSize());
-        float intensity = config.getFirstValue("Intensity",false).asValue().getValue<float>(light->getIntensity());
-        
-        light->setColor( color );
-        light->setInnerSize( innerSize );
-        light->setOuterSize( outerSize );
         light->setIntensity( intensity );
         
         return light;

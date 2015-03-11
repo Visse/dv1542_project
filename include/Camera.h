@@ -5,8 +5,9 @@
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
 
+struct SceneRenderUniforms;
 class GpuBuffer;
-class LowLevelRenderer;
+class Renderer;
 
 class Camera
 {
@@ -14,7 +15,9 @@ public:
     virtual ~Camera() = default;
     
     virtual void update( float dt );
-    virtual void render( LowLevelRenderer &renderer ) = 0;
+    virtual void render( Renderer &renderer ) = 0;
+    virtual SceneRenderUniforms getSceneUniforms() = 0;
+    
     
     glm::mat4 getProjectionMatrix() {
         return mProjectionMatrix;

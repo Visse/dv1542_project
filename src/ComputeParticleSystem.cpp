@@ -5,11 +5,12 @@
 #include "GLinclude.h"
 #include "Config.h"
 #include "GpuBuffer.h"
-#include "LowLevelRenderer.h"
 #include "Material.h"
 
 #include <glm/gtc/random.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
+#pragma message "FIXME"
 
 ComputeParticleSystem::ComputeParticleSystem( Root *root ) :
     mRoot(root)
@@ -17,27 +18,7 @@ ComputeParticleSystem::ComputeParticleSystem( Root *root ) :
     ResourceManager *resourceMgr = mRoot->getResourceManager();
     
     mSimulation = resourceMgr->getGpuProgramAutoPack( "ComputeParticleSimulation" );
-    mMaterial = resourceMgr->getMaterialAutoPack( "ComputeParticleMaterial" );
     mAttractorMaterial = resourceMgr->getMaterialAutoPack( "ComputeParticleAttractorMaterial" );
-    
-    if( !mSimulation || !mMaterial) {
-        throw std::runtime_error( "computeParticle: Missing gpu programs and/or material!, did you load the resourcepack?" );
-    }
-    if( mAttractorMaterial ) {
-        mAttractorUniformLoc = mAttractorMaterial->getProgram()->getUniformBlockLocation("ComputeAttractors");
-    }
-    
-    mShader = mMaterial->getProgram();
-    
-    mSimulationLoc.dt = mSimulation->getUniformLocation( "dt" );
-    mSimulationLoc.weightMod = mSimulation->getUniformLocation( "weightMod" );
-    mSimulationLoc.distMod = mSimulation->getUniformLocation( "distMod" );
-    mSimulationLoc.lifeTime = mSimulation->getUniformLocation( "lifeTimeMod" );
-    mSimulationLoc.damping = mSimulation->getUniformLocation( "dampingMod" );
-    mSimulationLoc.attractorCount = mSimulation->getUniformLocation( "AttractorCount" );
-    mSimulationLoc.modelMatrix = mSimulation->getUniformLocation("ModelMatrix");
-    
-    mRenderingUniformLoc = mShader->getUniformBlockLocation( "ComputeParticle" );
 
     
     const Config *config = mRoot->getConfig();
@@ -134,39 +115,5 @@ void ComputeParticleSystem::update( float dt )
     glDispatchCompute( mParticleGroupCount, 1, 1 );
     
     glMemoryBarrier( GL_SHADER_STORAGE_BARRIER_BIT );
-}
-
-void ComputeParticleSystem::queueRenderable( LowLevelRenderer &renderer )
-{
-    RenderingUniformBlock uniforms;
-        uniforms.modelMatrix = getTransform();
-        uniforms.intensityAndSize = glm::vec2(mIntensity,mPointSize);
-    
-    LowLevelOperationParams params;
-        params.material = mMaterial.get();
-        params.vao = &mVAO;
-        params.vertexStart = 0;
-        params.vertexCount = mParticleGroupCount * mParticleGroupSize;
-        params.drawMode = DrawMode::Points;
-        params.renderQueue = RQ_LightLast;
-        params.uniforms[0] = renderer.aquireUniformBuffer( mRenderingUniformLoc, uniforms );
-        
-    renderer.queueOperation( params );
-    
-    if( mShowAttractors && mAttractorMaterial ) {
-        AttractorUniformBlock uniforms;
-            uniforms.modelMatrix = getTransform();
-        
-        LowLevelOperationParams params;
-            params.material = mAttractorMaterial.get();
-            params.vao = &mAttractorVAO;
-            params.vertexStart = 0;
-            params.vertexCount = mAttractorCount;
-            params.drawMode = DrawMode::Points;
-            params.renderQueue = RQ_LightLast;
-            params.uniforms[0] = renderer.aquireUniformBuffer( mAttractorUniformLoc, uniforms );
-            
-        renderer.queueOperation( params );
-    }
 }
 

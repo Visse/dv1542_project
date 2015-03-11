@@ -17,7 +17,6 @@ class Material;
 
 struct SubMesh {
     size_t vertexStart, vertexCount;
-    SharedPtr<Material> material;
 };
 
 class Mesh {

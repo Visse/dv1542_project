@@ -6,6 +6,7 @@
 
 #include "BoundingSphere.h"
 
+class Renderer;
 class SceneNode;
 class LowLevelRenderer;
 class Renderable;
@@ -16,7 +17,8 @@ public:
    
     virtual void update( float dt ) {}
     
-    virtual void queueRenderable( LowLevelRenderer &renderer ) {}
+    virtual void submitRenderer( Renderer &renderer ) {}
+    virtual void submitShadowCaster( Renderer &renderer ) {}
     
     void setPosition( const glm::vec3 &position ) {
         mPosition = position;

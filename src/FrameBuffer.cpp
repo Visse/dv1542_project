@@ -71,9 +71,6 @@ void FrameBuffer::setDepthTexture( const SharedPtr<Texture> &texture )
 
 void FrameBuffer::bindFrameBuffer()
 {
-#ifdef USE_DEBUG_NORMAL
-    assert( getBoundFrameBuffer() == 0 );
-#endif
     glBindFramebuffer( GL_FRAMEBUFFER, mFrameBuffer );
 }
 

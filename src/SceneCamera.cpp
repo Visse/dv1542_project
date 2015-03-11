@@ -1,5 +1,4 @@
 #include "SceneCamera.h"
-#include "LowLevelRenderer.h"
 #include "GpuBuffer.h"
 #include "UniformBlockDefinitions.h"
 #include "Controller.h"
@@ -7,6 +6,7 @@
 #include "Root.h"
 #include "DebugDrawer.h"
 #include "DefaultGpuProgramLocations.h"
+#include "Renderer.h"
 
 #include <glm/glm.hpp>
 
@@ -27,37 +27,22 @@ void SceneCamera::update( float dt )
     Camera::update( dt );
 }
 
-void SceneCamera::render( LowLevelRenderer &renderer )
+void SceneCamera::render( Renderer &renderer )
 {
-    mCulledObjects.clear();
-    
+    renderer.renderScene( mScene.get(), this );
+}
+
+SceneRenderUniforms SceneCamera::getSceneUniforms()
+{
     SceneRenderUniforms sceneUniforms;
         sceneUniforms.viewMatrix = getViewMatrix();
         sceneUniforms.projectionMatrix = getProjectionMatrix();
         sceneUniforms.viewProjMatrix = sceneUniforms.projectionMatrix * sceneUniforms.viewMatrix;
-        sceneUniforms.inverseViewMatrix = glm::inverse(getViewMatrix());
+        sceneUniforms.inverseViewMatrix = glm::inverse( sceneUniforms.viewMatrix );
         sceneUniforms.inverseProjectionMatrix = glm::inverse( sceneUniforms.projectionMatrix );
         sceneUniforms.inverseViewProjMatrix = glm::inverse( sceneUniforms.viewProjMatrix );
         sceneUniforms.clippingPlanes = glm::vec2( getNearPlane(), getFarPlane() );
         sceneUniforms.cameraPosition = mController->getPosition();
-    
-    UniformBuffer uniformBuffer = renderer.aquireUniformBuffer( sizeof(SceneRenderUniforms) );
-    uniformBuffer.setIndex( getDefaultUniformBlockBinding(DefaultUniformBlockLocations::SceneInfo) );
-    uniformBuffer.setRawContent( 0, &sceneUniforms, sizeof(SceneRenderUniforms) );
-    
-    renderer.setSceneUniforms( uniformBuffer );
-    
-    Frustrum frustrum = getFrustrum();
-    
-    mScene->quarySceneObjects( frustrum, mCulledObjects );
-    
-    for( SceneObject *sceneObject : mCulledObjects ) {
-        sceneObject->queueRenderable( renderer );
-    }
-    
-    DebugDrawer *debugDrawer = mRoot->getDebugDrawer();
-    if( debugDrawer ) {
-        debugDrawer->queueRenderable( renderer );
-    }
+        
+    return sceneUniforms;
 }
-

@@ -8,6 +8,8 @@
 #include <map>
 #include <glm/mat4x4.hpp>
 
+class Texture;
+class GpuProgram;
 class Root;
 class GpuBuffer;
 class GraphicsManager;
@@ -31,7 +33,6 @@ public:
     virtual void update( float dt );
     virtual bool handleSDLEvent( const SDL_Event &event );
     
-    
 private:
     void initImGui();
     void destroyImGui();
@@ -46,7 +47,7 @@ private:
     void submitDebugDraw();
     
     void paintDebugOverlay();
-    void render( LowLevelRenderer &renderer );
+    void render();
     
 private:
     struct DebugDrawInfo {
@@ -60,7 +61,7 @@ private:
         SharedPtr<Mesh> mesh;
     };
     
-    struct UniformBlock {
+    struct DebugGuiUniforms {
         glm::mat4 projectionMatrix;
     };
     
@@ -70,10 +71,11 @@ private:
         Depth
     };
     
-    class DebugCamera;
+    class DebugFrameListener;
+    
 private:
     Root *mRoot = nullptr;
-    DebugCamera *mCamera;
+    DebugFrameListener *mFrameListener;
     
     Int32 mKeyToogleDebug; 
     
@@ -88,13 +90,10 @@ private:
     
     std::map<SceneObject*, DebugDrawInfo> mDebugDrawInfo;
     SharedPtr<GpuBuffer> mVertexBuffer;
-    SharedPtr<Material> mMaterial;
-    SharedPtr<VertexArrayObject> mVAO;
     
     float mHeight;
     
-    UniformBlock mUniforms;
-    size_t mUniformBlockLoc;
+    DebugGuiUniforms mUniforms;
     
     Frustrum mCurrentFrustrum,
              mSavedFrustrum;

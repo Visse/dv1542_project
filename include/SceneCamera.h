@@ -1,13 +1,14 @@
 #pragma once
 
 #include "Camera.h"
-#include "Entity.h"
+#include "SharedPtr.h"
 
 #include <vector>
 
 class Root;
-class Controller;
 class Scene;
+class SceneObject;
+class Controller;
 
 class SceneCamera :
     public Camera
@@ -16,7 +17,8 @@ public:
     SceneCamera( Root *root, const SharedPtr<Scene> &scene, const SharedPtr<Controller> &controller ); 
     
     virtual void update( float dt ) override;
-    virtual void render( LowLevelRenderer &renderer ) override;
+    virtual void render( Renderer &renderer ) override;
+    virtual SceneRenderUniforms getSceneUniforms() override;
     
 private:
     Root *mRoot;

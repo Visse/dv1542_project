@@ -20,7 +20,6 @@ void MeshLoaderWavefront::loadFile( const std::string &filename )
     std::string line;
     
     mParseInfo.currentLine = 1;
-    mParseInfo.currentMaterial.reset();
     mParseInfo.positions.clear();
     mParseInfo.normals.clear();
     mParseInfo.texcoords.clear();
@@ -52,10 +51,7 @@ void MeshLoaderWavefront::parseLine( const std::string &line )
     else if( StringUtils::startsWith(line,"f ") ) {
         parseFace( line );
     }
-    else if( StringUtils::startsWith(line,"usemtl ") ) {
-        std::string name = StringUtils::stripSpaces( line.substr(7) );
-        mParseInfo.currentMaterial = mResourceMgr->getMaterialAutoPack( name );
-    }
+    else if( StringUtils::startsWith(line,"usemtl ") ) {} // use material, unsupported
     else if( StringUtils::startsWith(line,"#") ) {} // comment
     else if( StringUtils::startsWith(line,"s ") ) {} // smooth, unsupported
     else if( StringUtils::startsWith(line,"g ") ) {} // group
@@ -105,7 +101,6 @@ void MeshLoaderWavefront::parseFace( const std::string &line )
     auto iter = vertexes.begin(), end = vertexes.end();
     int index = 0;
     Face face;
-    face.material = mParseInfo.currentMaterial;
     for( ++iter; iter != end; ++iter, ++index ) {
         if( !parseVertex(*iter, index, face) ) {
             throw std::runtime_error( StringUtils::strjoin("Invalid face vertex!, expected format is \"[position]/[texcoord]/[normal]\", line ",mParseInfo.currentLine," says: \"",line,"\".") );
@@ -195,33 +190,14 @@ void MeshLoaderWavefront::validateFaces()
 
 void MeshLoaderWavefront::sortFaces()
 {
-    std::sort( mParseInfo.faces.begin(), mParseInfo.faces.end(), 
-        []( const Face &f1, const Face &f2 ) {
-            return f1.material < f2.material;
-        }
-    );
 }
 
 void MeshLoaderWavefront::buildMesh()
 {
     if( mParseInfo.faces.empty() )  return;
     
-    SharedPtr<Material> currentMaterial = mParseInfo.faces.front().material;
-    
     size_t startIndex = 0, vertexCount = 0;
     for( const Face &face : mParseInfo.faces ) {
-        if( face.material != currentMaterial ) {
-            SubMesh subMesh;
-                subMesh.material = currentMaterial;
-                subMesh.vertexCount = vertexCount;
-                subMesh.vertexStart = startIndex;
-            mMeshInfo.submeshes.push_back( subMesh );
-            
-            startIndex += vertexCount;
-            vertexCount = 0;
-            currentMaterial = face.material;
-        }
-        
         for( int i=0; i < 3; ++i ) {
             Vertex vertex;
                 vertex.position = mParseInfo.positions.at(face.position[i]);
@@ -248,13 +224,10 @@ void MeshLoaderWavefront::buildMesh()
         }
     }
     
-    if( vertexCount > 0 ) {
-        SubMesh subMesh;
-            subMesh.material = currentMaterial;
-            subMesh.vertexCount = vertexCount;
-            subMesh.vertexStart = startIndex;
-        mMeshInfo.submeshes.push_back( subMesh );
-    }
+    SubMesh subMesh;
+        subMesh.vertexCount = vertexCount;
+        subMesh.vertexStart = startIndex;
+    mMeshInfo.submeshes.push_back( subMesh );
 }
 
 

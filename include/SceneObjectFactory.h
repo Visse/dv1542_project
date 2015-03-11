@@ -19,11 +19,11 @@ public:
 };
 
 
-class EntityFactory :
+class DeferredEntityFactory :
     public SceneObjectFactory
 {
 public:
-    EntityFactory( Root *root );
+    DeferredEntityFactory( Root *root );
     virtual SceneObject* createObject( const Yaml::Node &node ) override;
     
     

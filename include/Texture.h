@@ -16,6 +16,12 @@ enum class TextureType
     RGBA,
     Depth,
     
+    // 16 bits precision
+    Red16,
+    RG16,
+    RGB16,
+    RGBA16,
+    
     // floating point formats
     RGBF,
     RGBAF,

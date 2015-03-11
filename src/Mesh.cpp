@@ -160,21 +160,13 @@ SharedPtr<Mesh> uploadMeshToGpu( const std::vector<Mesh::Vertex> &vertexes,
     vao->bindVAO();
     vertexBuffer->bindBuffer();
     
-    GLuint loc;
-    loc = getDefaultAttributeLocation( DefaultAttributeLocations::Position );
-    vao->setVertexAttribPointer( loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), offsetof(Vertex, position) );
+    vao->setVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), offsetof(Vertex, position) );
+    vao->setVertexAttribPointer( 1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), offsetof(Vertex, normal) );
+    vao->setVertexAttribPointer( 2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), offsetof(Vertex, texcoord) );
     
-    loc = getDefaultAttributeLocation( DefaultAttributeLocations::Normal );
-    vao->setVertexAttribPointer( loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), offsetof(Vertex, normal) );
+    vao->setVertexAttribPointer( 3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), offsetof(Vertex, tangent) );
+    vao->setVertexAttribPointer( 4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), offsetof(Vertex, bitangent) );
     
-    loc = getDefaultAttributeLocation( DefaultAttributeLocations::Tangent );
-    vao->setVertexAttribPointer( loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), offsetof(Vertex, tangent) );
-    
-    loc = getDefaultAttributeLocation( DefaultAttributeLocations::Bitangent );
-    vao->setVertexAttribPointer( loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), offsetof(Vertex, bitangent) );
-    
-    loc = getDefaultAttributeLocation( DefaultAttributeLocations::Texcoord );
-    vao->setVertexAttribPointer( loc, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), offsetof(Vertex, texcoord) );
     
     vao->unbindVAO();
     vertexBuffer->unbindBuffer();

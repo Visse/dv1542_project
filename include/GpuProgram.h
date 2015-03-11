@@ -10,9 +10,37 @@
 
 class GpuShader;
 
+class GpuProgramBuilder {
+public:
+    void addShader( const SharedPtr<GpuShader> &shader ) {
+        mShaders.push_back( shader );
+    }
+    void setOutput( const std::string &name, int index ) {
+        mOutputs[name] = index;
+    }
+    void setAttribute( const std::string &name, int index ) {
+        mAttributes[name] = index;
+    }
+    void setSampler( const std::string &name, int unit ) {
+        mSamplers[name] = unit;
+    }
+    void setUniformBlock( const std::string &name, int index ) {
+        mUniformBlocks[name] = index;
+    }
+    
+    SharedPtr<GpuProgram> buildProgram();
+    
+private:
+    std::vector<SharedPtr<GpuShader>> mShaders;
+    std::map<std::string,int> mOutputs, 
+                              mAttributes, 
+                              mSamplers,
+                              mUniformBlocks;
+};
+
 class GpuProgram {
 public:
-    static SharedPtr<GpuProgram> CreateProgram( const std::vector<SharedPtr<GpuShader>> &shaders );
+    static SharedPtr<GpuProgram> LoadProgram( const std::string &filename );
     
 public:
     GpuProgram( GLuint program );
@@ -26,21 +54,10 @@ public:
     void bindProgram();
     void unbindProgram();
     
-    GLint getAttribLocation( const std::string &name );
-    GLint getUniformLocation( const std::string &name );
-    GLint getUniformBlockLocation( const std::string &name );
-    const UniformBlockLayout& getUniformBlockLayout( const std::string &name );
-    
     GLuint getGLProgram() {
         return mProgram;
     }
     
 private:
     GLuint mProgram;
-    
-    std::map<std::string,GLint> mUniformBlockLoc,
-                                mUniformLoc,
-                                mAttribLoc;
-    
-    std::map<std::string,UniformBlockLayout> mUniformBlocks;
 };

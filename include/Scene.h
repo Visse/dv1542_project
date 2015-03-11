@@ -8,11 +8,14 @@
 
 #include "SharedPtr.h"
 #include "UniquePtr.h"
+#include "BoundingSphere.h"
 
 class Root;
 class Frustrum;
 class SceneObject;
 class SceneGraph;
+
+struct AmbientUniforms;
 
 class Scene {
 public:
@@ -38,8 +41,31 @@ public:
     SceneGraph* getSceneGraph() {
         return mSceneGraph.get();
     }
+    AmbientUniforms getAmbientUniforms();
+    
+    
+    glm::vec3 getAmbientColor() {
+        return mAmbientColor;
+    }
+    void setAmbientColor( const glm::vec3 &ambient ) {
+        mAmbientColor = ambient;
+    }
+    
+private:
+    typedef unsigned int ZoneID;
+    struct Portal {
+        BoundingSphere bounds;
+        glm::vec3 pos;
+        ZoneID targetZone;
+    };
+    struct ZoneInfo {
+        std::vector<Portal> portals;
+        UniquePtr<SceneGraph> sceneGraph;
+    };
     
 private:
     Root *mRoot;
     UniquePtr<SceneGraph> mSceneGraph;
+    
+    glm::vec3 mAmbientColor = glm::vec3(0.5);
 };

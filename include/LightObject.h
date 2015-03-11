@@ -18,27 +18,21 @@ class LightObject :
 public:
     void setColor( const glm::vec3 &color ) {
         mColor = color;
+    }    
+    void setCastShadow( bool castShadow ) {
+        mCastShadow = castShadow;
     }
+    
     const glm::vec3& getColor() {
         return mColor;
     }
-    
-    
-    virtual SharedPtr<Mesh> getOuterLightVolumeMesh() {
-        return SharedPtr<Mesh>();
-    }
-    virtual glm::mat4 getOuterLightVolumeMatrix() {
-        return glm::mat4();
+    bool getCastShadow() {
+        return mCastShadow;
     }
     
-    virtual SharedPtr<Mesh> getInnerLightVolumeMesh() {
-        return SharedPtr<Mesh>();
-    }
-    virtual glm::mat4 getInnerLightVolumeMatrix() {
-        return glm::mat4();
-    }
 private:
     glm::vec3 mColor;
+    bool mCastShadow;
 };
 
 class PointLight :
@@ -46,10 +40,8 @@ class PointLight :
 {
 public:
     PointLight( Root *root );
-    virtual void queueRenderable( LowLevelRenderer& renderer ) override;
     
-    void setOuterRadius( float radius )
-    {
+    void setOuterRadius( float radius ) {
         BoundingSphere bounds( glm::vec3(), radius );
         setBoundingSphere( bounds );
         mOuterRadius = radius;
@@ -60,6 +52,7 @@ public:
     void setIntensity( float intensity ) {
         mIntensity = intensity;
     }
+
     
     float getOuterRadius() {
         return mOuterRadius;
@@ -71,41 +64,16 @@ public:
         return mIntensity;
     }
     
-    virtual SharedPtr<Mesh> getInnerLightVolumeMesh() override {
-        return mMesh;
-    }
-    virtual SharedPtr<Mesh> getOuterLightVolumeMesh() override {
-        return mMesh;
-    }
-    virtual glm::mat4 getInnerLightVolumeMatrix();
-    virtual glm::mat4 getOuterLightVolumeMatrix();
-
+    virtual void submitRenderer( Renderer &renderer );
+    
 private:
     Root *mRoot;
-    
-    SharedPtr<Mesh> mMesh;
-    SharedPtr<Material> mMaterial;
     
     float mOuterRadius = 1.f,
           mInnerRadius = 0.f;
     
     float mIntensity = 0.5f;
-          
-    size_t mBlockLoc;
-};
-
-class AmbientLight :
-    public LightObject
-{
-public:
-    AmbientLight( Root *root );
-    virtual void queueRenderable( LowLevelRenderer& renderer ) override;
-
-private:
-    Root *mRoot;
-    SharedPtr<Material> mMaterial;
     
-    size_t mBlockLoc;
 };
 
 class SpotLight :
@@ -113,8 +81,6 @@ class SpotLight :
 {
 public:
     SpotLight( Root *root );
-    
-    virtual void queueRenderable( LowLevelRenderer &renderer ) override;
     
     float getIntensity() {
         return mIntensity;
@@ -150,15 +116,6 @@ public:
         updateBounds();
     }
     
-    virtual SharedPtr<Mesh> getInnerLightVolumeMesh() override {
-        return mMesh;
-    }
-    virtual SharedPtr<Mesh> getOuterLightVolumeMesh() override {
-        return mMesh;
-    }
-    virtual glm::mat4 getInnerLightVolumeMatrix();
-    virtual glm::mat4 getOuterLightVolumeMatrix();
-    
 private:
     void updateBounds();
     
@@ -175,58 +132,4 @@ private:
     // inner & outer distance dictates how the light falls of with distance
     float mInnerAngle = 0.392699082, mOuterAngle = 0.785398163, // 22.5 & 45 degrees
           mInnerDistance = 0.5f, mOuterDistance = 1.f;
-};
-
-
-class BoxLight :
-    public LightObject
-{
-public:
-    BoxLight( Root *root );
-        
-    virtual void queueRenderable( LowLevelRenderer &renderer ) override;
-    
-    float getIntensity() {
-        return mIntensity;
-    }
-    const glm::vec3& getInnerSize() {
-        return mInnerSize;
-    }
-    const glm::vec3& getOuterSize() {
-        return mOuterSize;
-    }
-    
-    void setIntensity( float intensity ) {
-        mIntensity = intensity;
-    }
-    void setInnerSize( const glm::vec3 &size ) {
-        mInnerSize = size;
-    }
-    void setOuterSize( const glm::vec3 &size ) {
-        mOuterSize = size;
-        updateBounds();
-    }
-    
-    virtual SharedPtr<Mesh> getInnerLightVolumeMesh() override {
-        return mMesh;
-    }
-    virtual SharedPtr<Mesh> getOuterLightVolumeMesh() override {
-        return mMesh;
-    }
-    virtual glm::mat4 getInnerLightVolumeMatrix();
-    virtual glm::mat4 getOuterLightVolumeMatrix();
-    
-private:
-    void updateBounds();
-    
-private:
-    Root *mRoot;
-    
-    SharedPtr<Mesh> mMesh;
-    SharedPtr<Material> mMaterial;
-    
-    size_t mBlockLoc;
-    
-    float mIntensity = 0.5f;
-    glm::vec3 mInnerSize = glm::vec3(0.5f), mOuterSize = glm::vec3(1.f);
 };

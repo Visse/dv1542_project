@@ -35,6 +35,18 @@ TextureType stringToTextureType( const std::string &str )
     if( StringUtils::equalCaseInsensitive(str,"RGBA") ) {
         return TextureType::RGBA;
     }
+    if( StringUtils::equalCaseInsensitive(str,"Red16") ) {
+        return TextureType::Red16;
+    }
+    if( StringUtils::equalCaseInsensitive(str,"RG16") ) {
+        return TextureType::RG16;
+    }
+    if( StringUtils::equalCaseInsensitive(str,"RGB16") ) {
+        return TextureType::RGB16;
+    }
+    if( StringUtils::equalCaseInsensitive(str,"RGBA16") ) {
+        return TextureType::RGBA16;
+    }
     if( StringUtils::equalCaseInsensitive(str,"Depth") ) {
         return TextureType::Depth;
     }
@@ -70,6 +82,16 @@ GLint typeToGLFormat( TextureType type )
         return GL_RGB8;
     case( TextureType::RGBA ):
         return GL_RGBA8;
+        
+    case( TextureType::Red16 ):
+        return GL_R16;
+    case( TextureType::RG16 ):
+        return GL_RG16;
+    case( TextureType::RGB16 ):
+        return GL_RGB16;
+    case( TextureType::RGBA16 ):
+        return GL_RGBA16;
+        
     case( TextureType::Depth ):
         return GL_DEPTH_COMPONENT16;
     case( TextureType::RGBF ):
@@ -356,8 +378,8 @@ SharedPtr<Texture> Texture::CreateTexture( TextureType type, const glm::uvec2& s
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
     }
     else {
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
     }
     
     return std::make_shared<Texture>( type, size, glTexture );

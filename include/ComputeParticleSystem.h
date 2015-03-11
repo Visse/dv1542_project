@@ -19,9 +19,7 @@ class ComputeParticleSystem :
 public:
     ComputeParticleSystem( Root *root );
     virtual void update( float dt ) override;
-    
-    virtual void queueRenderable( LowLevelRenderer &renderer ) override;
-    
+
     float getSpeed() {
         return mSpeed;
     }
@@ -46,19 +44,19 @@ public:
     unsigned int getParticleGroupCount() {
         return mParticleGroupCount;
     }
-	unsigned int getMaxParticleGroupCount() {
+    unsigned int getMaxParticleGroupCount() {
         return mMaxParticleGroupCount;
     }
-	unsigned int getAttractorCount() {
+    unsigned int getAttractorCount() {
         return mAttractorCount;
     }
-	unsigned int getMaxAttractorCount() {
+    unsigned int getMaxAttractorCount() {
         return mMaxAttractorCount;
     }
     bool getShowAttractors() {
         return mShowAttractors;
     }
-	unsigned int getParticleCount() {
+    unsigned int getParticleCount() {
         return mParticleGroupCount * mParticleGroupSize;
     }
     
