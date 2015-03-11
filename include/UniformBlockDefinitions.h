@@ -41,7 +41,7 @@ struct AmbientUniforms {
 struct PointLightUniforms {
     glm::mat4 modelMatrix;
     glm::vec3 color;
-    float dummy0;
+    float intensity;
     glm::vec2 radius;
     float dummy1[2];
 

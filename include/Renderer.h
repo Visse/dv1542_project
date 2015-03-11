@@ -154,6 +154,7 @@ private:
     struct { // Deferred data
         SharedPtr<GpuProgram> entityDeferredProgram,
                               pointLightProgram,
+                              pointLightNoShadowProgram,
                               ambientLightProgram,
                               copyDepthProgram;
                               

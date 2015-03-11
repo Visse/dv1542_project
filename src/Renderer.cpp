@@ -191,6 +191,7 @@ void Renderer::initDeferred()
 
     mDeferred.entityDeferredProgram = resourceMgr->getGpuProgramAutoPack( "DeferredMeshShader" );
     mDeferred.pointLightProgram = resourceMgr->getGpuProgramAutoPack( "DeferredPointLightShader" );
+    mDeferred.pointLightNoShadowProgram = resourceMgr->getGpuProgramAutoPack( "DeferredPointLightNoShadowShader" );
     mDeferred.ambientLightProgram = resourceMgr->getGpuProgramAutoPack( "DeferredAmbientShader" );
     mDeferred.copyDepthProgram = resourceMgr->getGpuProgramAutoPack( "DeferredCopyDepthShader" );
     
@@ -287,6 +288,14 @@ void Renderer::renderLights()
         mDeferred.pointLightProgram->bindProgram();
         
         for( const PointLightInfo &info : mPointLights ) {
+            bindUniforms( 1, info.uniforms.getBuffer(), info.uniforms.getOffset(), info.uniforms.getSize() );
+            
+            drawMesh( mDeferred.sphereMesh );
+        }
+        
+        mDeferred.pointLightNoShadowProgram->bindProgram();
+        
+        for( const PointLightInfo &info : mPointLightsNoShadow ) {
             bindUniforms( 1, info.uniforms.getBuffer(), info.uniforms.getOffset(), info.uniforms.getSize() );
             
             drawMesh( mDeferred.sphereMesh );
