@@ -12,7 +12,7 @@
 
 #include <algorithm>
 #include <cassert>
-
+#include <iostream>
 
 void GLAPIENTRY debugCallback( GLenum source, GLenum type, unsigned int id, GLuint severity, GLsizei length, const char *message, void *userParam );
 // seems like there some variations for the definition of GLDEBUGPROC, well I'm not using the userParam so it shouldn't matter
@@ -96,6 +96,22 @@ bool GraphicsManager::init( Root *root )
     for( size_t i=0; i < mNumOfQuaryObjects; ++i ) {
         glBeginQuery( GL_SAMPLES_PASSED, mSamplesQuaryObjects[i] );
         glEndQuery( GL_SAMPLES_PASSED );
+    }
+    
+    
+    { // log supported extensions
+        /// @todo add proper loggin
+        std::clog << "[GraphicsManager] Supported Extensions: \n";
+        
+        GLint numExtensions;
+        glGetIntegerv( GL_NUM_EXTENSIONS, &numExtensions );
+        for(GLint i = 0; i < numExtensions; i++)
+        {
+            const char* extension = (const char*)glGetStringi(GL_EXTENSIONS, i);
+            
+            std::clog << "\t#" << (i+1) << "\t" << extension << std::endl;
+            
+        }
     }
     
     return true;

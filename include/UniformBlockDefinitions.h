@@ -68,7 +68,14 @@ struct BoxLightUniforms {
     static const UniformBlockLayout& GetUniformBlockLayout();
 };
 
+struct PointLightShadowUniforms {
+    glm::mat4 viewProjMatrix[6];
+    glm::vec3 lightPosition;
+    float dummy0;
+    glm::vec2 clippingPlanes;
+};
 
-
-
+struct ShadowCasterUniforms {
+    glm::mat4 modelMatrix;
+};
 

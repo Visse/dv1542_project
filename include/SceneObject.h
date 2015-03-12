@@ -22,7 +22,7 @@ public:
     virtual void update( float dt ) {}
     
     virtual void submitRenderer( Renderer &renderer ) {}
-    virtual void submitShadowCaster( Renderer &renderer ) {}
+    virtual void submitShadowCasters( Renderer &renderer ) {}
     
     void setPosition( const glm::vec3 &position ) {
         mPosition = position;

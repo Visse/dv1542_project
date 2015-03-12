@@ -32,19 +32,9 @@ void FrameBuffer::attachColorTexture( const SharedPtr<Texture> &texture, int ind
     GLenum status = glCheckFramebufferStatus( GL_FRAMEBUFFER );
     
     glColorMaski( index, GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
-    
     mAttachedTextures[index] = texture;
-    GLenum drawBuffers[8];
-    for( int i=0; i < 8; ++i ) {
-        if( mAttachedTextures[i] ) {
-            drawBuffers[i] = GL_COLOR_ATTACHMENT0+i;
-        }
-        else {
-            drawBuffers[i] = GL_NONE;
-        }
-    }
     
-    glDrawBuffers( 8, drawBuffers ); 
+    updateDrawBuffers();
     
     glBindFramebuffer( GL_FRAMEBUFFER, 0 );
     
@@ -60,6 +50,8 @@ void FrameBuffer::setDepthTexture( const SharedPtr<Texture> &texture )
     glFramebufferTexture( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, texture->getGLTexture(), 0 );
     
     GLenum status = glCheckFramebufferStatus( GL_FRAMEBUFFER );
+    
+    updateDrawBuffers();
     glBindFramebuffer( GL_FRAMEBUFFER, 0 );
     
     if( status != GL_FRAMEBUFFER_COMPLETE ) {
@@ -81,4 +73,18 @@ void FrameBuffer::unbindFrameBuffer()
     assert( getBoundFrameBuffer() == mFrameBuffer );
 #endif
     glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+}
+
+void FrameBuffer::updateDrawBuffers()
+{
+    GLenum drawBuffers[8];
+    for( int i=0; i < 8; ++i ) {
+        if( mAttachedTextures[i] ) {
+            drawBuffers[i] = GL_COLOR_ATTACHMENT0+i;
+        }
+        else {
+            drawBuffers[i] = GL_NONE;
+        }
+    }
+    glDrawBuffers( 8, drawBuffers ); 
 }

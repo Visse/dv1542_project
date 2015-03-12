@@ -5,6 +5,7 @@
 #include "GLTypes.h"
 #include "SharedEnums.h"
 #include "Material.h"
+#include "Frustrum.h"
 
 #include <glm/mat4x4.hpp>
 #include <glm/vec2.hpp>
@@ -12,6 +13,7 @@
 
 #include <vector>
 
+class Frustrum;
 class Renderable;
 class GpuBuffer;
 class VertexArrayObject;
@@ -45,13 +47,12 @@ public:
     void renderScene( Scene *scene, Camera *camera );
     
     void addMesh( const SharedPtr<Mesh> &mesh, const DeferredMaterial &material, const glm::mat4 &modelMatrix );
-    void addPointLight( UniformBuffer uniforms, const glm::vec3 &pos, float radius, bool shadows );
-    
-    void render();
-    
-    
+    void addPointLight( UniformBuffer uniforms, const glm::mat4 &modelMatrix, const glm::vec3 &position, float radius, bool shadows );
     void addCustomRenderable( const CustomRenderableSettings &settings, Renderable *renderable );
     
+    void addShadowMesh( const SharedPtr<Mesh> &mesh, const glm::mat4 &modelMatrix );
+    
+    void render();
     
     UniformBuffer aquireUniformBuffer( size_t size );
     
@@ -61,18 +62,12 @@ public:
         buffer.setRawContent( 0, &content, sizeof(Type) );
         return buffer;
     }
-private:
-    struct EntityInfo {
-        SharedPtr<Mesh> mesh;
-        GLuint buffer, offset;
-        
-        DeferredMaterial material;
-    };
     
 private:
     void initGBuffer();
     void initSSAO();
     void initDeferred();
+    void initShadows();
     
     void renderDeferred();
     void renderSSAO();
@@ -81,10 +76,29 @@ private:
     
     void drawMesh( const SharedPtr<Mesh> &mesh );
     void setBlendMode( BlendMode mode );
+    void bindUniforms( GLuint index, const UniformBuffer &buffer ) {
+        bindUniforms( index, buffer.getBuffer(), buffer.getOffset(), buffer.getSize() );
+    }
     void bindUniforms( GLuint index, GLuint buffer, GLuint offset, GLuint size );
     void setViewportSize( glm::uvec2 size );
     
+    void prepereShadowCasters();
+    void renderPointLightShadowMap( unsigned int first, unsigned int last );
+    
+    void quaryForObjects( const Frustrum &frustrum );
+    
 private:
+    struct EntityInfo {
+        SharedPtr<Mesh> mesh;
+        GLuint buffer, offset;
+        
+        DeferredMaterial material;
+    };
+    struct ShadowMeshInfo {
+        SharedPtr<Mesh> mesh;
+        UniformBuffer buffer;
+    };
+    
     struct CustomRenderable {
         SharedPtr<GpuProgram> program;
         SharedPtr<Texture> textures[8];
@@ -101,24 +115,29 @@ private:
     };
     
     struct PointLightInfo {
-        UniformBuffer uniforms;
+        UniformBuffer uniforms, shadowUniform;
+        unsigned int firstShadowCaster, lastShadowCaster;
         
-        glm::vec3 pos;
-        float radius;
+        glm::mat4 viewProjMatrix;
+    };
+    struct PointLightNoShadowInfo {
+        UniformBuffer uniforms;
     };
     
 private:
     Root *mRoot;
     UniformBufferAllocator *mAllocator;
-    Scene *mCurrentScene;
+    Scene *mCurrentScene = nullptr;
+    Camera *mCurrentCamera = nullptr;
     
-    std::vector<SceneObject*> mVisibleObjects;
+    std::vector<SceneObject*> mQuaryResult;
     std::vector<EntityInfo> mEntities;
     std::vector<CustomRenderable> mCustomRenderable;
     
-    std::vector<PointLightInfo> mPointLights,
-                                mPointLightsNoShadow;
+    std::vector<PointLightInfo> mPointLights;
+    std::vector<PointLightNoShadowInfo> mPointLightsNoShadow;
     
+    std::vector<ShadowMeshInfo> mShadowMeshes;
     
     UniformBuffer mSceneUniforms, 
                   mAmbientUniforms;
@@ -160,6 +179,15 @@ private:
                               
         SharedPtr<Mesh> sphereMesh;
     } mDeferred;
+    
+    struct {
+        SharedPtr<GpuProgram> pointLightShadowCasterProgram;
+        SharedPtr<Texture> pointLightShadowTexture;
+        
+        SharedPtr<FrameBuffer> pointLightShadowFrameBuffer;
+        
+        glm::uvec2 frameBufferSize;
+    } mShadows;
     
     glm::uvec2 mWindowSize;
 };

@@ -22,13 +22,23 @@ public:
     DeferredEntity( SceneObjectFactory* factory, Root *root, const SharedPtr<Mesh> &mesh, const DeferredMaterial &material );
     
     virtual void submitRenderer( Renderer& renderer ) override;
+    virtual void submitShadowCasters(Renderer& renderer) override;
     
     SharedPtr<Mesh> getMesh() {
         return mMesh;
     }
 
+    void setCastShadow( bool castShadow ) {
+        mCastShadow = castShadow;
+    }
+    bool getCastShadow() {
+        return mCastShadow;
+    }
+    
 private:
     Root *mRoot;
     SharedPtr<Mesh> mMesh;
     DeferredMaterial mMaterial;
+    
+    bool mCastShadow = true;
 };

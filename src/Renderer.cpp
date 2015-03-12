@@ -13,12 +13,16 @@
 #include "Mesh.h"
 #include "Renderable.h"
 
+
+static const float SHADOW_NEAR_CLIP_PLANE = 0.01f;
+
 Renderer::Renderer( Root *root ) :
     mRoot(root)
 {
     initGBuffer();
     initSSAO();
     initDeferred();
+    initShadows();
     
     const Config *config = root->getConfig();
     mWindowSize = glm::uvec2( config->windowWidth, config->windowHeight );
@@ -34,12 +38,15 @@ Renderer::~Renderer()
 void Renderer::renderScene( Scene *scene, Camera *camera )
 {
     mCurrentScene = scene;
+    mCurrentCamera = camera;
     
-    scene->quarySceneObjects( camera->getFrustrum(), mVisibleObjects );
+    quaryForObjects( camera->getFrustrum() );
     
-    for( SceneObject *object : mVisibleObjects ) {
+    for( SceneObject *object : mQuaryResult ) {
         object->submitRenderer( *this );
     }
+    
+    prepereShadowCasters();
     
     SceneRenderUniforms sceneUniforms = camera->getSceneUniforms();
     mSceneUniforms = aquireUniformBuffer( sceneUniforms );
@@ -50,6 +57,7 @@ void Renderer::renderScene( Scene *scene, Camera *camera )
     render();
     
     mCurrentScene = nullptr;
+    mCurrentCamera = nullptr;
 }
 
 void Renderer::addMesh( const SharedPtr<Mesh> &mesh, const DeferredMaterial &material, const glm::mat4 &modelMatrix )
@@ -68,21 +76,46 @@ void Renderer::addMesh( const SharedPtr<Mesh> &mesh, const DeferredMaterial &mat
     mEntities.push_back( info );
 }
 
-void Renderer::addPointLight( UniformBuffer uniforms, const glm::vec3 &pos, float radius, bool shadows )
+void Renderer::addPointLight( UniformBuffer uniforms, const glm::mat4 &modelMatrix, const glm::vec3 &position, float radius, bool shadows )
 {
-    PointLightInfo info;
-        info.uniforms = uniforms;
-        info.pos = pos;
-        info.radius = radius;
-        
     if( shadows ) {
+        glm::mat4 shadowProjMatrix = glm::perspective( glm::radians(90.f), 1.f, SHADOW_NEAR_CLIP_PLANE, radius );
+        glm::mat4 shadowViewMatrix = glm::inverse( modelMatrix );
+        
+        static const glm::mat4 ROT_MATRIX[] = {
+                glm::rotate(glm::rotate(glm::mat4(), glm::radians(90.f),  glm::vec3(0,1,0)), glm::radians(180.f), glm::vec3(1,0,0)), // right
+                glm::rotate(glm::rotate(glm::mat4(), glm::radians(-90.f), glm::vec3(0,1,0)), glm::radians(180.f), glm::vec3(1,0,0)), // left
+                
+                glm::rotate(glm::rotate(glm::mat4(), glm::radians(90.f),  glm::vec3(1,0,0)), glm::radians(180.f), glm::vec3(1,0,0)), // top
+                glm::rotate(glm::rotate(glm::mat4(), glm::radians(-90.f), glm::vec3(1,0,0)), glm::radians(180.f), glm::vec3(1,0,0)), // bottom
+                
+                glm::rotate(glm::rotate(glm::mat4(), glm::radians(180.f), glm::vec3(0,1,0)), glm::radians(180.f), glm::vec3(0,0,180)), // back
+                glm::rotate(glm::rotate(glm::mat4(), glm::radians(0.f),   glm::vec3(1,0,0)), glm::radians(180.f), glm::vec3(0,0,180))  // front
+        };
+        PointLightShadowUniforms shadowUniforms;
+        
+        for( int i=0; i < 6; ++i ) {
+            shadowUniforms.viewProjMatrix[i] = shadowProjMatrix * ROT_MATRIX[i] * shadowViewMatrix;
+        }
+        shadowUniforms.clippingPlanes = glm::vec2( SHADOW_NEAR_CLIP_PLANE, radius );
+        shadowUniforms.lightPosition = position;
+        
+        PointLightInfo info;
+            info.uniforms = uniforms;
+            info.shadowUniform = aquireUniformBuffer( shadowUniforms ); 
+            info.firstShadowCaster = 0;
+            info.lastShadowCaster = 0;
+            info.viewProjMatrix = shadowProjMatrix * shadowViewMatrix;
+        
         mPointLights.push_back( info );
     }
     else {
+        PointLightNoShadowInfo info;
+            info.uniforms = uniforms;
         mPointLightsNoShadow.push_back( info );
+        
     }
 }
-
 
 void Renderer::render()
 {   
@@ -96,7 +129,6 @@ void Renderer::render()
     renderCustom();
     
     mEntities.clear();
-    mVisibleObjects.clear();
     mCustomRenderable.clear();
     mPointLights.clear();
     mPointLightsNoShadow.clear();
@@ -126,6 +158,18 @@ void Renderer::addCustomRenderable( const CustomRenderableSettings &settings, Re
     }
     
     mCustomRenderable.push_back( custom );
+}
+
+void Renderer::addShadowMesh( const SharedPtr<Mesh> &mesh, const glm::mat4 &modelMatrix )
+{
+    ShadowCasterUniforms uniforms;
+        uniforms.modelMatrix = modelMatrix;
+    
+    ShadowMeshInfo info;
+        info.mesh = mesh;
+        info.buffer = aquireUniformBuffer( uniforms );
+        
+    mShadowMeshes.push_back( info );
 }
 
 
@@ -196,6 +240,22 @@ void Renderer::initDeferred()
     mDeferred.copyDepthProgram = resourceMgr->getGpuProgramAutoPack( "DeferredCopyDepthShader" );
     
     mDeferred.sphereMesh = resourceMgr->getMeshAutoPack( "Sphere" );
+}
+
+void Renderer::initShadows()
+{
+    ResourceManager *resourceMgr = mRoot->getResourceManager();
+    const Config *config = mRoot->getConfig();
+    
+    glm::uvec2 shadowMapSize = glm::uvec2(config->shadowMapSize, config->shadowMapSize);
+    
+    mShadows.frameBufferSize = shadowMapSize;
+    mShadows.pointLightShadowCasterProgram = resourceMgr->getGpuProgramAutoPack( "DeferredPointLightShadowCasterShader" );
+    mShadows.pointLightShadowTexture = Texture::CreateTexture( TextureType::CubeMap_Depth, shadowMapSize, 1 );
+    
+    
+    mShadows.pointLightShadowFrameBuffer = makeSharedPtr<FrameBuffer>();
+    mShadows.pointLightShadowFrameBuffer->setDepthTexture( mShadows.pointLightShadowTexture );
 }
 
 void Renderer::renderDeferred()
@@ -280,22 +340,40 @@ void Renderer::renderLights()
         glDrawArrays( GL_POINTS, 0, 1 );
     }
     
-    glDepthMask( GL_FALSE );
-    glCullFace( GL_FRONT );
-    glDisable( GL_DEPTH_TEST );
+
     
     { // point lights
-        mDeferred.pointLightProgram->bindProgram();
-        
         for( const PointLightInfo &info : mPointLights ) {
-            bindUniforms( 1, info.uniforms.getBuffer(), info.uniforms.getOffset(), info.uniforms.getSize() );
+            bindUniforms( 1, info.uniforms );
+            bindUniforms( 2, info.shadowUniform );
             
+            glCullFace( GL_BACK );
+            glDepthMask( GL_TRUE);
+            glEnable( GL_DEPTH_TEST );
+            glEnable( GL_TEXTURE_CUBE_MAP_SEAMLESS );
+            
+            mShadows.pointLightShadowFrameBuffer->bindFrameBuffer();
+            setViewportSize( mShadows.frameBufferSize );
+            mShadows.pointLightShadowCasterProgram->bindProgram();
+            renderPointLightShadowMap( info.firstShadowCaster, info.lastShadowCaster );
+            
+            glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+            setViewportSize( mWindowSize );
+            
+            mShadows.pointLightShadowTexture->bindTexture(3);
+            
+            mDeferred.pointLightProgram->bindProgram();
+            
+            glDepthMask( GL_FALSE );
+            glCullFace( GL_FRONT );
+            glDisable( GL_DEPTH_TEST );
             drawMesh( mDeferred.sphereMesh );
+            mShadows.pointLightShadowTexture->unbindTexture(3);
         }
         
         mDeferred.pointLightNoShadowProgram->bindProgram();
         
-        for( const PointLightInfo &info : mPointLightsNoShadow ) {
+        for( const PointLightNoShadowInfo &info : mPointLightsNoShadow ) {
             bindUniforms( 1, info.uniforms.getBuffer(), info.uniforms.getOffset(), info.uniforms.getSize() );
             
             drawMesh( mDeferred.sphereMesh );
@@ -359,7 +437,7 @@ void Renderer::drawMesh( const SharedPtr<Mesh> &mesh )
     for( const SubMesh &submesh : mesh->getSubMeshes() )
     {
         if( indexBuffer ) {
-            glDrawElements( GL_TRIANGLES, submesh.vertexCount, GL_UNSIGNED_INT, reinterpret_cast<GLvoid*>(sizeof(GLuint)* submesh.vertexStart) );;
+            glDrawElements( GL_TRIANGLES, submesh.vertexCount, GL_UNSIGNED_INT, reinterpret_cast<GLvoid*>(sizeof(GLuint)* submesh.vertexStart) );
         }
         else {
             glDrawArrays( GL_TRIANGLES, submesh.vertexStart, submesh.vertexCount );
@@ -393,5 +471,37 @@ void Renderer::setViewportSize( glm::uvec2 size )
     glViewport( 0, 0, size.x, size.y );
 }
 
+void Renderer::prepereShadowCasters()
+{
+    for( PointLightInfo &light : mPointLights ) {
+        Frustrum frustrum = Frustrum::FromProjectionMatrix( light.viewProjMatrix );
+        quaryForObjects( frustrum );
+        
+        light.firstShadowCaster = mShadowMeshes.size();
+        
+        for( SceneObject *object : mQuaryResult ) {
+            object->submitShadowCasters( *this );
+        }
+        
+        light.lastShadowCaster = mShadowMeshes.size();
+    }
+}
 
+void Renderer::renderPointLightShadowMap( unsigned int first, unsigned int last )
+{
+    glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT );
+    for( unsigned int i=first; i < last; ++i ) {
+        ShadowMeshInfo &info = mShadowMeshes[i];
+        bindUniforms( 3, info.buffer );
+        
+        drawMesh( info.mesh );
+    }
+}
 
+void Renderer::quaryForObjects( const Frustrum &frustrum )
+{
+    mQuaryResult.clear();
+    if( !mCurrentScene ) return;
+    
+    mCurrentScene->quarySceneObjects( frustrum, mQuaryResult );
+}

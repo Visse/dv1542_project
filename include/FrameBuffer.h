@@ -24,6 +24,9 @@ public:
     void unbindFrameBuffer();
     
 private:
+    void updateDrawBuffers();
+    
+private:
     GLuint mFrameBuffer;
     
     SharedPtr<Texture> mAttachedTextures[8];

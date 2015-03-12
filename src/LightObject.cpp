@@ -15,6 +15,7 @@ PointLight::PointLight( SceneObjectFactory* factory, Root *root ) :
     LightObject(factory),
     mRoot(root)
 {
+    setCastShadow( true );
 }
 
 void PointLight::submitRenderer( Renderer &renderer )
@@ -25,7 +26,7 @@ void PointLight::submitRenderer( Renderer &renderer )
         uniforms.modelMatrix = glm::scale( getTransform(), glm::vec3(mOuterRadius) );
         uniforms.radius = glm::vec2(mInnerRadius,mOuterRadius);
         
-    renderer.addPointLight( renderer.aquireUniformBuffer(uniforms), getPosition(), mOuterRadius, getCastShadow() );
+    renderer.addPointLight( renderer.aquireUniformBuffer(uniforms), getTransform(), getPosition(), mOuterRadius, getCastShadow() );
 }
 
 
