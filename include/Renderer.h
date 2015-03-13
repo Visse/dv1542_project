@@ -68,10 +68,12 @@ private:
     void initSSAO();
     void initDeferred();
     void initShadows();
+    void initOther();
     
     void renderDeferred();
     void renderSSAO();
     void renderLights();
+    void renderOther();
     void renderCustom();
     
     void drawMesh( const SharedPtr<Mesh> &mesh );
@@ -188,6 +190,12 @@ private:
         
         glm::uvec2 frameBufferSize;
     } mShadows;
+    
+    struct {
+        SharedPtr<GpuProgram> skyboxProgram;
+        
+        SharedPtr<Mesh> cubeMesh;
+    } mOther;
     
     glm::uvec2 mWindowSize;
 };

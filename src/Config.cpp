@@ -40,6 +40,9 @@ void Config::load( const std::string &filename )
         else if( StringUtils::equalCaseInsensitive(key,"SSAOBufferWidth") ) {
             ssaoBufferWidth = value.asValue().getValue<unsigned int>();
         }
+        else if( StringUtils::equalCaseInsensitive(key,"ShadowMapSize") ) {
+            shadowMapSize = value.asValue().getValue<unsigned int>();
+        }
         else if( StringUtils::equalCaseInsensitive(key,"Fov") ) {
             fov = value.asValue().getValue<float>();
         }

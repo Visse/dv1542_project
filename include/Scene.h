@@ -10,6 +10,7 @@
 #include "UniquePtr.h"
 #include "BoundingSphere.h"
 
+class Texture;
 class Root;
 class Frustrum;
 class SceneObject;
@@ -51,6 +52,13 @@ public:
         mAmbientColor = ambient;
     }
     
+    void setSkyBox( const SharedPtr<Texture> &skybox ) {
+        mSkyBox = skybox;
+    }
+    SharedPtr<Texture> getSkyBox() {
+        return mSkyBox;
+    }
+    
 private:
     typedef unsigned int ZoneID;
     struct Portal {
@@ -68,4 +76,5 @@ private:
     UniquePtr<SceneGraph> mSceneGraph;
     
     glm::vec3 mAmbientColor = glm::vec3(0.5);
+    SharedPtr<Texture> mSkyBox;
 };

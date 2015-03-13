@@ -93,10 +93,6 @@ GpuBuffer::GpuBuffer( BufferType type, size_t size, BufferUsage usage, BufferUpd
     mSize(size)
 {
     GLenum bufferType = bufferTypeToGL( mType );
-#ifdef USE_DEBUG_NORMAL
-    // since we are binding our buffer, no other buffer can be bound
-    assert( getBoundBuffer(bufferType) == 0 );
-#endif
     
     glGenBuffers( 1, &mBuffer );
     glBindBuffer( bufferType, mBuffer );
@@ -132,10 +128,6 @@ void GpuBuffer::destoyBuffer()
 void GpuBuffer::setSize( size_t size )
 {
     GLenum bufferType = bufferTypeToGL( mType );
-#ifdef USE_DEBUG_NORMAL
-    // since we are binding our buffer, no other buffer can be bound
-    assert( getBoundBuffer(bufferType) == 0 );
-#endif
     if( mBuffer == 0 ) {
         createBuffer();
     }
@@ -151,11 +143,6 @@ void *GpuBuffer::mapBuffer( BufferUsage access )
 {
     GLenum bufferType = bufferTypeToGL( mType );
     GLenum usage = usageToGL( access );
-    
-#ifdef USE_DEBUG_NORMAL
-    // since we are binding our buffer, no other buffer can be bound
-    assert( getBoundBuffer(bufferType) == 0 );
-#endif
 
     glBindBuffer( bufferType, mBuffer );
     return glMapBuffer( bufferType, usage );
@@ -175,9 +162,7 @@ void GpuBuffer::unmapBuffer()
 void GpuBuffer::bindBuffer()
 {
     GLenum bufferType = bufferTypeToGL( mType );
-// #ifdef USE_DEBUG_NORMAL
-//     assert( getBoundBuffer(bufferType) == 0 );
-// #endif
+
     glBindBuffer( bufferType, mBuffer );
 }
 
@@ -206,9 +191,6 @@ void GpuBuffer::bindIndexed( GLuint index )
 void GpuBuffer::bindBufferAs( BufferType type )
 {
     GLenum bufferType = bufferTypeToGL(type);
-#ifdef USE_DEBUG_NORMAL
-    assert( getBoundBuffer(bufferType) == 0 );
-#endif
     glBindBuffer( bufferType, mBuffer );   
 }
 
@@ -227,10 +209,6 @@ void GpuBuffer::uploadData( const void *data, size_t size )
     
     GLenum usage = usageAndUpdateToGL( mUsage, mUpdate );
     GLenum bufferType = bufferTypeToGL( mType );
-    
-#ifdef USE_DEBUG_NORMAL
-    assert( getBoundBuffer(bufferType) == 0 );
-#endif 
     
     glBindBuffer( bufferType, mBuffer );
     glBufferData( bufferType, size, data, usage );

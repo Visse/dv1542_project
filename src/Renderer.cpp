@@ -23,6 +23,7 @@ Renderer::Renderer( Root *root ) :
     initSSAO();
     initDeferred();
     initShadows();
+    initOther();
     
     const Config *config = root->getConfig();
     mWindowSize = glm::uvec2( config->windowWidth, config->windowHeight );
@@ -124,8 +125,9 @@ void Renderer::render()
     bindUniforms( 0, mSceneUniforms.getBuffer(), mSceneUniforms.getOffset(), mSceneUniforms.getSize() );
     
     renderDeferred();
-//     renderSSAO();
+    renderSSAO();
     renderLights();
+    renderOther();
     renderCustom();
     
     mEntities.clear();
@@ -258,6 +260,15 @@ void Renderer::initShadows()
     mShadows.pointLightShadowFrameBuffer->setDepthTexture( mShadows.pointLightShadowTexture );
 }
 
+void Renderer::initOther()
+{
+    ResourceManager *resourceMgr = mRoot->getResourceManager();
+    
+    mOther.skyboxProgram = resourceMgr->getGpuProgramAutoPack( "SkyBoxShader" );
+    mOther.cubeMesh = resourceMgr->getMeshAutoPack( "Cube" );
+}
+
+
 void Renderer::renderDeferred()
 {
     setBlendMode( BlendMode::Replace );
@@ -340,8 +351,6 @@ void Renderer::renderLights()
         glDrawArrays( GL_POINTS, 0, 1 );
     }
     
-
-    
     { // point lights
         for( const PointLightInfo &info : mPointLights ) {
             bindUniforms( 1, info.uniforms );
@@ -379,11 +388,13 @@ void Renderer::renderLights()
             drawMesh( mDeferred.sphereMesh );
         }
     }
+    glDepthMask( GL_FALSE );
+    glCullFace( GL_FRONT );
+    glDisable( GL_DEPTH_TEST );
     
-    
-    glCullFace( GL_BACK );
     /*draw lights here */
     
+    glCullFace( GL_BACK );
     { // ambient
         bindUniforms( 1, mAmbientUniforms.getBuffer(), mAmbientUniforms.getOffset(), mAmbientUniforms.getSize() );
         mDeferred.ambientLightProgram->bindProgram();
@@ -392,10 +403,27 @@ void Renderer::renderLights()
         
         glDrawArrays( GL_POINTS, 0, 1 );
     }
-    
+    setBlendMode( BlendMode::Replace );
     glDepthMask( GL_TRUE );
     glEnable( GL_DEPTH_TEST );
 }
+
+void Renderer::renderOther()
+{
+    if( mCurrentScene ) {
+        SharedPtr<Texture> skybox = mCurrentScene->getSkyBox();
+        if( skybox ) {
+            mOther.skyboxProgram->bindProgram();
+            skybox->bindTexture( 0 );
+            glDisable( GL_CULL_FACE );
+            glDepthMask( GL_FALSE );
+            drawMesh( mOther.cubeMesh );
+            glDepthMask( GL_TRUE );
+            glEnable( GL_CULL_FACE );
+        }
+    }
+}
+
 
 void Renderer::renderCustom()
 {

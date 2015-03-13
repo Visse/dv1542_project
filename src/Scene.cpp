@@ -34,6 +34,10 @@ SharedPtr<Scene> Scene::LoadFromFile( Root *root, const std::string &filename )
         resourceMgr->loadResourcePack( packNode.asValue().getValue() );
     }
     
+    std::string skyboxName = sceneCfg.getFirstValue("SkyBox",false).asValue().getValue();
+    SharedPtr<Texture> skybox = resourceMgr->getTextureAutoPack( skyboxName );
+    scene->setSkyBox( skybox );
+    
     auto objectList = sceneCfg.getValues("Object");
     for( Yaml::Node objectNode : objectList ) {
         Yaml::MappingNode config = objectNode.asMapping();
