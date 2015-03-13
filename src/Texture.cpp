@@ -188,7 +188,6 @@ bool loadImageToGLTexture( GLint target, FIBITMAP *image, const glm::uvec2 &size
     {
         return false;
     }
-    FreeImage_FlipVertical( image );
     BYTE *bits = FreeImage_GetBits( image );
     
     glTexSubImage2D( target, 0, 0, 0, size.x, size.y, GL_BGRA, GL_UNSIGNED_BYTE, bits );

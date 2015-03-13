@@ -30,10 +30,7 @@ SharedPtr<Mesh> MeshLoaderAssimp::loadFile( const std::string &filename )
 {
     Assimp::Importer importer;
     
-    const aiScene *scene = importer.ReadFile( filename, 
-        aiProcessPreset_TargetRealtime_Quality |
-        aiProcess_FlipUVs
-    );
+    const aiScene *scene = importer.ReadFile( filename, aiProcessPreset_TargetRealtime_Quality );
     
     if( !scene ) {
         throw std::runtime_error(StringUtils::strjoin("Failed to load mesh, error: ",importer.GetErrorString()));
