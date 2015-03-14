@@ -4,6 +4,7 @@
 #include "LightObject.h"
 #include "ComputeParticleSystem.h"
 #include "Mesh.h"
+#include "MovingSpheresLight.h"
 
 
 #include "imgui.h"
@@ -152,11 +153,33 @@ void DebugManager::showSceneObject( float dt, SceneObject *object )
             ImGui::Value( "Particle Count", particleCount );
         }
         
+        
+        MovingSpheresLight *movingSpheres = dynamic_cast<MovingSpheresLight*>(object);
+        if( movingSpheres ) {
+            int sphereCount = movingSpheres->getSphereCount();
+            float sizeScale = movingSpheres->getSizeScale();
+            float timeMultiplier = movingSpheres->getTimeMultipler();
+            
+            if( ImGui::SliderInt( "SphereCount", &sphereCount, 0, 100) ) {
+                movingSpheres->setSphereCount( sphereCount );
+            }
+            if( ImGui::SliderFloat( "SizeScale", &sizeScale, 0.1f, 10.f) ) {
+                movingSpheres->setSizeScale( sizeScale );
+            }
+            if( ImGui::SliderFloat( "TimeMultiplier", &timeMultiplier, -1.f, 3.f) ) {
+                movingSpheres->setTimeMultipler(timeMultiplier);
+            }
+        }
+        
         LightObject *light = dynamic_cast<LightObject*>(object);
         if( light ) {
             glm::vec3 color = light->getColor();
             if( ImGui::ColorEdit3("Color", glm::value_ptr(color)) ) {
                 light->setColor( color );
+            }
+            bool castShadows = light->getCastShadow();
+            if( ImGui::Checkbox("Cast Shadows", &castShadows) ) {
+                light->setCastShadow( castShadows );
             }
             
             if( PointLight *pointLight = dynamic_cast<PointLight*>(light) ) {

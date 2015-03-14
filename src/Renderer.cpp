@@ -380,6 +380,9 @@ void Renderer::renderLights()
             mShadows.pointLightShadowTexture->unbindTexture(3);
         }
         
+        glDepthMask( GL_FALSE );
+        glCullFace( GL_FRONT );
+        glDisable( GL_DEPTH_TEST );
         mDeferred.pointLightNoShadowProgram->bindProgram();
         
         for( const PointLightNoShadowInfo &info : mPointLightsNoShadow ) {
@@ -388,9 +391,6 @@ void Renderer::renderLights()
             drawMesh( mDeferred.sphereMesh );
         }
     }
-    glDepthMask( GL_FALSE );
-    glCullFace( GL_FRONT );
-    glDisable( GL_DEPTH_TEST );
     
     /*draw lights here */
     

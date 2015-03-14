@@ -8,12 +8,10 @@
 MovingSpheresLight::MovingSpheresLight( SceneObjectFactory *factory, Root *root ) :
     PointLight( factory, root )
 {
-    
-    mSpheres.resize( 20 );
-    
-    for( SphereInfo &info : mSpheres ) {
-        info.radius = glm::linearRand( 0.02f, 0.15f );
-    }
+    // this is so its respecting its default-constructor assignment
+    unsigned int count = mSphereCount;
+    mSphereCount = 0;
+    setSphereCount( count );
     
     ResourceManager *resourceMgr = root->getResourceManager();
     mSphereMesh = resourceMgr->getMeshAutoPack("Sphere");
@@ -23,7 +21,7 @@ MovingSpheresLight::MovingSpheresLight( SceneObjectFactory *factory, Root *root 
 
 void MovingSpheresLight::update( float dt )
 {
-    mCurrentTime += dt;
+    mCurrentTime += dt * mTimeMultiplier;
     
     float index = 0;
     for( SphereInfo &info : mSpheres ) {
@@ -36,7 +34,7 @@ void MovingSpheresLight::update( float dt )
         index += 1.0;
     }
     for( SphereInfo &info : mSpheres ) {
-        info.transform = glm::scale( glm::translate(glm::mat4(), info.position), glm::vec3(info.radius*glm::length(info.position)) );
+        info.transform = glm::scale( glm::translate(glm::mat4(), info.position), glm::vec3(info.radius*glm::length(info.position)*mSizeScale) );
     }
 }
 
@@ -59,5 +57,17 @@ void MovingSpheresLight::submitShadowCasters( Renderer &renderer )
         renderer.addShadowMesh( mSphereMesh, getTransform() * info.transform );
     }
 }
+
+void MovingSpheresLight::setSphereCount( unsigned int sphereCount )
+{
+    unsigned int prevCount = mSphereCount;
+    mSphereCount = sphereCount;
+    mSpheres.resize(  mSphereCount );
+    
+    for( unsigned int i=prevCount; i < mSphereCount; ++i ) {
+        mSpheres[i].radius = glm::linearRand( 0.02f, 0.15f );
+    }
+}
+
 
 

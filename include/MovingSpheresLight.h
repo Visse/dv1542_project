@@ -16,6 +16,24 @@ public:
     virtual void submitRenderer( Renderer& renderer ) override;
     virtual void submitShadowCasters( Renderer& renderer ) override;
     
+    unsigned int getSphereCount() {
+        return mSphereCount;
+    }
+    float getSizeScale() {
+        return mSizeScale;
+    }
+    float getTimeMultipler() {
+        return mTimeMultiplier;
+    }
+    
+    void setSphereCount( unsigned int sphereCount );
+    void setSizeScale( float sizeScale ) {
+        mSizeScale = sizeScale;
+    }
+    void setTimeMultipler( float timeMultiplier ) {
+        mTimeMultiplier = timeMultiplier;
+    }
+    
 private:
     struct SphereInfo {
         glm::vec3 position;
@@ -31,5 +49,9 @@ private:
     SharedPtr<Texture> mDiffuseTexture,
                        mNormalTexture;
                        
-    float mCurrentTime = 0.f;
+    float mCurrentTime = 0.f,
+          mTimeMultiplier = 1.0f,
+          mSizeScale = 1.0f;
+          
+    unsigned int mSphereCount = 20;
 };
