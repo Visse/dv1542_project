@@ -14,7 +14,7 @@ MovingSpheresLight::MovingSpheresLight( SceneObjectFactory *factory, Root *root 
     setSphereCount( count );
     
     ResourceManager *resourceMgr = root->getResourceManager();
-    mSphereMesh = resourceMgr->getMeshAutoPack("Sphere");
+    mSphereMesh = resourceMgr->getMeshAutoPack("LowPolySphere");
     mDiffuseTexture = resourceMgr->getTextureAutoPack("LavaDiffuseImage");
     mNormalTexture = resourceMgr->getTextureAutoPack("LavaNormalImage");
 }
