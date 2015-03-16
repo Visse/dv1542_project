@@ -255,6 +255,10 @@ void Renderer::initShadows()
     mShadows.pointLightShadowCasterProgram = resourceMgr->getGpuProgramAutoPack( "DeferredPointLightShadowCasterShader" );
     mShadows.pointLightShadowTexture = Texture::CreateTexture( TextureType::CubeMap_Depth, shadowMapSize, 1 );
     
+    mShadows.pointLightShadowTexture->bindTexture(0);
+        glTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE );
+        glTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL );
+    mShadows.pointLightShadowTexture->unbindTexture(0);
     
     mShadows.pointLightShadowFrameBuffer = makeSharedPtr<FrameBuffer>();
     mShadows.pointLightShadowFrameBuffer->setDepthTexture( mShadows.pointLightShadowTexture );

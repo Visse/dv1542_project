@@ -267,6 +267,7 @@ SharedPtr<Texture> createCubeMapTexture( TextureType type, const std::string &fi
         std::string textureFaceName = StringUtils::strjoin( imageName, FACE_NAMES[i], extension );
         
         FIBITMAP *image = loadTexture( textureFaceName );
+        FreeImage_FlipVertical( image );
         
         if( !createdTexture ) {
             size.x = FreeImage_GetWidth( image );

@@ -160,7 +160,7 @@ void DebugManager::showSceneObject( float dt, SceneObject *object )
             float sizeScale = movingSpheres->getSizeScale();
             float timeMultiplier = movingSpheres->getTimeMultipler();
             
-            if( ImGui::SliderInt( "SphereCount", &sphereCount, 0, 100) ) {
+            if( ImGui::SliderInt( "SphereCount", &sphereCount, 0, 500) ) {
                 movingSpheres->setSphereCount( sphereCount );
             }
             if( ImGui::SliderFloat( "SizeScale", &sizeScale, 0.1f, 10.f) ) {

@@ -2,6 +2,7 @@
 #include "StringUtils.h"
 #include "GpuBuffer.h"
 #include "Mesh.h"
+#include "Skeleton.h"
 
 #include "GLinclude.h"
 
@@ -15,8 +16,12 @@
 
 #include <glm/vec3.hpp>
 #include <glm/vec2.hpp>
+#include <glm/mat4x4.hpp>
 #include <glm/common.hpp>
 #include <glm/geometric.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/epsilon.hpp>
+#include <glm/detail/func_matrix.hpp>
 
 void countVertexesAndIndexes( const aiScene *scene, int &vertexCount, int &indexCount );
 
@@ -137,6 +142,17 @@ glm::vec3 toGlm( const aiVector3D &v ) {
     return glm::vec3(v.x,v.y,v.z);
 }
 
+glm::mat4 toGlm( const aiMatrix4x4 &mat ) 
+{
+    return glm::make_mat4( reinterpret_cast<const float*>(&mat) );
+}
+
+glm::quat toGlm( const aiQuaternion &quat )
+{
+    return glm::quat( quat.w, quat.x, quat.y, quat.z );
+}
+
+
 SharedPtr<Mesh> loadMesh( const aiScene *scene )
 {
     struct Vertex {
@@ -210,7 +226,10 @@ SharedPtr<Mesh> loadAnimatedMesh( const aiScene *scene )
     typedef std::array<BoneWeight,4> BoneWeightArray;
     typedef std::map<unsigned int, BoneWeightArray> BoneWeightMap;
     std::map<const aiMesh*, BoneWeightMap> vertexBoneLookup;
+    std::map<std::string, unsigned int> boneIndexLookup;
     
+    std::vector<Bone> bones;
+    bones.push_back( Bone() );
     
     auto insertWeight = []( BoneWeightArray &array, BoneWeight &weight ) {
         int pos = 0;
@@ -226,6 +245,7 @@ SharedPtr<Mesh> loadAnimatedMesh( const aiScene *scene )
     };
     
     // construct vertex-bone lookup
+    unsigned int boneCount = 0;
     for( unsigned int i=0; i < scene->mNumMeshes; ++i ) {
         const aiMesh *mesh = scene->mMeshes[i];
         BoneWeightMap &weights = vertexBoneLookup[mesh];
@@ -233,11 +253,20 @@ SharedPtr<Mesh> loadAnimatedMesh( const aiScene *scene )
         for( unsigned int j=0; j < mesh->mNumBones; ++j ) {
             const aiBone *bone = mesh->mBones[j];
             
+            boneCount++;
+            boneIndexLookup.emplace( bone->mName.C_Str(), boneCount );
+            
+            Bone b;
+                b.parent = 0;
+                b.boneMatrix = toGlm( bone->mOffsetMatrix );
+                b.invBoneMatrix = glm::inverse(b.boneMatrix);
+            bones.push_back( b );
+            
             for( unsigned int g=0; g < bone->mNumWeights; ++g ) {
                 const aiVertexWeight &vertexWeight = bone->mWeights[g];
                 BoneWeightArray &weightArray = weights[vertexWeight.mVertexId];
                 BoneWeight weight;
-                    weight.bone = j+1;
+                    weight.bone = boneCount + j;
                     weight.weight = vertexWeight.mWeight;
                     
                 insertWeight( weightArray, weight );
@@ -262,6 +291,145 @@ SharedPtr<Mesh> loadAnimatedMesh( const aiScene *scene )
             }
         }
     );
+    
+    std::function<void(const aiNode*)> buildBoneHirachi;
+    
+    buildBoneHirachi = [&]( const aiNode *node ) {
+        auto iter = boneIndexLookup.find( node->mName.C_Str() );
+        
+        if( iter != boneIndexLookup.end() ) {
+            const aiNode *parent = node->mParent;
+            while( parent ) {
+                auto parentIter = boneIndexLookup.find( parent->mName.C_Str() );
+                if( parentIter != boneIndexLookup.end() ) {
+                    bones[iter->second].parent = parentIter->second;
+                    break;
+                }
+                parent = parent->mParent;
+            }
+        }
+        
+        for( unsigned int i=0; i < node->mNumChildren; ++i ) {
+            buildBoneHirachi( node->mChildren[i] );
+        }
+    };
+    
+    buildBoneHirachi( scene->mRootNode );
+    
+    SharedPtr<Skeleton> skeleton = makeSharedPtr<Skeleton>(bones);
+    
+    
+    auto makeSyncronized = []( std::vector<aiVectorKey> &positions, std::vector<aiQuatKey> &rotations ) {            
+        std::vector<aiVectorKey> newPositions;
+        std::vector<aiQuatKey> newRotations;
+        
+        auto curPosIter = positions.begin(),
+             endPosIter = positions.end();
+             
+        auto curRotIter = rotations.begin(),
+             endRotIter = rotations.end();
+        
+        while( curPosIter->mTime < curRotIter->mTime && curRotIter != endRotIter ) {
+            newPositions.emplace_back( curRotIter->mTime, curPosIter->mValue );
+            ++curRotIter;
+        }
+        while( curRotIter->mTime < curPosIter->mTime && curPosIter != endPosIter ) {
+            newRotations.emplace_back( curPosIter->mTime, curRotIter->mValue );
+            ++curPosIter;
+        }
+        
+        while( curPosIter != endPosIter && curRotIter != endRotIter ) {
+            if( glm::epsilonEqual(curPosIter->mTime, curRotIter->mTime, 1e-3) ) {
+                newPositions.emplace_back( *curPosIter );
+                newRotations.emplace_back( *curRotIter );
+                
+                ++curPosIter;
+                ++curRotIter;
+            }
+            else if( curPosIter->mTime < curRotIter->mTime ) {
+                double time = curPosIter->mTime;
+                
+                double startTime = (curRotIter-1)->mTime,
+                       endTime = curRotIter->mTime;
+                
+                float dt = (time-startTime) / (endTime - startTime);
+                
+                aiQuaternion rot;
+                aiQuaternion::Interpolate( rot, (curRotIter-1)->mValue, curRotIter->mValue, dt );
+                
+                newRotations.emplace_back( time, rot );
+                newPositions.emplace_back( *curPosIter );
+                ++curPosIter;
+            }
+            else /*if( curRotIter->mTime < curPosIter->mTime )*/ {
+                double time = curRotIter->mTime;
+                
+                double startTime = (curPosIter-1)->mTime,
+                       endTime = curPosIter->mTime;
+                      
+                float dt = (time-startTime) / (endTime - startTime);
+                
+                aiVector3D pos = (curPosIter-1)->mValue + (curPosIter->mValue - (curPosIter-1)->mValue)*dt;
+                
+                newRotations.emplace_back( *curRotIter );
+                newPositions.emplace_back( time, pos );
+                
+                ++curRotIter;
+            }
+        }
+        
+        while( curPosIter != endPosIter ) {
+            newRotations.emplace_back( curPosIter->mTime, (curRotIter-1)->mValue );
+            newPositions.emplace_back( *curPosIter );
+            curPosIter++;
+        }
+        while( curRotIter != endRotIter ) {
+            newPositions.emplace_back( curRotIter->mTime, (curPosIter-1)->mValue );
+            newRotations.emplace_back( *curRotIter );
+            curRotIter++;
+        }
+    
+        positions = std::move(newPositions);
+        rotations = std::move(newRotations);
+    };
+    
+    for( unsigned int i=0; i < scene->mNumAnimations; ++i ) {
+        const aiAnimation *animation = scene->mAnimations[i];
+        
+        float ticksPerSecond = animation->mTicksPerSecond;
+        if( ticksPerSecond < 1e-4f ) ticksPerSecond = 24.f;
+        
+        AnimationClip clip;
+            clip.name = animation->mName.C_Str();
+            clip.channels.resize( boneCount );
+            clip.lenght = animation->mDuration / ticksPerSecond;
+        
+            
+        for( unsigned int j=0; j < animation->mNumChannels; ++j ) {
+            aiNodeAnim *node = animation->mChannels[j];
+            
+            std::vector<aiVectorKey> positions( node->mPositionKeys, node->mPositionKeys+node->mNumPositionKeys );
+            std::vector<aiQuatKey> rotations( node->mRotationKeys, node->mRotationKeys+node->mNumRotationKeys );
+            
+            // make positions & rotations syncronized, aka they each have entries with the same time stamp
+            makeSyncronized( positions, rotations );
+            
+            AnimationChannel channel;
+            channel.samples.resize( positions.size() );
+            
+            for( unsigned int g=0; g < positions.size(); ++g ) {
+                AnimationSample sample;
+                    sample.position = toGlm(positions[i].mValue);
+                    sample.rotation = toGlm(rotations[i].mValue);
+                    sample.timeStamp = positions[i].mTime / ticksPerSecond;
+                channel.samples.push_back( sample );
+            }
+            
+            clip.channels.push_back( std::move(channel) );
+        }
+        
+        skeleton->setAnimationClip( clip.name, std::move(clip) );
+    }
     
     
     SharedPtr<VertexArrayObject> vao = makeSharedPtr<VertexArrayObject>();
