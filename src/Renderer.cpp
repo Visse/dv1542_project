@@ -123,10 +123,15 @@ void Renderer::render()
     
     bindUniforms( 0, mSceneUniforms.getBuffer(), mSceneUniforms.getOffset(), mSceneUniforms.getSize() );
     
-    renderDeferred();
-    renderSSAO();
-    renderLights();
-    renderOther();
+    if( mRenderWireframe ) {
+        renderWireframes();
+    }
+    else {
+        renderDeferred();
+        renderSSAO();
+        renderLights();
+        renderOther();
+    }
     renderCustom();
     
     mEntities.clear();
@@ -226,6 +231,7 @@ void Renderer::initDeferred()
     mDeferred.pointLightNoShadowProgram = resourceMgr->getGpuProgramAutoPack( "DeferredPointLightNoShadowShader" );
     mDeferred.ambientLightProgram = resourceMgr->getGpuProgramAutoPack( "DeferredAmbientShader" );
     mDeferred.copyDepthProgram = resourceMgr->getGpuProgramAutoPack( "DeferredCopyDepthShader" );
+    mDeferred.wireFrameProgram = resourceMgr->getGpuProgramAutoPack( "DeferredWireFrameShader" );
     
     mDeferred.sphereMesh = resourceMgr->getMeshAutoPack( "Sphere" );
 }
@@ -447,6 +453,21 @@ void Renderer::renderCustom()
         setBlendMode( entry.blendMode );
         entry.renderable->render( *this );
     }
+}
+
+void Renderer::renderWireframes()
+{
+    glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+    setViewportSize( mWindowSize );
+    
+    mDeferred.wireFrameProgram->bindProgram();
+    
+    for( const EntityInfo &info : mEntities ) 
+    {
+        bindUniforms( 1, info.buffer, info.offset, sizeof(EntityUniforms) );
+        drawMesh( info.mesh );
+    }
+    
 }
 
 void Renderer::drawMesh( const SharedPtr<Mesh> &mesh )

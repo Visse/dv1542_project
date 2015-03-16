@@ -242,6 +242,13 @@ void DebugManager::update( float dt )
                         }
                         ImGui::TreePop();
                     }
+                    
+                    GraphicsManager *graphicsMgr = mRoot->getGraphicsManager();
+                    Renderer *renderer = graphicsMgr->getRenderer();
+                    bool renderWireFrame = renderer->getRenderWireFrame();
+                    if( ImGui::Checkbox("RenderWireFrame", &renderWireFrame) ) {
+                        renderer->setRenderWireFrame( renderWireFrame );
+                    }
                 }
                 
                 

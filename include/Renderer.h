@@ -85,6 +85,9 @@ public:
     void setRenderWireFrame( bool renderWireframe ) {
         mRenderWireframe = renderWireframe;
     }
+    bool getRenderWireFrame() {
+        return mRenderWireframe;
+    }
     
 private:
     void initGBuffer();
@@ -98,6 +101,7 @@ private:
     void renderLights();
     void renderOther();
     void renderCustom();
+    void renderWireframes();
     
     void drawMesh( const SharedPtr<Mesh> &mesh );
     void setBlendMode( BlendMode mode );
@@ -185,7 +189,8 @@ private:
                               pointLightProgram,
                               pointLightNoShadowProgram,
                               ambientLightProgram,
-                              copyDepthProgram;
+                              copyDepthProgram,
+                              wireFrameProgram;
                               
         SharedPtr<Mesh> sphereMesh;
     } mDeferred;
