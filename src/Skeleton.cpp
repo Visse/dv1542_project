@@ -6,6 +6,8 @@ SharedPtr<SkeletonInstance> Skeleton::createInstance()
     return makeSharedPtr<SkeletonInstance>( this );
 }
 
+
+
 SkeletonInstance::SkeletonInstance( Skeleton *skeleton ) :
     mSkeleton(skeleton)
 {
@@ -13,13 +15,13 @@ SkeletonInstance::SkeletonInstance( Skeleton *skeleton ) :
 
 void SkeletonInstance::playAnimation( const std::string &name )
 {
-    mSkeleton->getAnimation(name);
+//     mSkeleton->getAnimation(name);
 }
 
 void SkeletonInstance::update( float dt )
 {
     if( mAnimation ) {
-        mAnimation->update( dt )
+//         mAnimation->update( dt );
     }
 }
 

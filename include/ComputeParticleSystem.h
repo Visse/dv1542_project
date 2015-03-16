@@ -18,8 +18,10 @@ class ComputeParticleSystem :
 {
 public:
     ComputeParticleSystem( SceneObjectFactory* factory, Root *root );
+    virtual ~ComputeParticleSystem();
+    
     virtual void update( float dt ) override;
-
+    
     float getSpeed() {
         return mSpeed;
     }
@@ -92,34 +94,36 @@ public:
     }
     
 private:
+    void render();
+    void renderAttractors();
+    
+private:
     struct RenderingUniformBlock {
         glm::mat4 modelMatrix;
         glm::vec2 intensityAndSize;
     };
-    struct AttractorUniformBlock {
-        glm::mat4 modelMatrix;
-    };
+    
+    struct ParticleRenderable;
     
 private:
     Root *mRoot;
+    Renderer *mRenderer;
+    ParticleRenderable *mParticleRenderable,
+                       *mAttractorRenderable;
     
-    VertexArrayObject mVAO, mAttractorVAO;
+    SharedPtr<VertexArrayObject> mVAO, mAttractorVAO;
     SharedPtr<GpuProgram> mSimulation,
-                          mShader;
+                          mShader,
+                          mAttractorShader;
     SharedPtr<GpuBuffer> mParticleBuffer,
                          mStartPositionBuffer,
                          mAttractorBuffer;
-    SharedPtr<Material> mMaterial, mAttractorMaterial;
     
     struct {
         GLint dt, distMod, weightMod, lifeTime,
               damping, attractorCount, modelMatrix;
     } mSimulationLoc;
 
-    size_t mRenderingUniformLoc,
-           mAttractorUniformLoc;
-    
-    
     std::vector<float> mAttractorWeights;
     
     float mCurrentTime = 0.f,

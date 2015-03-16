@@ -6,21 +6,57 @@
 #include "Config.h"
 #include "GpuBuffer.h"
 #include "Material.h"
+#include "GraphicsManager.h"
+#include "Renderer.h"
+#include "Renderable.h"
 
 #include <glm/gtc/random.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#pragma message "FIXME"
+class ComputeParticleSystem::ParticleRenderable :
+    public Renderable
+{
+public:
+    ComputeParticleSystem *system;
+    void (ComputeParticleSystem::*renderFunc)();
+    
+    virtual void render( Renderer &renderer ) override {
+        (system->*renderFunc)();
+    }
+};
+
 
 ComputeParticleSystem::ComputeParticleSystem( SceneObjectFactory *factory, Root *root ) :
     SceneObject(factory),
     mRoot(root)
 {
+    mRenderer = mRoot->getGraphicsManager()->getRenderer();
+    
+    mParticleRenderable = new ParticleRenderable;
+        mParticleRenderable->system = this;
+        mParticleRenderable->renderFunc = &ComputeParticleSystem::render;
+        
+    mAttractorRenderable = new ParticleRenderable;
+        mAttractorRenderable->system = this;
+        mAttractorRenderable->renderFunc = &ComputeParticleSystem::renderAttractors;
+    
     ResourceManager *resourceMgr = mRoot->getResourceManager();
     
     mSimulation = resourceMgr->getGpuProgramAutoPack( "ComputeParticleSimulation" );
-    mAttractorMaterial = resourceMgr->getMaterialAutoPack( "ComputeParticleAttractorMaterial" );
-
+    mShader = resourceMgr->getGpuProgramAutoPack( "ComputeParticleShader" );
+    mAttractorShader = resourceMgr->getGpuProgramAutoPack( "ComputeAttractorShader" );
+    
+    {
+        GLuint glProgram = mSimulation->getGLProgram();
+        
+        mSimulationLoc.dt = glGetUniformLocation( glProgram, "dt" );
+        mSimulationLoc.weightMod = glGetUniformLocation( glProgram, "weightMod" );
+        mSimulationLoc.distMod = glGetUniformLocation( glProgram, "distMod" );
+        mSimulationLoc.lifeTime = glGetUniformLocation( glProgram, "lifeTimeMod" );
+        mSimulationLoc.damping = glGetUniformLocation( glProgram, "dampingMod" );
+        mSimulationLoc.attractorCount = glGetUniformLocation( glProgram, "AttractorCount" );
+        mSimulationLoc.modelMatrix = glGetUniformLocation( glProgram, "ModelMatrix");
+    }
     
     const Config *config = mRoot->getConfig();
     
@@ -60,18 +96,20 @@ ComputeParticleSystem::ComputeParticleSystem( SceneObjectFactory *factory, Root 
         }
     );
     
-    mVAO.bindVAO();
+    mVAO = makeSharedPtr<VertexArrayObject>();
+    mVAO->bindVAO();
     mParticleBuffer->bindBufferAs( BufferType::Vertexes );
-    mVAO.setVertexAttribPointer( 0, 4, GL_FLOAT, GL_FALSE, sizeof(Particle), offsetof(Particle,pos) );
+    mVAO->setVertexAttribPointer( 0, 4, GL_FLOAT, GL_FALSE, sizeof(Particle), offsetof(Particle,pos) );
     
-    mVAO.unbindVAO();
+    mVAO->unbindVAO();
     mParticleBuffer->unbindBufferAs( BufferType::Vertexes );
     
-    mAttractorVAO.bindVAO();
+    mAttractorVAO = makeSharedPtr<VertexArrayObject>();
+    mAttractorVAO->bindVAO();
     mAttractorBuffer->bindBufferAs( BufferType::Vertexes );
-    mAttractorVAO.setVertexAttribPointer( 0, 4, GL_FLOAT, GL_FALSE, sizeof(glm::vec4), 0 );
+    mAttractorVAO->setVertexAttribPointer( 0, 4, GL_FLOAT, GL_FALSE, sizeof(glm::vec4), 0 );
     
-    mAttractorVAO.unbindVAO();
+    mAttractorVAO->unbindVAO();
     mAttractorBuffer->unbindBufferAs( BufferType::Vertexes );
     
     mAttractorCount = config->computeParticle.defaultAttractorCount;
@@ -79,6 +117,12 @@ ComputeParticleSystem::ComputeParticleSystem( SceneObjectFactory *factory, Root 
     mParticleGroupSize = config->computeParticle.localSize;
     mMaxParticleGroupCount = config->computeParticle.maxGroupCount;
     mMaxAttractorCount  = config->computeParticle.maxAttractorCount;
+}
+
+ComputeParticleSystem::~ComputeParticleSystem()
+{
+    delete mParticleRenderable;
+    delete mAttractorRenderable;
 }
 
 void ComputeParticleSystem::update( float dt )
@@ -116,5 +160,40 @@ void ComputeParticleSystem::update( float dt )
     glDispatchCompute( mParticleGroupCount, 1, 1 );
     
     glMemoryBarrier( GL_SHADER_STORAGE_BARRIER_BIT );
+    
+    
+    RenderingUniformBlock uniforms;
+        uniforms.modelMatrix = getTransform();
+        uniforms.intensityAndSize = glm::vec2( mIntensity, mPointSize );
+    
+    CustomRenderableSettings settings;
+        settings.blendMode = BlendMode::AddjectiveBlend;
+        settings.vao = mVAO;
+        settings.uniforms[0] = mRenderer->getSceneUniforms();
+        settings.uniforms[1] = mRenderer->aquireUniformBuffer( uniforms );
+        settings.program = mShader;
+        settings.renderable = mParticleRenderable;
+    mRenderer->addCustomRenderable( settings );
+    
+    if( mShowAttractors ) {
+        settings.program = mAttractorShader;
+        settings.renderable = mAttractorRenderable;
+        settings.vao = mAttractorVAO;
+        
+        mRenderer->addCustomRenderable( settings );
+    }
 }
 
+void ComputeParticleSystem::render()
+{
+    glDepthMask( GL_FALSE );
+    glDrawArrays( GL_POINTS, 0, mParticleGroupSize * mParticleGroupCount );
+    glDepthMask( GL_TRUE );
+}
+
+void ComputeParticleSystem::renderAttractors()
+{
+    glDepthMask( GL_FALSE );
+    glDrawArrays( GL_POINTS, 0, mAttractorCount );
+    glDepthMask( GL_TRUE );
+}

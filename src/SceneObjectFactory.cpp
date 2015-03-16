@@ -8,6 +8,7 @@
 #include "SkyBox.h"
 
 #include "MovingSpheresLight.h"
+#include "RandomMovingPointLight.h"
 
 #include <yaml-cxx/YamlCxx.h>
 
@@ -109,6 +110,21 @@ SceneObject *LightFactory::createObject( const Yaml::Node &node )
     }
     if( StringUtils::equalCaseInsensitive(lightType,"MovingSpheres") ) {
         MovingSpheresLight *light = new MovingSpheresLight( this, mRoot );
+        
+        float innerRadius = config.getFirstValue("InnerRadius",false).asValue().getValue<float>(light->getInnerRadius());
+        float outerRadius = config.getFirstValue("OuterRadius",false).asValue().getValue<float>(light->getOuterRadius());
+        float intensity = config.getFirstValue("Intensity",false).asValue().getValue<float>(light->getIntensity());
+        
+        light->setColor( color );
+        light->setOuterRadius( outerRadius );
+        light->setInnerRadius( innerRadius );
+        light->setIntensity( intensity );
+        
+        return light;
+    }
+    else if( StringUtils::equalCaseInsensitive(lightType,"RandomMovingPoint") ) {
+        
+        RandomMovingPointLight *light = new RandomMovingPointLight( this, mRoot );
         
         float innerRadius = config.getFirstValue("InnerRadius",false).asValue().getValue<float>(light->getInnerRadius());
         float outerRadius = config.getFirstValue("OuterRadius",false).asValue().getValue<float>(light->getOuterRadius());

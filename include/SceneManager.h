@@ -15,6 +15,7 @@ class SceneManager :
 {
 public:
     virtual bool init( Root *root ); 
+    virtual void postInit();
     virtual void destroy();
     
     virtual void update( float dt );

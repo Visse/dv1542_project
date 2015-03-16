@@ -25,6 +25,14 @@ bool SceneManager::init( Root *root )
     addFactory( "Light", new LightFactory(mRoot), true );
     addFactory( "SkyBox", new SkyBoxFactory(mRoot), true );
     
+    StartupMesurements *mesurements = mRoot->getStartupMesurements();
+    mesurements->sceneStartup = initTimer.getTimeAsSeconds();
+    
+    return true;
+}
+
+void SceneManager::postInit()
+{
     const Config *config = mRoot->getConfig();
     
     mScene = Scene::LoadFromFile( mRoot, config->startScene );
@@ -45,11 +53,6 @@ bool SceneManager::init( Root *root )
     
     GraphicsManager *graphicsMgr = mRoot->getGraphicsManager();
     graphicsMgr->addCamera( mCamera );
-    
-    StartupMesurements *mesurements = mRoot->getStartupMesurements();
-    mesurements->sceneStartup = initTimer.getTimeAsSeconds();
-    
-    return true;
 }
 
 void SceneManager::destroy()

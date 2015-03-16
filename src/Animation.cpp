@@ -1,9 +1,9 @@
 #include "Animation.h"
-
+/*
 AnimationInstance::AnimationInstance( AnimationClip *clip ) :
     mClip(clip)
 {
-    mCurrentSamples.resize( mClip->channels.at(0)->size() );
+    mCurrentSamples.resize( mClip->channels.at(0).size() );
 }
 
 void AnimationInstance::update( float dt )
@@ -17,5 +17,5 @@ void AnimationInstance::update( float dt )
     
     /// @todo
 }
-
+*/
 

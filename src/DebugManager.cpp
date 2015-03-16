@@ -70,8 +70,10 @@ public:
             settings.textures[0] = mTexture;
             settings.uniforms[0] = mRenderer->aquireUniformBuffer( mDebugMgr->mUniforms );
             settings.blendMode = BlendMode::AlphaBlend;
+            settings.renderable = &mRenderable;
+            settings.queue = 10;
         
-        mRenderer->addCustomRenderable( settings, &mRenderable );
+        mRenderer->addCustomRenderable( settings );
     }
     
 private:

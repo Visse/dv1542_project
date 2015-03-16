@@ -41,10 +41,13 @@ public:
         CustomRenderableSettings settings;
             settings.blendMode = BlendMode::Replace;
             settings.program = mWireFrameShader;
-        mRenderer->addCustomRenderable( settings, &mWireRenderable );
+            settings.renderable = &mWireRenderable;
+            settings.queue = 5;
+        mRenderer->addCustomRenderable( settings );
         
         settings.program = mNormalShader;
-        mRenderer->addCustomRenderable( settings, &mNormalRenderable );
+        settings.renderable = &mNormalRenderable;
+        mRenderer->addCustomRenderable( settings );
     }
     
 private:

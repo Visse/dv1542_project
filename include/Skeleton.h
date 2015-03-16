@@ -3,6 +3,7 @@
 #include <glm/mat4x4.hpp>
 
 #include <vector>
+#include <map>
 
 #include "Animation.h"
 
@@ -38,10 +39,9 @@ private:
 class SkeletonInstance {
     friend class Skeleton;
     
-protected:
+public:
     SkeletonInstance( Skeleton *skeleton );
     
-public:
     void update( float dt );
     void playAnimation( const std::string &name );
     

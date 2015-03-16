@@ -13,7 +13,6 @@
 #include "Mesh.h"
 #include "Renderable.h"
 
-
 static const float SHADOW_NEAR_CLIP_PLANE = 0.01f;
 
 Renderer::Renderer( Root *root ) :
@@ -142,24 +141,11 @@ UniformBuffer Renderer::aquireUniformBuffer( size_t size )
     return UniformBuffer( result.buffer, result.memory, size, result.offset );
 }
 
-void Renderer::addCustomRenderable( const CustomRenderableSettings &settings, Renderable *renderable )
+void Renderer::addCustomRenderable( const CustomRenderableSettings &settings )
 {
-    CustomRenderable custom;
-    custom.renderable = renderable;
-    custom.program = settings.program;
-    custom.vao = settings.vao;
-    custom.indexbuffer = settings.indexbuffer;
-    custom.blendMode = settings.blendMode;
-    
-    std::copy( std::begin(settings.textures), std::end(settings.textures), custom.textures );
-    
-    for( int i=0; i < 8; ++i ) {
-        custom.uniforms[i].buffer = settings.uniforms[i].getBuffer();
-        custom.uniforms[i].offset = settings.uniforms[i].getOffset();
-        custom.uniforms[i].size = settings.uniforms[i].getSize();
-    }
-    
-    mCustomRenderable.push_back( custom );
+    assert( settings.renderable != nullptr );
+    auto iter = std::lower_bound( mCustomRenderable.begin(), mCustomRenderable.end(), settings );
+    mCustomRenderable.emplace( iter, settings );
 }
 
 void Renderer::addShadowMesh( const SharedPtr<Mesh> &mesh, const glm::mat4 &modelMatrix )
@@ -431,7 +417,7 @@ void Renderer::renderOther()
 
 void Renderer::renderCustom()
 {
-    for( const CustomRenderable &entry : mCustomRenderable ) 
+    for( const CustomRenderableSettings &entry : mCustomRenderable ) 
     {
         entry.program->bindProgram();
         if( entry.indexbuffer ) {
@@ -446,8 +432,15 @@ void Renderer::renderCustom()
             }
         }
         for( int i=0; i < 8; ++i ) {
-            if( entry.uniforms[i].buffer != 0 ) {
-                bindUniforms( i, entry.uniforms[i].buffer, entry.uniforms[i].offset, entry.uniforms[i].size );
+            GLuint buffer = entry.uniforms[i].getBuffer();
+            if( buffer & SB_SpecailBuffer_Bit ) {
+                switch( buffer ) {
+                case( SB_SceneUniforms ):
+                    bindUniforms( i, mSceneUniforms );
+                }
+            }
+            else if( buffer != 0 ) {
+                bindUniforms( i, entry.uniforms[i] );
             }
         }
         

@@ -37,9 +37,24 @@ struct CustomRenderableSettings {
     UniformBuffer uniforms[8];
     
     BlendMode blendMode = BlendMode::Replace;
+    
+    Renderable *renderable = nullptr;
+    
+    int queue = 0;
+    
+    
+    friend bool operator < ( const CustomRenderableSettings &s1, const CustomRenderableSettings &s2 ) {
+        return s1.queue < s2.queue;
+    }
 };
 
 class Renderer {
+private:
+    enum SpecialBuffers {
+        SB_SpecailBuffer_Bit = (1<<10),
+        SB_SceneUniforms = 1 | SB_SpecailBuffer_Bit
+    };
+    
 public:
     Renderer( Root *root );
     ~Renderer();
@@ -48,7 +63,7 @@ public:
     
     void addMesh( const SharedPtr<Mesh> &mesh, const DeferredMaterial &material, const glm::mat4 &modelMatrix );
     void addPointLight( UniformBuffer uniforms, const glm::mat4 &modelMatrix, const glm::vec3 &position, float radius, bool shadows );
-    void addCustomRenderable( const CustomRenderableSettings &settings, Renderable *renderable );
+    void addCustomRenderable( const CustomRenderableSettings &settings );
     
     void addShadowMesh( const SharedPtr<Mesh> &mesh, const glm::mat4 &modelMatrix );
     
@@ -56,11 +71,19 @@ public:
     
     UniformBuffer aquireUniformBuffer( size_t size );
     
+    UniformBuffer getSceneUniforms() {
+        return UniformBuffer(SB_SceneUniforms,nullptr,0,0);
+    }
+    
     template< typename Type >
     UniformBuffer aquireUniformBuffer( const Type &content ) {
         UniformBuffer buffer = aquireUniformBuffer( sizeof(Type) );
         buffer.setRawContent( 0, &content, sizeof(Type) );
         return buffer;
+    }
+    
+    void setRenderWireFrame( bool renderWireframe ) {
+        mRenderWireframe = renderWireframe;
     }
     
 private:
@@ -101,21 +124,6 @@ private:
         UniformBuffer buffer;
     };
     
-    struct CustomRenderable {
-        SharedPtr<GpuProgram> program;
-        SharedPtr<Texture> textures[8];
-        SharedPtr<VertexArrayObject> vao;
-        SharedPtr<GpuBuffer> indexbuffer;
-        
-        struct {
-            GLuint buffer = 0, offset, size;
-        } uniforms[8];
-        
-        BlendMode blendMode;
-        
-        Renderable *renderable;
-    };
-    
     struct PointLightInfo {
         UniformBuffer uniforms, shadowUniform;
         unsigned int firstShadowCaster, lastShadowCaster;
@@ -134,7 +142,7 @@ private:
     
     std::vector<SceneObject*> mQuaryResult;
     std::vector<EntityInfo> mEntities;
-    std::vector<CustomRenderable> mCustomRenderable;
+    std::vector<CustomRenderableSettings> mCustomRenderable;
     
     std::vector<PointLightInfo> mPointLights;
     std::vector<PointLightNoShadowInfo> mPointLightsNoShadow;
@@ -198,4 +206,6 @@ private:
     } mOther;
     
     glm::uvec2 mWindowSize;
+    
+    bool mRenderWireframe = false;
 };
