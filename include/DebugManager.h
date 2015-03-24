@@ -20,6 +20,7 @@ class VertexArrayObject;
 class SceneObject;
 class SceneNode;
 class Mesh;
+class DebugLogListener;
 
 
 class DebugManager :
@@ -76,6 +77,7 @@ private:
 private:
     Root *mRoot = nullptr;
     DebugFrameListener *mFrameListener;
+    DebugLogListener* mLogListener;
     
     Int32 mKeyToogleDebug; 
     

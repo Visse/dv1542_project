@@ -21,6 +21,7 @@
 #include "Renderer.h"
 #include "SceneObject.h"
 #include "LightObject.h"
+#include "DebugLogListener.h"
 
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
@@ -39,6 +40,12 @@ static const glm::vec4 COLOR_FRUSTUM_TEST_OUTSIDE = glm::vec4(0.8f,0.3f,0.3f,1.f
                        COLOR_FRUSTUM_TEST_INTERSECTING = glm::vec4(0.4f,0.2f,0.8f,1.f),
                        COLOR_FRUSTUM_TEST_INSIDE = glm::vec4(0.3f,0.8f,0.5f,1.f);
 
+static const ImVec4 LOG_COLOR_DEBUG = ImVec4(0.2,0.8,0.2,1.0),
+                    LOG_COLOR_INFORMATION = ImVec4(0.8,0.8,0.8,1.0),
+                    LOG_COLOR_WARNING = ImVec4(0.8,0.8,0.2,1.0),
+                    LOG_COLOR_ERROR = ImVec4(0.8,0.2,0.2,1.0),
+                    LOG_COLOR_CRITICAL = ImVec4(0.8,0.2,0.8,1.0);
+                       
 class DebugManager::DebugFrameListener :
     public FrameListener
 {
@@ -102,6 +109,10 @@ bool DebugManager::init( Root *root )
     Timer initTimer;
     
     mRoot = root;
+    
+    mLogListener = new DebugLogListener;
+    Log *log = mRoot->getDefaultLog();
+    log->addListener( mLogListener );
     
     const Config *config = mRoot->getConfig();
     mKeyToogleDebug = config->keyBindings.toogleDebug;
@@ -201,6 +212,43 @@ void DebugManager::update( float dt )
                 ImGui::PlotLines( "Gpu Time", graphicsMgr->getGpuTimeHistory(), 1.0f, 1.0f, ImVec2(0,70) );
                 ImGui::PlotLines( "Samples passed (*10k)", graphicsMgr->getSamplesPassed(), 100, 100, ImVec2(0,70) );
 
+            }
+            
+            if( ImGui::CollapsingHeader("Logs") ) {
+                ImGui::BeginChild( "DefaultLog", ImVec2(0,200), true );
+                ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4,1));
+                const auto logEntries = mLogListener->getMessages();
+                for( const auto &message : logEntries ) {
+                    ImVec4 color;
+                    switch( message.severity ) {
+                    case( LogSeverity::Debug ):
+                        color = LOG_COLOR_DEBUG;
+                        break;
+                    case( LogSeverity::Information ):
+                        color = LOG_COLOR_INFORMATION;
+                        break;
+                    case( LogSeverity::Warning ):
+                        color = LOG_COLOR_WARNING;
+                        break;
+                    case( LogSeverity::Error ):
+                        color = LOG_COLOR_ERROR;
+                        break;
+                    case( LogSeverity::Critical ):
+                        color = LOG_COLOR_CRITICAL;
+                        break;
+                    case( LogSeverity::COUNT ):
+                        break;
+                    }
+                    
+                    std::string severity = logSeverityToString(message.severity);
+                    ImGui::TextColored( color, "[%s][%s]\t%s", severity.c_str(), message.module, message.msg.c_str() );
+                    if( ImGui::IsItemHovered() ) {
+                        ImGui::SetTooltip( "%s", message.msg.c_str() );;
+                    }
+                }
+                
+                ImGui::PopStyleVar();
+                ImGui::EndChild();
             }
             
             SceneManager *sceneMgr = mRoot->getSceneManager();

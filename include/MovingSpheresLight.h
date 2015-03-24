@@ -33,6 +33,12 @@ public:
     void setTimeMultipler( float timeMultiplier ) {
         mTimeMultiplier = timeMultiplier;
     }
+    void setCastShadow( bool castShadow ) {
+        mCastShadow = castShadow;
+    }
+    bool getCastShadow() {
+        return mCastShadow;
+    }
     
 private:
     struct SphereInfo {
@@ -54,4 +60,6 @@ private:
           mSizeScale = 1.0f;
           
     unsigned int mSphereCount = 20;
+    
+    bool mCastShadow = true;
 };

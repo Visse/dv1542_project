@@ -3,6 +3,7 @@
 #include "StartupMesurements.h"
 #include "Timer.h"
 
+#include "LogManager.h"
 #include "GraphicsManager.h"
 #include "DebugManager.h"
 #include "ResourceManager.h"
@@ -36,6 +37,9 @@ bool Root::init()
     
     mStartupMesurements->sdlStartup = startUpTimer.getTimeAsSeconds();
     
+    mLogManager = new LogManager(this);
+    mDefaultLog = mLogManager->getDefaultLog();
+    
     mGraphicsManager = new GraphicsManager;
     mResourceManager = new ResourceManager;
     mDebugDrawer = new DebugDrawer;
@@ -68,6 +72,9 @@ void Root::destroy()
     }
     mManagers.clear();
     
+    delete mLogManager;
+    mLogManager = nullptr;
+    mDefaultLog = nullptr;
     mGraphicsManager = nullptr;
     mResourceManager = nullptr;
     mDebugManager = nullptr;

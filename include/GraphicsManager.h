@@ -7,6 +7,7 @@
 
 #include <vector>
 
+class Log;
 class Root;
 class FrameListener;
 class Renderer;
@@ -57,6 +58,7 @@ private:
     SDL_GLContext mGLContext = nullptr;
     
     Renderer *mRenderer = nullptr;
+    Log *mLog = nullptr;
     
     std::vector<FrameListener*> mFrameListeners;
     std::vector<Camera*> mCameras;

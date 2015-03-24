@@ -43,7 +43,21 @@ enum class DrawMode {
     Triangles
 };
 
+enum class LogSeverity {
+    Debug = 0,
+    Information,
+    Warning,
+    Error,
+    Critical,
+    
+    
+    COUNT
+    
+};
 
 RenderQueueId renderQueueFromString( const std::string &str );
 BlendMode blendModeFromString( const std::string &str );
 DepthCheck depthCheckFromString( const std::string &str );
+
+LogSeverity logSeverityFromString( const std::string &str );
+std::string logSeverityToString( LogSeverity severity );

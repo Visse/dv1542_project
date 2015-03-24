@@ -89,6 +89,10 @@ void DebugManager::showSceneObject( float dt, SceneObject *object )
             else {
                 ImGui::LabelText( "Mesh", "Unknown" );
             }
+            bool castShadow = entity->getCastShadow();
+            if( ImGui::Checkbox("Cast Shadows", &castShadow) ) {
+                entity->setCastShadow( castShadow );
+            }
             
             ImGui::Checkbox( "WireFrame", &debugDrawInfo.wireFrame );
             ImGui::SameLine();
@@ -159,6 +163,7 @@ void DebugManager::showSceneObject( float dt, SceneObject *object )
             int sphereCount = movingSpheres->getSphereCount();
             float sizeScale = movingSpheres->getSizeScale();
             float timeMultiplier = movingSpheres->getTimeMultipler();
+            bool castShadow = movingSpheres->getCastShadow();
             
             if( ImGui::SliderInt( "SphereCount", &sphereCount, 0, 500) ) {
                 movingSpheres->setSphereCount( sphereCount );
@@ -168,6 +173,9 @@ void DebugManager::showSceneObject( float dt, SceneObject *object )
             }
             if( ImGui::SliderFloat( "TimeMultiplier", &timeMultiplier, -1.f, 3.f) ) {
                 movingSpheres->setTimeMultipler(timeMultiplier);
+            }
+            if( ImGui::Checkbox( "Cast Shadow", &castShadow ) ) {
+                movingSpheres->setCastShadow( castShadow );
             }
         }
         

@@ -36,13 +36,6 @@ SpotLight::SpotLight( SceneObjectFactory* factory, Root *root ) :
     LightObject(factory),
     mRoot(root)
 {
-    ResourceManager *resourceMgr = root->getResourceManager();
-    
-    mMesh = resourceMgr->getMeshAutoPack("Cone");
-    mMaterial = resourceMgr->getMaterialAutoPack("SpotLightMaterial");
-    if( !mMaterial ) {
-        throw std::runtime_error( "Failed to load 'SpotLightMaterial'" );
-    }
 }
 
 void SpotLight::updateBounds()

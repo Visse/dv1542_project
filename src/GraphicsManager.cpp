@@ -7,6 +7,7 @@
 #include "StartupMesurements.h"
 #include "Renderer.h"
 #include "Camera.h"
+#include "Log.h"
 
 #include <SDL2/SDL.h>
 
@@ -26,6 +27,8 @@ bool GraphicsManager::init( Root *root )
     
     mRoot = root;
     const Config *config = mRoot->getConfig();
+    
+    mLog = mRoot->getDefaultLog();
         
     SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 4 );
     SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 3 );
@@ -39,11 +42,13 @@ bool GraphicsManager::init( Root *root )
                       SDL_WINDOW_OPENGL
                     );
     if( !mWindow ) {
+        mLog->stream(LogSeverity::Critical, "GraphicsManager") << "Failed to create a window!, error: " << SDL_GetError();
         return false;
     }
     
     mGLContext = SDL_GL_CreateContext( mWindow );
     if( !mGLContext ) {
+        mLog->stream(LogSeverity::Critical, "GraphicsManager") << "Failed to create a gl context!, error: " << SDL_GetError();
         SDL_DestroyWindow( mWindow );
         mWindow = nullptr;
         return false;
@@ -100,8 +105,9 @@ bool GraphicsManager::init( Root *root )
     
     
     { // log supported extensions
+        auto stream  = mLog->stream( LogSeverity::Information,  "GraphicsManager" );
         /// @todo add proper loggin
-        std::clog << "[GraphicsManager] Supported Extensions: \n";
+        stream << "Supported Extensions: ";
         
         GLint numExtensions;
         glGetIntegerv( GL_NUM_EXTENSIONS, &numExtensions );
@@ -109,8 +115,7 @@ bool GraphicsManager::init( Root *root )
         {
             const char* extension = (const char*)glGetStringi(GL_EXTENSIONS, i);
             
-            std::clog << "\t#" << (i+1) << "\t" << extension << std::endl;
-            
+            stream << "\n\t#" << (i+1) << "\t" << extension;
         }
     }
     

@@ -9,6 +9,7 @@
 #include "Frustrum.h"
 #include "SceneGraph.h"
 #include "UniformBlockDefinitions.h"
+#include "Log.h"
 
 #include "yaml-cxx/YamlCxx.h"
 
@@ -19,6 +20,9 @@
 
 SharedPtr<Scene> Scene::LoadFromFile( Root *root, const std::string &filename )
 {
+    Log *log = root->getDefaultLog();
+    log->stream(LogSeverity::Information, "Scene") << "Loading scene \"" << filename << "\"";
+    
     Yaml::MappingNode sceneCfg = Yaml::Node::LoadFromFile(filename).asMapping();
     
     SharedPtr<Scene> scene = makeSharedPtr<Scene>(root);
@@ -49,7 +53,7 @@ SharedPtr<Scene> Scene::LoadFromFile( Root *root, const std::string &filename )
             try {
                  object = factory->createObject( objectNode );
             } catch( const std::exception &e ) {
-                std::cerr << "[Scene] Failed to create object of type \"" << type << "\", error: " << e.what() << std::endl;
+                log->stream(LogSeverity::Error, "Scene") << "Failed to create object of type \"" << type << "\", error: " << e.what();
             }
             
             if( object ) {
@@ -79,8 +83,7 @@ SharedPtr<Scene> Scene::LoadFromFile( Root *root, const std::string &filename )
             }
         }
         else {
-            /// @todo add proper logging
-            std::cerr << "[Scene] No factory registred for type \"" << type << "\"." << std::endl;
+            log->stream(LogSeverity::Warning, "Scene") << "No factory registred for type \"" << type << "\"";
         }
     }
     

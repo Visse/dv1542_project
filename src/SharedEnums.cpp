@@ -3,6 +3,7 @@
 
 #include <cstdio>
 #include <stdexcept>
+#include <cassert>
 
 RenderQueueId renderQueueFromString(const std::string &str)
 {
@@ -35,4 +36,29 @@ RenderQueueId renderQueueFromString(const std::string &str)
     }
     
     return queue;
+}
+
+const char *LOG_SEVERITY_LOOKUP[static_cast<int>(LogSeverity::COUNT)] = {
+    "Debug",
+    "Information",
+    "Warning",
+    "Error",
+    "Critical"
+};
+
+LogSeverity logSeverityFromString( const std::string &str )
+{
+    for( int i=0; i < static_cast<int>(LogSeverity::COUNT); ++i ) {
+        if( StringUtils::compareCaseInsensitive(str.c_str(),LOG_SEVERITY_LOOKUP[i]) ) {
+            return static_cast<LogSeverity>( i );
+        }
+    }
+    throw std::runtime_error( StringUtils::strjoin("String \"",str,"\" isn't a valid LogSeverity!") ); 
+}
+
+std::string logSeverityToString( LogSeverity severity )
+{
+    int index = static_cast<int>( severity );
+    assert( index >= 0 && index < static_cast<int>(LogSeverity::COUNT) );
+    return LOG_SEVERITY_LOOKUP[index];
 }

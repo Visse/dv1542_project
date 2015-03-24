@@ -3,6 +3,8 @@
 #include "ValueHistory.h"
 #include "FixedSizeTypes.h"
 
+class Log;
+class LogManager;
 struct Config;
 class BaseManager;
 class GraphicsManager;
@@ -22,6 +24,13 @@ public:
     void run();
     void quit();
     
+    
+    Log* getDefaultLog() {
+        return mDefaultLog;
+    }
+    LogManager* getLogManager() {
+        return mLogManager;
+    }
     GraphicsManager* getGraphicsManager() {
         return mGraphicsManager;
     }
@@ -66,15 +75,18 @@ private:
 private:
     bool mRunning = false;
     Config *mConfig = nullptr;
+    Log *mDefaultLog = nullptr;
     
     Int32 mQuitGameKey;
     
+    LogManager *mLogManager = nullptr;
     GraphicsManager *mGraphicsManager = nullptr;
     DebugManager *mDebugManager = nullptr;
     ResourceManager *mResourceManager = nullptr;
     InputManager *mInputManager = nullptr;
     SceneManager *mSceneManager = nullptr;
     DebugDrawer *mDebugDrawer = nullptr;
+    
     
     std::vector<BaseManager*> mManagers;
     

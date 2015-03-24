@@ -30,5 +30,7 @@ void DeferredEntity::submitRenderer( Renderer &renderer )
 
 void DeferredEntity::submitShadowCasters( Renderer &renderer )
 {
-    renderer.addShadowMesh( mMesh, getTransform() );
+    if( mCastShadow ) {
+        renderer.addShadowMesh( mMesh, getTransform() );
+    }
 }

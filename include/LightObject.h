@@ -125,11 +125,6 @@ private:
 private:
     Root *mRoot;
     
-    SharedPtr<Mesh> mMesh;
-    SharedPtr<Material> mMaterial;
-    
-    size_t mBlockLoc;
-    
     float mIntensity = 0.5f;
     // inner & outer angle dictates how the light falls of towards the 'edge' 
     // inner & outer distance dictates how the light falls of with distance

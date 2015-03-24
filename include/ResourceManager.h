@@ -11,6 +11,7 @@ class Mesh;
 class Texture;
 class Material;
 class GpuProgram;
+class Log;
 
 
 /** class ResourceManager
@@ -37,13 +38,11 @@ public:
     SharedPtr<GpuProgram> getGpuProgram( const std::string &pack, const std::string &name );
     SharedPtr<Texture> getTexture( const std::string &pack, const std::string &name );
     SharedPtr<Mesh> getMesh( const std::string &pack, const std::string &name );
-    SharedPtr<Material> getMaterial( const std::string &pack, const std::string &name );
     
     // automaticly detect resource pack (to specify a pack, prefix the name with 'pack:')
     SharedPtr<GpuProgram> getGpuProgramAutoPack( const std::string &name );
     SharedPtr<Texture> getTextureAutoPack( const std::string &name );
     SharedPtr<Mesh> getMeshAutoPack( const std::string &name );
-    SharedPtr<Material> getMaterialAutoPack( const std::string &name );
     
 private:
     void loadCompressedResourcePack( const std::string &name, const std::string &path );
@@ -59,12 +58,12 @@ private:
         std::map<std::string,GpuProgramPtr> programs;
         std::map<std::string,TexturePtr> textures;
         std::map<std::string,MeshPtr> meshes;
-        std::map<std::string,MaterialPtr> materials;
     };
     typedef std::map<std::string,ResourcePack> ResourcePackMap;
     
 private:
     Root *mRoot;
+    Log *mLog;
     std::vector<std::string> mResourcePaths;
     ResourcePackMap mResourcePacks;
 };

@@ -53,8 +53,10 @@ void MovingSpheresLight::submitRenderer( Renderer &renderer )
 
 void MovingSpheresLight::submitShadowCasters( Renderer &renderer )
 {
-    for( const SphereInfo &info : mSpheres ) {
-        renderer.addShadowMesh( mSphereMesh, getTransform() * info.transform );
+    if( mCastShadow ) {
+        for( const SphereInfo &info : mSpheres ) {
+            renderer.addShadowMesh( mSphereMesh, getTransform() * info.transform );
+        }
     }
 }
 

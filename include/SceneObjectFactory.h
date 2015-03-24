@@ -53,14 +53,3 @@ public:
 private:
     Root *mRoot;
 };
-
-class SkyBoxFactory :
-    public SceneObjectFactory
-{
-public:
-    SkyBoxFactory( Root *root );
-    virtual SceneObject* createObject( const Yaml::Node& node ) override;
-    
-private:
-    Root *mRoot;
-};

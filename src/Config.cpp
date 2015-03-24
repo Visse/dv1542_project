@@ -76,6 +76,15 @@ void Config::load( const std::string &filename )
         else if( StringUtils::equalCaseInsensitive(key, "ComputeParticle") ) {
             loadComputeParticleConfig( computeParticle, value.asMapping() );
         }
+        else if( StringUtils::equalCaseInsensitive(key, "LogToFile") ) {
+            logToFile = value.asValue().getValue<bool>();
+        }
+        else if( StringUtils::equalCaseInsensitive(key, "LogToStdLog") ) {
+            logToStdLog = value.asValue().getValue<bool>();
+        }
+        else if( StringUtils::equalCaseInsensitive(key, "LogFileName") ) {
+            logFileName = value.asValue().getValue();
+        }
     }
 }
 

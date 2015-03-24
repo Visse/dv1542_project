@@ -23,7 +23,6 @@ bool SceneManager::init( Root *root )
     addFactory( "DeferredEntity", new DeferredEntityFactory(mRoot), true );
     addFactory( "ComputeParticle", new ComputeParticleFactory(mRoot), true );
     addFactory( "Light", new LightFactory(mRoot), true );
-    addFactory( "SkyBox", new SkyBoxFactory(mRoot), true );
     
     StartupMesurements *mesurements = mRoot->getStartupMesurements();
     mesurements->sceneStartup = initTimer.getTimeAsSeconds();

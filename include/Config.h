@@ -51,6 +51,10 @@ struct Config
     float targetFrameRate = 30.f;
     int valueHistoryLenght = 200;
     
+    // logging
+    bool logToFile = false,
+         logToStdLog = true;
+    std::string logFileName;
     
     // graphics config
     unsigned int windowHeight = 720,
