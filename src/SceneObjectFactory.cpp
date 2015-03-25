@@ -45,9 +45,8 @@ SceneObject* DeferredEntityFactory::createObject( const Yaml::Node &node )
         
         return entity;
     }
-    /// @todo add proper logging
-    std::cerr << "Failed to load mesh \"" << meshName << "\" for entity!" << std::endl;
-    return nullptr;
+    
+    throw std::runtime_error( StringUtils::strjoin("Failed to load mesh \"",meshName,"\" for entity!") );
 }
 
 ComputeParticleFactory::ComputeParticleFactory( Root *root ) :
@@ -137,7 +136,5 @@ SceneObject *LightFactory::createObject( const Yaml::Node &node )
         return light;
     }
     
-    /// @todo add proper logging
-    std::cerr << "Failed to create light: Unknown light type \"" << lightType << "\".";
-    return nullptr;
+    throw std::runtime_error( StringUtils::strjoin("Failed to create light: Unknown light type \"",lightType,"\".") );
 }

@@ -280,13 +280,13 @@ void ResourceManager::loadUncompressedResourcePack( const std::string &name, con
             if( mesh ) {
                 pack.meshes.emplace( modName, mesh );
                 
-                mLog->stream(LogSeverity::Information, "ResourceManager") << "Loaded mesh \"" << name << "\"";
+                mLog->stream(LogSeverity::Information, "ResourceManager") << "Loaded mesh \"" << modName << "\"";
             }
             else {
-                mLog->stream(LogSeverity::Error, "ResourceManager") << "Failed to load mesh \"" << name << "\"";
+                mLog->stream(LogSeverity::Error, "ResourceManager") << "Failed to load mesh \"" << modName << "\"";
             }
         } catch( const std::exception &e ) {
-            mLog->stream(LogSeverity::Error, "ResourceManager") << "Failed to load mesh \"" << name << "\"," << " error: " << e.what();
+            mLog->stream(LogSeverity::Error, "ResourceManager") << "Failed to load mesh \"" << modName << "\"," << " error: " << e.what();
         }
     }
 }

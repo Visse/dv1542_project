@@ -56,15 +56,15 @@ void Log::logMessage( LogSeverity severity, const char *module, const std::strin
     uint64_t hours, mins, seconds, millis;
     splitTimeStamp( timeStamp, hours, mins, seconds, millis );
     
-    char buffer[512];
-    std::snprintf( buffer, 512, "[%02" PRIu64 ":%02" PRIu64 ":%02" PRIu64 ":%03" PRIu64 "][%s][%s]\t%s", 
-                   hours, mins, seconds, millis, logSeverityToString(severity).c_str(), module, msg.c_str());
+    char msgStamp[512];
+    std::snprintf( msgStamp, 512, "[%02" PRIu64 ":%02" PRIu64 ":%02" PRIu64 ":%03" PRIu64 "][%s][%s]\t", 
+                   hours, mins, seconds, millis, logSeverityToString(severity).c_str(), module );
     
     if( mLogToFile ) {
-        mFile << buffer << std::endl;
+        mFile << msgStamp << msg << std::endl;
     }
     if( mLogToStdLog ) {
-        std::clog << buffer << std::endl;
+        std::clog << msgStamp << msg << std::endl;
     }
     
     for( LogListener *listener : mListeners ) {
