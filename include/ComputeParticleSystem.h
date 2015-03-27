@@ -21,6 +21,7 @@ public:
     virtual ~ComputeParticleSystem();
     
     virtual void update( float dt ) override;
+    virtual void submitRenderer( Renderer& renderer ) override;
     
     float getSpeed() {
         return mSpeed;

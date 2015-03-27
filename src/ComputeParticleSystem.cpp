@@ -161,7 +161,10 @@ void ComputeParticleSystem::update( float dt )
     
     glMemoryBarrier( GL_SHADER_STORAGE_BARRIER_BIT );
     
-    
+}
+
+void ComputeParticleSystem::submitRenderer( Renderer &renderer )
+{
     RenderingUniformBlock uniforms;
         uniforms.modelMatrix = getTransform();
         uniforms.intensityAndSize = glm::vec2( mIntensity, mPointSize );
@@ -183,6 +186,7 @@ void ComputeParticleSystem::update( float dt )
         mRenderer->addCustomRenderable( settings );
     }
 }
+
 
 void ComputeParticleSystem::render()
 {

@@ -212,6 +212,15 @@ void DebugManager::update( float dt )
                 ImGui::PlotLines( "Gpu Time", graphicsMgr->getGpuTimeHistory(), 1.0f, 1.0f, ImVec2(0,70) );
                 ImGui::PlotLines( "Samples passed (*10k)", graphicsMgr->getSamplesPassed(), 100, 100, ImVec2(0,70) );
 
+                Renderer::RendererStatistics statistics = graphicsMgr->getRenderer()->getStatistics();
+                
+                ImGui::Value( "Drawn Meshes", (int)statistics.totDrawnMeshes );
+                ImGui::Value( "Drawn Entities", (int)statistics.drawnEntities );
+                ImGui::Value( "Drawn PointLights", (int)statistics.drawnPointLights );
+                ImGui::SameLine();
+                ImGui::Value( "Shadow meshes", (int)statistics.drawnPointShadowMap );
+                ImGui::Value( "Drawn PointLights/WoS", (int)statistics.drawnPointLightsNoShadow );
+                ImGui::Value( "Custom Rendereables", (int)statistics.customRenderables );
             }
             
             if( ImGui::CollapsingHeader("Logs") ) {

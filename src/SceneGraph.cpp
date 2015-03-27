@@ -23,7 +23,7 @@ SceneGraph::SceneGraph( Root *root, const BoundingSphere &rootBounds ) :
     mRootNode->_setBounds( BoundingSphere(center, radius) );
     mSceneNodes.push_back( mRootNode.get() );
     
-    mMaxNodeLevel = ((int)maxNodeLevel) - 1 ;
+    mMaxNodeLevel = ((int)maxNodeLevel) - 1;
     mRootPosition = rootBounds.getCenter();
 }
 

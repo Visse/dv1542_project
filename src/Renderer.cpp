@@ -37,6 +37,9 @@ Renderer::~Renderer()
 
 void Renderer::renderScene( Scene *scene, Camera *camera )
 {
+    mPrevFrameStatistics = mCurrentStatistics;
+    mCurrentStatistics = RendererStatistics();
+    
     mCurrentScene = scene;
     mCurrentCamera = camera;
     
@@ -128,7 +131,7 @@ void Renderer::render()
     }
     else {
         renderDeferred();
-        renderSSAO();
+//         renderSSAO();
         renderLights();
         renderOther();
     }
@@ -282,6 +285,8 @@ void Renderer::renderDeferred()
         bindUniforms( 1, info.buffer, info.offset, sizeof(EntityUniforms) );
         drawMesh( info.mesh );
     }
+    
+    mCurrentStatistics.drawnEntities += mEntities.size();
 }
 
 void Renderer::renderSSAO()
@@ -388,6 +393,9 @@ void Renderer::renderLights()
         }
     }
     
+    mCurrentStatistics.drawnPointLights += mPointLights.size();
+    mCurrentStatistics.drawnPointLightsNoShadow += mPointLightsNoShadow.size();
+    
     /*draw lights here */
     
     glCullFace( GL_BACK );
@@ -453,6 +461,8 @@ void Renderer::renderCustom()
         setBlendMode( entry.blendMode );
         entry.renderable->render( *this );
     }
+    
+    mCurrentStatistics.customRenderables += mCustomRenderable.size();
 }
 
 void Renderer::renderWireframes()
@@ -488,6 +498,8 @@ void Renderer::drawMesh( const SharedPtr<Mesh> &mesh )
         else {
             glDrawArrays( GL_TRIANGLES, submesh.vertexStart, submesh.vertexCount );
         }
+        
+        mCurrentStatistics.totDrawnMeshes++;
     }
     
 }
@@ -542,6 +554,8 @@ void Renderer::renderPointLightShadowMap( unsigned int first, unsigned int last 
         
         drawMesh( info.mesh );
     }
+    
+    mCurrentStatistics.drawnPointShadowMap += last - first; 
 }
 
 void Renderer::quaryForObjects( const Frustrum &frustrum )

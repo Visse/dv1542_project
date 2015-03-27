@@ -9,7 +9,7 @@ class Frustrum;
 
 class SceneGraph {
 public:
-    SceneGraph( Root *root, const BoundingSphere &rootBounds = BoundingSphere(glm::vec3(-10,-10,-10),64.f) );
+    SceneGraph( Root *root, const BoundingSphere &rootBounds = BoundingSphere(glm::vec3(0,0,0),128.f) );
     
     void addObject( SceneObject *object );
     void removeObject( SceneObject *object );

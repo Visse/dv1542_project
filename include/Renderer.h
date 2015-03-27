@@ -56,6 +56,18 @@ private:
     };
     
 public:
+    struct RendererStatistics {
+        size_t totDrawnMeshes = 0;
+        
+        size_t drawnPointLights = 0,
+               drawnPointLightsNoShadow = 0,
+               drawnPointShadowMap = 0,
+               drawnEntities = 0;
+               
+        size_t customRenderables = 0;
+    };
+    
+public:
     Renderer( Root *root );
     ~Renderer();
     
@@ -87,6 +99,9 @@ public:
     }
     bool getRenderWireFrame() {
         return mRenderWireframe;
+    }
+    RendererStatistics getStatistics() {
+        return mPrevFrameStatistics;
     }
     
 private:
@@ -213,4 +228,7 @@ private:
     glm::uvec2 mWindowSize;
     
     bool mRenderWireframe = false;
+    
+    RendererStatistics mCurrentStatistics,
+                       mPrevFrameStatistics;
 };
