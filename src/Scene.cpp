@@ -46,7 +46,14 @@ void Scene::update( float dt )
 
 void Scene::quarySceneObjects( const Frustrum &frustrum, std::vector<SceneObject*> &result )
 {
-    mSceneGraph->quaryObjects( frustrum, result );
+    if( mUseFrustumCulling ) {
+        mSceneGraph->quaryObjects( frustrum, result );
+    }
+    else {
+        mSceneGraph->forEachObject( [&](SceneObject *object ) {
+            result.push_back( object );
+        } );
+    }
 }
 
 void Scene::forEachObject( const std::function<void(SceneObject*)> &callback )

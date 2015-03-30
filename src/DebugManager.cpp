@@ -306,6 +306,11 @@ void DebugManager::update( float dt )
                     if( ImGui::Checkbox("RenderWireFrame", &renderWireFrame) ) {
                         renderer->setRenderWireFrame( renderWireFrame );
                     }
+                    
+                    bool useFrustrumCulling = scene->getUseFrustrumCulling();
+                    if( ImGui::Checkbox("Use Frustrum Culling", &useFrustrumCulling) ) {
+                        scene->setUseFrustrumCulling( useFrustrumCulling );
+                    }
                 }
                 
                 

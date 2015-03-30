@@ -117,6 +117,8 @@ ComputeParticleSystem::ComputeParticleSystem( SceneObjectFactory *factory, Root 
     mParticleGroupSize = config->computeParticle.localSize;
     mMaxParticleGroupCount = config->computeParticle.maxGroupCount;
     mMaxAttractorCount  = config->computeParticle.maxAttractorCount;
+    
+    setBoundingSphere( BoundingSphere(glm::vec3(), 2.0f) );
 }
 
 ComputeParticleSystem::~ComputeParticleSystem()

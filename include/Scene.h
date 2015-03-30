@@ -59,6 +59,13 @@ public:
         return mSkyBox;
     }
     
+    void setUseFrustrumCulling( bool useFrustrumCulling ) {
+        mUseFrustumCulling = useFrustrumCulling;
+    }
+    bool getUseFrustrumCulling() {
+        return mUseFrustumCulling;
+    }
+    
 private:
     typedef unsigned int ZoneID;
     struct Portal {
@@ -77,4 +84,6 @@ private:
     
     glm::vec3 mAmbientColor = glm::vec3(0.5);
     SharedPtr<Texture> mSkyBox;
+    
+    bool mUseFrustumCulling = true;
 };
