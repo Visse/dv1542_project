@@ -10,6 +10,7 @@ class Frustrum;
 class SceneGraph {
 public:
     SceneGraph( Root *root, const BoundingSphere &rootBounds = BoundingSphere(glm::vec3(0,0,0),128.f) );
+    ~SceneGraph();
     
     void addObject( SceneObject *object );
     void removeObject( SceneObject *object );
@@ -52,7 +53,8 @@ private:
     std::vector<SceneNode*> mSceneNodes;
     std::vector<SceneNodeBlockPtr> mChildBlocks;
     
-    std::vector<SceneObject*> mDirtyObjects;
+    std::vector<SceneObject*> mDirtyObjects,
+                              mNewObjects;
     
     int mMinNodeLevel = -2,
         mMaxNodeLevel;

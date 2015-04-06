@@ -9,6 +9,7 @@
 #include "StartupMesurements.h"
 #include "SceneObjectFactory.h"
 #include "StringUtils.h"
+#include "SceneLoader.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -23,6 +24,8 @@ bool SceneManager::init( Root *root )
     addFactory( "DeferredEntity", new DeferredEntityFactory(mRoot), true );
     addFactory( "ComputeParticle", new ComputeParticleFactory(mRoot), true );
     addFactory( "Light", new LightFactory(mRoot), true );
+    addFactory( "RandomMovingObjects", new RandomMovingObjectFactory(mRoot), true );
+    addFactory( "PulsingObject", new PulsingObjectFactory(mRoot), true );
     
     StartupMesurements *mesurements = mRoot->getStartupMesurements();
     mesurements->sceneStartup = initTimer.getTimeAsSeconds();
@@ -34,7 +37,10 @@ void SceneManager::postInit()
 {
     const Config *config = mRoot->getConfig();
     
-    mScene = Scene::LoadFromFile( mRoot, config->startScene );
+    SceneLoader loader( mRoot );
+    mScene = loader.getScene();
+    
+    loader.loadFile( config->startScene );
     
     auto controller = makeSharedPtr<FlyingController>( mRoot->getInputManager() );
     

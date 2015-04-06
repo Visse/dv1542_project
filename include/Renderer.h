@@ -6,6 +6,7 @@
 #include "SharedEnums.h"
 #include "Material.h"
 #include "Frustrum.h"
+#include "ValueHistory.h"
 
 #include <glm/mat4x4.hpp>
 #include <glm/vec2.hpp>
@@ -100,8 +101,18 @@ public:
     bool getRenderWireFrame() {
         return mRenderWireframe;
     }
+    void setUseOcclusionQuarries( bool useOcclusionQuaries ) {
+        mUseOcclusionQuaries = useOcclusionQuaries;
+    }
+    bool getUseOcclusionQuarries() {
+        return mUseOcclusionQuaries;
+    }
+    
     RendererStatistics getStatistics() {
         return mPrevFrameStatistics;
+    }
+    const ValueHistory<float>& getMemoryUsageHistory() {
+        return mMemUsageHistory;
     }
     
 private:
@@ -148,6 +159,8 @@ private:
         unsigned int firstShadowCaster, lastShadowCaster;
         
         glm::mat4 viewProjMatrix;
+        glm::vec3 position;
+        float radius;
     };
     struct PointLightNoShadowInfo {
         UniformBuffer uniforms;
@@ -227,8 +240,13 @@ private:
     
     glm::uvec2 mWindowSize;
     
-    bool mRenderWireframe = false;
+    bool mRenderWireframe = false,
+         mUseOcclusionQuaries = false;
     
+    std::vector<GLuint> mOcclusionQuaries;
+        
     RendererStatistics mCurrentStatistics,
                        mPrevFrameStatistics;
+                       
+    ValueHistory<float> mMemUsageHistory;
 };

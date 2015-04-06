@@ -12,6 +12,7 @@
 #include "UniformBlockDefinitions.h"
 #include "Mesh.h"
 #include "Renderable.h"
+#include <DebugDrawer.h>
 
 static const float SHADOW_NEAR_CLIP_PLANE = 0.01f;
 
@@ -28,6 +29,8 @@ Renderer::Renderer( Root *root ) :
     mWindowSize = glm::uvec2( config->windowWidth, config->windowHeight );
     
     mAllocator = new UniformBufferAllocator;
+    
+    mMemUsageHistory.setSize( config->valueHistoryLenght );
 }
 
 Renderer::~Renderer()
@@ -109,6 +112,8 @@ void Renderer::addPointLight( UniformBuffer uniforms, const glm::mat4 &modelMatr
             info.firstShadowCaster = 0;
             info.lastShadowCaster = 0;
             info.viewProjMatrix = shadowProjMatrix * shadowViewMatrix;
+            info.position = position;
+            info.radius = radius;
         
         mPointLights.push_back( info );
     }
@@ -122,7 +127,8 @@ void Renderer::addPointLight( UniformBuffer uniforms, const glm::mat4 &modelMatr
 
 void Renderer::render()
 {   
-    mAllocator->flushAndReset();
+    float usage = mAllocator->flushAndReset();
+    mMemUsageHistory.pushValue( usage );
     
     bindUniforms( 0, mSceneUniforms.getBuffer(), mSceneUniforms.getOffset(), mSceneUniforms.getSize() );
     
@@ -278,14 +284,55 @@ void Renderer::renderDeferred()
     
     mDeferred.entityDeferredProgram->bindProgram();
     
-    for( const EntityInfo &info : mEntities ) 
-    {
-        info.material.diffuseTexture->bindTexture( 0 );
-        info.material.normalMap->bindTexture( 1 );
-        bindUniforms( 1, info.buffer, info.offset, sizeof(EntityUniforms) );
-        drawMesh( info.mesh );
+    if( mUseOcclusionQuaries ) {
+        if( mOcclusionQuaries.size() < mEntities.size() ) {
+            size_t oldSize = mOcclusionQuaries.size();
+            mOcclusionQuaries.resize( mEntities.size() );
+            glGenQueries( mEntities.size() - oldSize, &mOcclusionQuaries[oldSize] );
+        }
+        
+        glColorMask( GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE );
+        
+        int i=0;
+        for( const EntityInfo &info : mEntities ) 
+        {
+            glBeginQuery( GL_ANY_SAMPLES_PASSED, mOcclusionQuaries[i] );
+            
+            bindUniforms( 1, info.buffer, info.offset, sizeof(EntityUniforms) );
+            drawMesh( info.mesh );
+            
+            glEndQuery( GL_ANY_SAMPLES_PASSED );
+            ++i;
+        }
+        
+        glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
+        glDepthFunc( GL_EQUAL );
+        
+        i=0;
+        for( const EntityInfo &info : mEntities ) 
+        {
+            glBeginConditionalRender( mOcclusionQuaries[i], GL_QUERY_NO_WAIT );
+            
+            info.material.diffuseTexture->bindTexture( 0 );
+            info.material.normalMap->bindTexture( 1 );
+            bindUniforms( 1, info.buffer, info.offset, sizeof(EntityUniforms) );
+            drawMesh( info.mesh );
+            
+            glEndConditionalRender();
+            ++i;
+        }
+        
+        glDepthFunc( GL_LESS );
     }
-    
+    else {
+        for( const EntityInfo &info : mEntities ) 
+        {
+            info.material.diffuseTexture->bindTexture( 0 );
+            info.material.normalMap->bindTexture( 1 );
+            bindUniforms( 1, info.buffer, info.offset, sizeof(EntityUniforms) );
+            drawMesh( info.mesh );
+        }
+    }
     mCurrentStatistics.drawnEntities += mEntities.size();
 }
 
@@ -428,7 +475,6 @@ void Renderer::renderOther()
     }
 }
 
-
 void Renderer::renderCustom()
 {
     for( const CustomRenderableSettings &entry : mCustomRenderable ) 
@@ -532,7 +578,10 @@ void Renderer::setViewportSize( glm::uvec2 size )
 void Renderer::prepereShadowCasters()
 {
     for( PointLightInfo &light : mPointLights ) {
-        Frustrum frustrum = Frustrum::FromProjectionMatrix( light.viewProjMatrix );
+        glm::mat4 frustrumMat = glm::ortho(-light.radius, light.radius,-light.radius, light.radius,-light.radius, light.radius);
+        frustrumMat = glm::translate( frustrumMat,-light.position );
+        
+        Frustrum frustrum = Frustrum::FromProjectionMatrix( frustrumMat );
         quaryForObjects( frustrum );
         
         light.firstShadowCaster = mShadowMeshes.size();

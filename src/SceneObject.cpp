@@ -1,7 +1,12 @@
 #include "SceneObject.h"
+#include "SceneObjectFactory.h"
 
 #include <glm/gtx/transform.hpp>
 
+SceneObject* SceneObject::clone()
+{
+    return mFactory->cloneObject( this );
+}
 
 void SceneObject::_updateTransform()
 {

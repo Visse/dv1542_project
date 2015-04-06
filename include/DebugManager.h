@@ -83,6 +83,7 @@ private:
     
     bool mIsDebugVisible = false,
          mShowSceneBounds = false,
+         mShowSceneLightsBounds = false,
          mShowSceneGraph = false,
          mShowBoundsInFrustrumColor = false,
          mShowSceneNodesAsBoxes = true,

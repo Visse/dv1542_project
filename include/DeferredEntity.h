@@ -27,6 +27,9 @@ public:
     SharedPtr<Mesh> getMesh() {
         return mMesh;
     }
+    const DeferredMaterial& getMaterial() {
+        return mMaterial;
+    }
 
     void setCastShadow( bool castShadow ) {
         mCastShadow = castShadow;

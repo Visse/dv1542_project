@@ -6,7 +6,8 @@
 #include "GLinclude.h"
 
 
-static const size_t DEFAULT_UNIFORM_BUFFER_SIZE = 524288, // 0.5 MB
+// static const size_t DEFAULT_UNIFORM_BUFFER_SIZE = 524288, // 0.5 MB
+static const size_t DEFAULT_UNIFORM_BUFFER_SIZE = 1024*128, // 128 KB
                     DEFAULT_UNIFORM_BUFFER_CLEAN_UP_TIME = 100; // to clean up unused buffers every 100 frame seems resonable
 
 
@@ -32,6 +33,17 @@ public:
         GLint aligment;
         glGetIntegerv( GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &aligment );
         mAligment = aligment;
+    }
+    
+    ~UniformBufferAllocator()
+    {
+        for( BufferInfo &info : mBuffers ) {
+            if( info.mapped != nullptr ) {
+                glBindBuffer( GL_UNIFORM_BUFFER, info.buffer );
+                glUnmapBuffer( GL_UNIFORM_BUFFER );
+            }
+            glDeleteBuffers( 1, &info.buffer );
+        }
     }
     
     AllocationResult getMemory( size_t size )
@@ -68,14 +80,16 @@ public:
         return allocateFromBuffer( tmp, size );
     }
     
-    void flushAndReset()
+    size_t flushAndReset()
     {
+        size_t memUsage = 0;
         for( BufferInfo &info : mBuffers ) 
         {
             if( info.mapped ) {
                 glBindBuffer( GL_UNIFORM_BUFFER, info.buffer );
                 glFlushMappedBufferRange( GL_UNIFORM_BUFFER, 0, info.offset );
                 glUnmapBuffer( GL_UNIFORM_BUFFER );
+                memUsage += info.offset;
                 
                 info.mapped = nullptr;
                 info.offset = 0;
@@ -103,6 +117,8 @@ public:
             
             mBuffers.erase( end+1, mBuffers.end() );
         }
+        
+        return memUsage;
     }
     
 private:

@@ -12,13 +12,6 @@
 
 #include <iostream>
 
-SharedPtr<Scene> Scene::LoadFromFile( Root *root, const std::string &filename )
-{
-    SceneLoader loader( root );
-    loader.loadFile( filename );
-    return loader.getScene();
-}
-
 Scene::Scene( Root *root ):
     mRoot(root)
 {
@@ -41,6 +34,7 @@ void Scene::removeObject( SceneObject *object )
 
 void Scene::update( float dt )
 {
+    if( mPaused ) dt = 0.f;
     mSceneGraph->update( dt );
 }
 

@@ -6,6 +6,7 @@
 
 #include "BoundingSphere.h"
 
+class SceneGraph;
 class SceneObjectFactory;
 class Renderer;
 class SceneNode;
@@ -23,6 +24,8 @@ public:
     
     virtual void submitRenderer( Renderer &renderer ) {}
     virtual void submitShadowCasters( Renderer &renderer ) {}
+    
+    SceneObject* clone();
     
     void setPosition( const glm::vec3 &position ) {
         mPosition = position;
@@ -81,6 +84,10 @@ public:
     SceneObjectFactory* getFactory() {
         return mFactory;
     }
+    
+    virtual void _objectAddedToGraph( SceneGraph *graph ) {}
+    virtual void _objectRemovedFromGraph( SceneGraph *graph ) {}
+    
 private:
     void markDirty() {
         mDirty = true;

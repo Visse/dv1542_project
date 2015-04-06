@@ -80,16 +80,12 @@ bool GraphicsManager::init( Root *root )
     mesurements->graphicsStartup = initTimer.getTimeAsSeconds();
     
     mGpuTimes.setSize( config->valueHistoryLenght );
-    mSamplePassed.setSize( config->valueHistoryLenght );
-    
     
     mNumOfQuaryObjects = 3;
     
     mTimeQuaryObjects.resize( mNumOfQuaryObjects );
-    mSamplesQuaryObjects.resize( mNumOfQuaryObjects );
     
     glGenQueries( mNumOfQuaryObjects, &mTimeQuaryObjects[0] );
-    glGenQueries( mNumOfQuaryObjects, &mSamplesQuaryObjects[0] );
     
     // this is to suppress warnings from the graphics driver - 
     // for trying to quary a object that doesn't have a value get,
@@ -97,10 +93,6 @@ bool GraphicsManager::init( Root *root )
     for( size_t i=0; i < mNumOfQuaryObjects; ++i ) {
         glBeginQuery( GL_TIME_ELAPSED, mTimeQuaryObjects[i] );
         glEndQuery( GL_TIME_ELAPSED );
-    }
-    for( size_t i=0; i < mNumOfQuaryObjects; ++i ) {
-        glBeginQuery( GL_SAMPLES_PASSED, mSamplesQuaryObjects[i] );
-        glEndQuery( GL_SAMPLES_PASSED );
     }
     
     
@@ -125,7 +117,6 @@ bool GraphicsManager::init( Root *root )
 void GraphicsManager::destroy()
 {
     glDeleteQueries( mNumOfQuaryObjects, &mTimeQuaryObjects[0] );
-    glDeleteQueries( mNumOfQuaryObjects, &mSamplesQuaryObjects[0] );
     
     delete mRenderer;
     mRenderer = nullptr;
@@ -149,7 +140,6 @@ void GraphicsManager::update( float dt )
 void GraphicsManager::render()
 {
     glBeginQuery( GL_TIME_ELAPSED, mTimeQuaryObjects[mCurrentQuary] );
-    glBeginQuery( GL_SAMPLES_PASSED, mSamplesQuaryObjects[mCurrentQuary] );
     
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
     
@@ -165,17 +155,12 @@ void GraphicsManager::render()
     
     {
         glEndQuery( GL_TIME_ELAPSED );
-        glEndQuery( GL_SAMPLES_PASSED );
         
         GLint result = -1;
         int index = (mCurrentQuary+1)%mNumOfQuaryObjects;
         glGetQueryObjectiv( mTimeQuaryObjects[index], GL_QUERY_RESULT, &result );
         
         mGpuTimes.pushValue( (double)(result) / 1000000.0 );
-        
-        glGetQueryObjectiv( mSamplesQuaryObjects[index], GL_QUERY_RESULT, &result );
-        
-        mSamplePassed.pushValue( (double)(result)/10000.0 );
         
         mCurrentQuary++;
         mCurrentQuary %= mNumOfQuaryObjects;

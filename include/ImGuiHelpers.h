@@ -81,4 +81,45 @@ namespace ImGui
         
         ImGui::PlotLines( label, valueGetter, const_cast<int*>(data), size, index, buffer, min, max, graph_size );
     }
+
+    template< typename Type, typename Getter >
+    void PlotLines( const char* label, Getter &&values, size_t size, Type maxGranity, Type minGranity, ImVec2 graph_size )
+    {
+        Type max = std::numeric_limits<Type>::min(),
+             min = std::numeric_limits<Type>::max(),
+             avarage = 0;
+
+        for( size_t i=0; i < size; ++i ) {
+            Type value = values(i);
+            if( value > max ) max = value;
+            if( value < min ) min = value;
+            avarage += value;
+        }
+        
+        if( maxGranity > 0 ) {
+            max = ((max+maxGranity-1)/maxGranity) * maxGranity;
+        }
+        else {
+            max = -maxGranity;
+        }
+        if( minGranity > 0 ) {
+            min = (min/minGranity) * minGranity;
+        }
+        else {
+            min = -minGranity;
+        }
+        
+        char buffer[128];
+        // visual studio didn't support snprintf :(, but since I'm using fixed with arguments, sprintf should be safe :)
+        std::sprintf( buffer, "Max: %-10f\nMin: %-10f\nAvg: %-10f", (float)max, (float)min, (float)avarage/(float)size );
+        
+        float (*valueGetter)(void*,int) = []( void* data, int idx ) -> float {
+            return (float)(*reinterpret_cast<Getter*>(data))(idx);
+        };
+        
+        ImGui::PlotLines( label, valueGetter, reinterpret_cast<void*>(&values), size, 0, buffer, min, max, graph_size );
+    }
+
+    
+    
 }

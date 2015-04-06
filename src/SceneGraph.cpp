@@ -1,17 +1,18 @@
 #include "SceneGraph.h"
 #include "SceneObject.h"
 #include "Frustrum.h"
+#include <Root.h>
 
 #include <glm/exponential.hpp>
 
 #include <cassert>
+#include <algorithm>
 
 SceneGraph::SceneGraph( Root *root, const BoundingSphere &rootBounds ) :
     mRoot(root)
 {
     mRootNode.reset( new SceneNode );
     mRootNode->_init( this, nullptr );
-   
     
     glm::vec3 center = rootBounds.getCenter();
     float radius = rootBounds.getRadius();
@@ -27,23 +28,46 @@ SceneGraph::SceneGraph( Root *root, const BoundingSphere &rootBounds ) :
     mRootPosition = rootBounds.getCenter();
 }
 
+SceneGraph::~SceneGraph()
+{
+    for( SceneNode *node : mSceneNodes ) {
+        node->_destroy();
+    }
+}
+
+
 void SceneGraph::addObject( SceneObject *object )
 {
     assert( object->_getParent() == nullptr );
     
-    SceneNode *parent = getOrCreateNodeForBound( object->getTransformedBoundingSphere() );
-    parent->addObject( object );
-    object->_setParent( parent );
+    mNewObjects.push_back( object );
 }
 
 void SceneGraph::removeObject( SceneObject *object )
 {
-    assert( object->_getParent() != nullptr );
-    
     SceneNode *parent = object->_getParent();
+    if( parent == nullptr ) {
+        // check if object hasn't had time to properly join the graph.
+        auto iter = std::find( mNewObjects.begin(), mNewObjects.end(), object );
+        if( iter != mNewObjects.end() ) {
+            // if so remove it from the queue.
+            std::swap( *iter, mNewObjects.back() );
+            mNewObjects.pop_back();
+        }
+        return;
+    }
     parent->removeObject( object );
 
     cleanEmptyNodes( parent );
+    object->_setParent( nullptr );
+    
+    auto iter = std::find( mDirtyObjects.begin(), mDirtyObjects.end(), object );
+    if( iter != mDirtyObjects.end() ) {
+        std::swap( *iter, mDirtyObjects.back() );
+        mDirtyObjects.pop_back();
+    }
+    
+    object->_objectRemovedFromGraph( this );
 }
 
 void SceneGraph::update( float dt )
@@ -65,6 +89,17 @@ void SceneGraph::update( float dt )
     }
     mDirtyObjects.clear();
     
+    auto newObjects = std::move( mNewObjects );
+    mNewObjects.clear();
+    
+    for( SceneObject *object : newObjects ) {
+        SceneNode *parent = getOrCreateNodeForBound( object->getTransformedBoundingSphere() );
+        parent->addObject( object );
+        object->_setParent( parent );
+        
+        object->_objectAddedToGraph( this );
+    }
+    
     for( SceneNode *node : mSceneNodes ) {
         node->update( dt );
     }
@@ -74,8 +109,9 @@ void SceneGraph::forEachObject( const std::function<void(SceneObject*)> &callbac
 {
     for( SceneNode *node : mSceneNodes ) {
         const auto &objects = node->getObjects();
-        for( SceneObject *obj : objects ) {
-            callback(obj);
+        for( const auto &obj : objects ) {
+            if( obj.isDead ) continue;
+            callback(obj.object);
         }
     }
 }
@@ -104,7 +140,13 @@ void SceneGraph::quaryObjectsForNode( SceneNode *node, const Frustrum &frustrum,
 void SceneGraph::nodeFullyInsideFrustrum( SceneNode *node, std::vector<SceneObject*> &result )
 {
     const auto &objects = node->getObjects();
-    result.insert( result.end(), objects.begin(), objects.end() );
+    
+    for( const auto &info: objects ) {
+        if( info.isDead ) continue;
+        SceneObject *object = info.object;
+        result.push_back( object );
+    }
+    
     
     SceneNode *children = node->getChildren();
     if( children ) {
@@ -117,7 +159,9 @@ void SceneGraph::nodeFullyInsideFrustrum( SceneNode *node, std::vector<SceneObje
 void SceneGraph::nodePartalyInsideFrusturm( SceneNode *node, const Frustrum &frustrum, std::vector<SceneObject*> &result )
 {
     const auto &objects = node->getObjects();
-    for( SceneObject *object : objects ) {
+    for( const auto &info: objects ) {
+        if( info.isDead ) continue;
+        SceneObject *object = info.object;
         if( frustrum.isInside(object->getTransformedBoundingSphere()) != Frustrum::TestStatus::Outside ) {
             result.push_back( object );
         }
@@ -222,15 +266,15 @@ void SceneGraph::cleanEmptyNodes( SceneNode *node )
                 isEmpty = false;
                 break;
             }
-            if( children[i].getObjects().empty() == false ) {
+            if( children[i].getObjects().size() > children->mDeadObjectCount ) {
                 isEmpty = false;
                 break;
             }
         }
 
         if( isEmpty ) {
-            parent->_setChildren( nullptr );
-            cleanEmptyNodes( parent );
+//             parent->_setChildren( nullptr );
+//             cleanEmptyNodes( parent );
            // delete[] children;
         }
     }

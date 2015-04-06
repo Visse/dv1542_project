@@ -94,7 +94,7 @@ GpuBuffer::GpuBuffer( BufferType type, size_t size, BufferUsage usage, BufferUpd
 {
     GLenum bufferType = bufferTypeToGL( mType );
     
-    glGenBuffers( 1, &mBuffer );
+    createBuffer();
     glBindBuffer( bufferType, mBuffer );
     
     GLenum bufferUsage = usageAndUpdateToGL( mUsage, mUpdate );

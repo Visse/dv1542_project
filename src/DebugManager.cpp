@@ -26,6 +26,7 @@
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_mouse.h>
@@ -46,6 +47,31 @@ static const ImVec4 LOG_COLOR_DEBUG = ImVec4(0.2,0.8,0.2,1.0),
                     LOG_COLOR_ERROR = ImVec4(0.8,0.2,0.2,1.0),
                     LOG_COLOR_CRITICAL = ImVec4(0.8,0.2,0.8,1.0);
                        
+#ifdef __GNUC__
+
+#include <cxxabi.h>
+
+std::string demangleName( const char *name )
+{
+    char *demangledName = __cxxabiv1::__cxa_demangle( name, NULL, NULL, NULL );
+    std::string tmp(demangledName);
+    
+    free(demangledName);
+    
+    return tmp;
+}
+
+#else
+
+std::string demangleName( const char *name )
+{
+    return std::string(name);
+}
+
+#endif
+
+                    
+                    
 class DebugManager::DebugFrameListener :
     public FrameListener
 {
@@ -175,6 +201,9 @@ void DebugManager::postInit()
 
 void DebugManager::destroy()
 {
+    delete mLogListener;
+    mLogListener = nullptr;
+    
     delete mFrameListener;
     mFrameListener = nullptr;
     
@@ -206,13 +235,16 @@ void DebugManager::update( float dt )
             
             if( ImGui::CollapsingHeader("Mesurements") ) {
                 GraphicsManager *graphicsMgr = mRoot->getGraphicsManager();
+                Renderer *renderer = graphicsMgr->getRenderer();
                 
                 ImGui::PlotLines( "Frame Time", mRoot->getFrameTimeHistory(), 1.f, 1.f, ImVec2(0,70) );
                 ImGui::PlotLines( "Frame Rate", mRoot->getFrameRateHistory(), 10.f, 0.f, ImVec2(0,70) );
                 ImGui::PlotLines( "Gpu Time", graphicsMgr->getGpuTimeHistory(), 1.0f, 1.0f, ImVec2(0,70) );
-                ImGui::PlotLines( "Samples passed (*10k)", graphicsMgr->getSamplesPassed(), 100, 100, ImVec2(0,70) );
+                
+                const auto &memUsage = renderer->getMemoryUsageHistory();
+                ImGui::PlotLines( "Mem Usage", [&]( int i ){ return memUsage.getValue(i) / 1024.f; }, memUsage.getSize(), 1.0f, 1.0f, ImVec2(0,70) );
 
-                Renderer::RendererStatistics statistics = graphicsMgr->getRenderer()->getStatistics();
+                Renderer::RendererStatistics statistics = renderer->getStatistics();
                 
                 ImGui::Value( "Drawn Meshes", (int)statistics.totDrawnMeshes );
                 ImGui::Value( "Drawn Entities", (int)statistics.drawnEntities );
@@ -265,7 +297,20 @@ void DebugManager::update( float dt )
             
             if( scene ) {
                 if( ImGui::CollapsingHeader("Scene") ) {
-                    ImGui::Checkbox( "Show Bounds", &mShowSceneBounds );
+                    bool showBounds = mShowSceneBounds | mShowSceneLightsBounds;
+                    if( ImGui::Checkbox("Show Bounds", &showBounds) ) {
+                        mShowSceneBounds = showBounds;
+                        mShowSceneLightsBounds = showBounds;
+                    }
+                    ImGui::SameLine();
+                    ImGui::PushID("ShowBounds");
+                    if( ImGui::CollapsingHeader( "[more]", "", false ) ) {
+                        ImGui::TreePush("ShowBoundsj");
+                        ImGui::Checkbox("Entities", &mShowSceneBounds );
+                        ImGui::Checkbox("Lights", &mShowSceneLightsBounds );
+                        ImGui::TreePop();
+                    }
+                    ImGui::PopID();
                     
                     ImGui::Checkbox( "Show SceneGraph", &mShowSceneGraph );
                     ImGui::SameLine();
@@ -300,6 +345,10 @@ void DebugManager::update( float dt )
                         ImGui::TreePop();
                     }
                     
+                    bool paused = scene->getPaused();
+                    if( ImGui::Checkbox("Paused", &paused) ) {
+                        scene->setPaused( paused );
+                    }
                     GraphicsManager *graphicsMgr = mRoot->getGraphicsManager();
                     Renderer *renderer = graphicsMgr->getRenderer();
                     bool renderWireFrame = renderer->getRenderWireFrame();
@@ -307,16 +356,33 @@ void DebugManager::update( float dt )
                         renderer->setRenderWireFrame( renderWireFrame );
                     }
                     
+                    bool useOcclusionQuarries = renderer->getUseOcclusionQuarries();
+                    if( ImGui::Checkbox("Use Occlusion Quarries", &useOcclusionQuarries) ) {
+                        renderer->setUseOcclusionQuarries( useOcclusionQuarries );
+                    }
+                    
                     bool useFrustrumCulling = scene->getUseFrustrumCulling();
                     if( ImGui::Checkbox("Use Frustrum Culling", &useFrustrumCulling) ) {
                         scene->setUseFrustrumCulling( useFrustrumCulling );
+                    }
+                    
+                    glm::vec3 ambientColor = scene->getAmbientColor();
+                    if( ImGui::ColorEdit3("Ambient", glm::value_ptr(ambientColor)) ) {
+                        scene->setAmbientColor( ambientColor );
                     }
                 }
                 
                 
                 if( ImGui::CollapsingHeader("SceneObjects") ) {
                     scene->forEachObject(
-                        std::bind( &DebugManager::showSceneObject, this, dt, std::placeholders::_1 )
+                        [&]( SceneObject *object ) {
+                            std::string objectType = demangleName(typeid(*object).name());
+                            
+                            if( ImGui::TreeNode(object, "%s", objectType.c_str()) ) {
+                                showSceneObject( dt, object );
+                                ImGui::TreePop();
+                            }
+                        }
                     );
                 }
             }

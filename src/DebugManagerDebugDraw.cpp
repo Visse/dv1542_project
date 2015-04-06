@@ -54,7 +54,7 @@ void DebugManager::submitDebugDraw()
         }
     }
 
-    if( mShowSceneBounds ) {
+    if( mShowSceneBounds || mShowSceneLightsBounds ) {
         SceneManager *sceneMgr = mRoot->getSceneManager();
         Scene *scene = sceneMgr->getScene();
         
@@ -65,7 +65,17 @@ void DebugManager::submitDebugDraw()
                     glm::vec4 color( glm::fract(index*0.13f+0.19f), 0.8f, 0.8f, 0.5f );
                     ImGui::ColorConvertHSVtoRGB( color.r, color.g, color.b, color.r, color.g, color.b );
                     
-                    showObjectBounds( object, color );
+                    if( mShowSceneBounds && mShowSceneLightsBounds ) {
+                        showObjectBounds( object, color );
+                    }
+                    else if( LightObject *light = dynamic_cast<LightObject*>(object) ) {
+                        if( mShowSceneLightsBounds ) {
+                            showObjectBounds( object, glm::vec4(light->getColor(),0.5f) );
+                        }
+                    }
+                    else if( mShowSceneBounds ) {
+                        showObjectBounds( object, color );
+                    }
                     index++;
                 }
             );

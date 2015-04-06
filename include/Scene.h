@@ -20,9 +20,6 @@ struct AmbientUniforms;
 
 class Scene {
 public:
-    static SharedPtr<Scene> LoadFromFile( Root *root, const std::string &filename );
-    
-public:
     Scene( Root *root );
     
     Scene( const Scene& ) = delete;
@@ -62,8 +59,14 @@ public:
     void setUseFrustrumCulling( bool useFrustrumCulling ) {
         mUseFrustumCulling = useFrustrumCulling;
     }
+    void setPaused( bool paused ) {
+        mPaused = paused;
+    }
     bool getUseFrustrumCulling() {
         return mUseFrustumCulling;
+    }
+    bool getPaused() {
+        return mPaused;
     }
     
 private:
@@ -85,5 +88,6 @@ private:
     glm::vec3 mAmbientColor = glm::vec3(0.5);
     SharedPtr<Texture> mSkyBox;
     
-    bool mUseFrustumCulling = true;
+    bool mUseFrustumCulling = true,
+         mPaused = false;
 };
