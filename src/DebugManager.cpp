@@ -333,15 +333,9 @@ void DebugManager::update( float dt )
                     ImGui::Checkbox( "Show Saved Frustrum", &mShowSavedFrustrum );
                     
                     if( ImGui::TreeNode("Show GBuffer") ) {
-                        if( ImGui::RadioButton("None", mGBufferDebug == GBufferDebug::None) ) {
-                            mGBufferDebug = GBufferDebug::None;
-                        }
-                        if( ImGui::RadioButton("Normals", mGBufferDebug == GBufferDebug::Normal) ) {
-                            mGBufferDebug = GBufferDebug::Normal;
-                        }
-                        if( ImGui::RadioButton("Depth", mGBufferDebug == GBufferDebug::Depth) ) {
-                            mGBufferDebug = GBufferDebug::Depth;
-                        }
+                        ImGui::Checkbox( "Normal", &mShowGBufferNormal );
+                        ImGui::Checkbox( "Depth", &mShowGBufferDepth );
+                        ImGui::Checkbox( "Diffuse", &mShowGBufferDiffuse );
                         ImGui::TreePop();
                     }
                     

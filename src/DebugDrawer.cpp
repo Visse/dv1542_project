@@ -10,6 +10,7 @@
 #include "GpuProgram.h"
 #include "Renderable.h"
 #include "Renderer.h"
+#include "Texture.h"
 #include "FrameListener.h"
 
 #include <iostream>
@@ -20,9 +21,10 @@ class DebugDrawer::DebugFrameListener :
     public FrameListener
 {
 public:
-    DebugFrameListener( DebugDrawer *drawer, const SharedPtr<GpuProgram> &wireFrameShader, const SharedPtr<GpuProgram> &normalShader ) :
+    DebugFrameListener( DebugDrawer *drawer, const SharedPtr<GpuProgram> &wireFrameShader, const SharedPtr<GpuProgram> &normalShader, const SharedPtr<GpuProgram> &textureShader ) :
         mWireFrameShader(wireFrameShader),
-        mNormalShader(normalShader)
+        mNormalShader(normalShader),
+        mTexturShader(textureShader)
     {
         mGraphicsMgr = drawer->mRoot->getGraphicsManager();
         mRenderer = mGraphicsMgr->getRenderer();
@@ -31,6 +33,7 @@ public:
         
         mWireRenderable.drawer = drawer;
         mNormalRenderable.drawer = drawer;
+        mTextureRenderable.drawer = drawer;
     }
     virtual ~DebugFrameListener()
     {
@@ -47,6 +50,11 @@ public:
         
         settings.program = mNormalShader;
         settings.renderable = &mNormalRenderable;
+        mRenderer->addCustomRenderable( settings );
+        
+        settings.queue = 6;
+        settings.program = mTexturShader;
+        settings.renderable = &mTextureRenderable;
         mRenderer->addCustomRenderable( settings );
     }
     
@@ -65,12 +73,21 @@ private:
         
         DebugDrawer *drawer;
     } mNormalRenderable;
+    struct : public Renderable {
+        virtual void render( Renderer &renderer ) {
+            drawer->renderTextures();
+        }
+        
+        DebugDrawer *drawer;
+    } mTextureRenderable;
+        
     
 private:
     GraphicsManager *mGraphicsMgr;
     Renderer *mRenderer;
     SharedPtr<GpuProgram> mWireFrameShader,
-                          mNormalShader;
+                          mNormalShader,
+                          mTexturShader;
 };
 
 
@@ -92,10 +109,11 @@ void DebugDrawer::postInit()
     ResourceManager *resourceMgr = mRoot->getResourceManager();
     
     SharedPtr<GpuProgram> wireFrameShader = resourceMgr->getGpuProgramAutoPack( "DebugDrawerWireShader" );
-    SharedPtr<GpuProgram> normalShader = resourceMgr->getGpuProgramAutoPack( "DebugDrawerNormalShader" );;
+    SharedPtr<GpuProgram> normalShader = resourceMgr->getGpuProgramAutoPack( "DebugDrawerNormalShader" );
+    SharedPtr<GpuProgram> textureShader = resourceMgr->getGpuProgramAutoPack( "DebugDrawerTextureShader" );
     
     mRenderer = mRoot->getGraphicsManager()->getRenderer();
-    mFrameListener = new DebugFrameListener( this, wireFrameShader, normalShader );
+    mFrameListener = new DebugFrameListener( this, wireFrameShader, normalShader, textureShader );
 }
 
 void DebugDrawer::destroy()
@@ -113,6 +131,7 @@ void DebugDrawer::update( float dt )
 {
     mWireFramesDraws.clear();
     mNormalDraws.clear();
+    mTextureDraws.clear();
 }
 
 void DebugDrawer::drawWireFrame( const SharedPtr<Mesh> &mesh, const glm::mat4 &transform, const glm::vec4 &color )
@@ -170,6 +189,16 @@ void DebugDrawer::drawWireBox( const glm::vec3 &hsize, const glm::mat4 &transfor
     drawWireFrame( mBoxMesh, t, color );
 }
 
+void DebugDrawer::drawTexture( const glm::vec2 &position, const glm::vec2 &size, const SharedPtr<Texture> &texture )
+{
+    glm::vec4 quad( position, size );
+    DebugTextureDraw draw;
+    draw.texture = texture;
+    draw.uniforms = mRenderer->aquireUniformBuffer( quad );
+    
+    mTextureDraws.push_back( draw );
+}
+
 void DebugDrawer::renderWireFrames()
 {
     for( const DebugWireDraw &draw : mWireFramesDraws ) {
@@ -185,6 +214,16 @@ void DebugDrawer::renderNormals()
         renderMesh( draw.mesh, GL_POINTS );
     }
 }
+
+void DebugDrawer::renderTextures()
+{
+    for( const DebugTextureDraw &draw : mTextureDraws ) {
+        glBindBufferRange( GL_UNIFORM_BUFFER, 1, draw.uniforms.getBuffer(), draw.uniforms.getOffset(), draw.uniforms.getSize() );
+        draw.texture->bindTexture( 0 );
+        glDrawArrays( GL_POINTS, 0, 1 );
+    }
+}
+
 
 void DebugDrawer::renderMesh( const SharedPtr<Mesh> &mesh, GLenum mode )
 {

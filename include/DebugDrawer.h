@@ -10,6 +10,7 @@
 
 #include <vector>
 
+class Texture;
 class VertexArrayObject;
 class GpuBuffer;
 class Material;
@@ -40,6 +41,8 @@ public:
     void drawWireConeAngle( float height, float angle, const glm::mat4 &transform, const glm::vec4 &color = glm::vec4(0.1f,1.f,0.5f,1.f) );
     void drawWireBox( const glm::vec3 &hsize, const glm::mat4 &transform, const glm::vec4 &color = glm::vec4(0.1f,1.f,0.5f,1.f) );
     
+    void drawTexture( const glm::vec2 &position, const glm::vec2 &size, const SharedPtr<Texture> &texture );
+    
 private:    
     struct WireDrawUniformBlock {
         glm::mat4 modelMatrix;
@@ -60,7 +63,10 @@ private:
         SharedPtr<Mesh> mesh;
         UniformBuffer uniforms;
     };
-
+    struct DebugTextureDraw {
+        SharedPtr<Texture> texture;
+        UniformBuffer uniforms;
+    };
     
     class DebugFrameListener;
     
@@ -77,6 +83,7 @@ private:
 private:
     void renderWireFrames();
     void renderNormals();
+    void renderTextures();
     
     void renderMesh( const SharedPtr<Mesh> &mesh, GLenum mode );
   
@@ -89,6 +96,7 @@ private:
     
     std::vector<DebugWireDraw> mWireFramesDraws;
     std::vector<DebugNormalDraw> mNormalDraws;
+    std::vector<DebugTextureDraw> mTextureDraws;
     
     SharedPtr<Mesh> mSphereMesh,
                     mConeMesh,

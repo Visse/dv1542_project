@@ -9,6 +9,8 @@
 #include "SceneManager.h"
 
 #include "imgui.h"
+#include <GraphicsManager.h>
+#include <Renderer.h>
 
 static const glm::vec4 COLOR_WIREFRAME = glm::vec4(0.1f,1.f,0.5f,1.f),
                        COLOR_NORMAL = glm::vec4(0.5f,0.2f,0.2f,1.f),
@@ -109,5 +111,16 @@ void DebugManager::submitDebugDraw()
     if( mShowSavedFrustrum ) {
         glm::mat4 modelMatrix = glm::inverse( mSavedViewProjMatrix );
         debugDrawer->drawWireBox( glm::vec3(1.f), modelMatrix, COLOR_SAVED_FRUSTRUM );
+    }
+    
+    Renderer *renderer = mRoot->getGraphicsManager()->getRenderer();
+    if( mShowGBufferNormal ) {
+        debugDrawer->drawTexture( glm::vec2(-0.5,-0.5), glm::vec2(0.5,0.5), renderer->getGBufferNormalTexture() );
+    }
+    if( mShowGBufferDepth ) {
+        debugDrawer->drawTexture( glm::vec2(0.5,-0.5), glm::vec2(0.5,0.5), renderer->getGBufferDepthTexture() );
+    }
+    if( mShowGBufferDiffuse ) {
+        debugDrawer->drawTexture( glm::vec2(-0.5,0.5), glm::vec2(0.5,0.5), renderer->getGBufferDiffuseTexture() );
     }
 }

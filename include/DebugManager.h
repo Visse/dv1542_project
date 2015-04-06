@@ -65,13 +65,7 @@ private:
     struct DebugGuiUniforms {
         glm::mat4 projectionMatrix;
     };
-    
-    enum class GBufferDebug {
-        None,
-        Normal,
-        Depth
-    };
-    
+
     class DebugFrameListener;
     
 private:
@@ -102,6 +96,9 @@ private:
              mSavedFrustrum;
     glm::mat4 mSavedViewProjMatrix;
     
-    GBufferDebug mGBufferDebug = GBufferDebug::None;
+    bool mShowGBufferNormal = false,
+         mShowGBufferDepth = false,
+         mShowGBufferDiffuse = false;
+    
     SharedPtr<Material> mGBufferNormalMaterial, mGBufferDepthMaterial;
 };

@@ -115,6 +115,16 @@ public:
         return mMemUsageHistory;
     }
     
+    
+    SharedPtr<Texture> getGBufferNormalTexture() {
+        return mGBuffer.normalTexture;
+    }
+    SharedPtr<Texture> getGBufferDiffuseTexture() {
+        return mGBuffer.diffuseTexture;
+    }
+    SharedPtr<Texture> getGBufferDepthTexture() {
+        return mGBuffer.depthTexture;
+    }
 private:
     void initGBuffer();
     void initSSAO();
