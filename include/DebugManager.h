@@ -96,9 +96,12 @@ private:
              mSavedFrustrum;
     glm::mat4 mSavedViewProjMatrix;
     
+    
+    float mGBufferAlpha = 0.8f;
     bool mShowGBufferNormal = false,
          mShowGBufferDepth = false,
-         mShowGBufferDiffuse = false;
+         mShowGBufferDiffuse = false,
+         mShowGBufferFullScreen = false;
     
     SharedPtr<Material> mGBufferNormalMaterial, mGBufferDepthMaterial;
 };

@@ -41,7 +41,7 @@ public:
     void drawWireConeAngle( float height, float angle, const glm::mat4 &transform, const glm::vec4 &color = glm::vec4(0.1f,1.f,0.5f,1.f) );
     void drawWireBox( const glm::vec3 &hsize, const glm::mat4 &transform, const glm::vec4 &color = glm::vec4(0.1f,1.f,0.5f,1.f) );
     
-    void drawTexture( const glm::vec2 &position, const glm::vec2 &size, const SharedPtr<Texture> &texture );
+    void drawTexture( const glm::vec2 &position, const glm::vec2 &size, const SharedPtr<Texture> &texture, float alpha );
     
 private:    
     struct WireDrawUniformBlock {

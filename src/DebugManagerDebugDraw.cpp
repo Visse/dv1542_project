@@ -114,13 +114,26 @@ void DebugManager::submitDebugDraw()
     }
     
     Renderer *renderer = mRoot->getGraphicsManager()->getRenderer();
-    if( mShowGBufferNormal ) {
-        debugDrawer->drawTexture( glm::vec2(-0.5,-0.5), glm::vec2(0.5,0.5), renderer->getGBufferNormalTexture() );
+    if( mShowGBufferFullScreen ) {
+        if( mShowGBufferNormal ) {
+            debugDrawer->drawTexture( glm::vec2(0,0), glm::vec2(1,1), renderer->getGBufferNormalTexture(), mGBufferAlpha );
+        }
+        if( mShowGBufferDepth ) {
+            debugDrawer->drawTexture( glm::vec2(0,0), glm::vec2(1,1), renderer->getGBufferDepthTexture(), mGBufferAlpha );
+        }
+        if( mShowGBufferDiffuse ) {
+            debugDrawer->drawTexture( glm::vec2(0,0), glm::vec2(1,1), renderer->getGBufferDiffuseTexture(), mGBufferAlpha );
+        }
     }
-    if( mShowGBufferDepth ) {
-        debugDrawer->drawTexture( glm::vec2(0.5,-0.5), glm::vec2(0.5,0.5), renderer->getGBufferDepthTexture() );
-    }
-    if( mShowGBufferDiffuse ) {
-        debugDrawer->drawTexture( glm::vec2(-0.5,0.5), glm::vec2(0.5,0.5), renderer->getGBufferDiffuseTexture() );
+    else {
+        if( mShowGBufferNormal ) {
+            debugDrawer->drawTexture( glm::vec2(-0.5,-0.5), glm::vec2(0.5,0.5), renderer->getGBufferNormalTexture(), mGBufferAlpha );
+        }
+        if( mShowGBufferDepth ) {
+            debugDrawer->drawTexture( glm::vec2(0.5,-0.5), glm::vec2(0.5,0.5), renderer->getGBufferDepthTexture(), mGBufferAlpha );
+        }
+        if( mShowGBufferDiffuse ) {
+            debugDrawer->drawTexture( glm::vec2(-0.5,0.5), glm::vec2(0.5,0.5), renderer->getGBufferDiffuseTexture(), mGBufferAlpha );
+        }
     }
 }

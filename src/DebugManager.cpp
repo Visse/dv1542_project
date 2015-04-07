@@ -333,6 +333,8 @@ void DebugManager::update( float dt )
                     ImGui::Checkbox( "Show Saved Frustrum", &mShowSavedFrustrum );
                     
                     if( ImGui::TreeNode("Show GBuffer") ) {
+                        ImGui::SliderFloat( "Alpha", &mGBufferAlpha, 0.f, 1.f );
+                        ImGui::Checkbox( "FullScreen", &mShowGBufferFullScreen );
                         ImGui::Checkbox( "Normal", &mShowGBufferNormal );
                         ImGui::Checkbox( "Depth", &mShowGBufferDepth );
                         ImGui::Checkbox( "Diffuse", &mShowGBufferDiffuse );

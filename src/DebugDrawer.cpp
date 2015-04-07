@@ -52,6 +52,7 @@ public:
         settings.renderable = &mNormalRenderable;
         mRenderer->addCustomRenderable( settings );
         
+        settings.blendMode = BlendMode::AlphaBlend;
         settings.queue = 6;
         settings.program = mTexturShader;
         settings.renderable = &mTextureRenderable;
@@ -189,12 +190,15 @@ void DebugDrawer::drawWireBox( const glm::vec3 &hsize, const glm::mat4 &transfor
     drawWireFrame( mBoxMesh, t, color );
 }
 
-void DebugDrawer::drawTexture( const glm::vec2 &position, const glm::vec2 &size, const SharedPtr<Texture> &texture )
+void DebugDrawer::drawTexture( const glm::vec2 &position, const glm::vec2 &size, const SharedPtr<Texture> &texture, float alpha )
 {
-    glm::vec4 quad( position, size );
+    struct {
+        glm::vec2 position, size;
+        float alpha;
+    } uniforms {position, size, alpha};
     DebugTextureDraw draw;
     draw.texture = texture;
-    draw.uniforms = mRenderer->aquireUniformBuffer( quad );
+    draw.uniforms = mRenderer->aquireUniformBuffer( uniforms );
     
     mTextureDraws.push_back( draw );
 }
