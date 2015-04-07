@@ -9,7 +9,8 @@ struct KeyBindings
 {
     Int32 quitGame    = 0x40000045, // F12
           toogleMouse = 0x4000003A, // F1
-          toogleDebug = 0x4000003B; // F2
+          toogleDebug = 0x4000003B, // F2
+          tooglePause = 0x4000003D; // F4
     
 };
 

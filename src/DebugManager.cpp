@@ -142,6 +142,7 @@ bool DebugManager::init( Root *root )
     
     const Config *config = mRoot->getConfig();
     mKeyToogleDebug = config->keyBindings.toogleDebug;
+    mKeyTooglePause = config->keyBindings.tooglePause;
     
     mHeight = config->windowHeight;
     
@@ -402,11 +403,19 @@ void DebugManager::update( float dt )
 
 bool DebugManager::handleSDLEvent( const SDL_Event &event )
 {
-    if( event.type == SDL_KEYDOWN &&
-        event.key.keysym.sym == mKeyToogleDebug ) 
+    if( event.type == SDL_KEYDOWN )
     {
-        mIsDebugVisible = !mIsDebugVisible;
-        return false;
+        if( event.key.keysym.sym == mKeyToogleDebug ) {
+            mIsDebugVisible = !mIsDebugVisible;
+            return false;
+        }
+        if( event.key.keysym.sym == mKeyTooglePause ) {
+            SceneManager *sceneMgr = mRoot->getSceneManager();
+            Scene *scene = sceneMgr->getScene();
+            if( scene ) {
+                scene->setPaused( !scene->getPaused() );
+            }
+        }
     }
     if( !mIsDebugVisible || SDL_GetRelativeMouseMode() == SDL_TRUE ) {
         return false;

@@ -73,7 +73,8 @@ private:
     DebugFrameListener *mFrameListener;
     DebugLogListener* mLogListener;
     
-    Int32 mKeyToogleDebug; 
+    Int32 mKeyToogleDebug,
+          mKeyTooglePause;
     
     bool mIsDebugVisible = false,
          mShowSceneBounds = false,

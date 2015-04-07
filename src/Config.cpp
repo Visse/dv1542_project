@@ -104,6 +104,9 @@ void loadKeyBindigs( KeyBindings &keybindings, Yaml::MappingNode node )
         else if( StringUtils::equalCaseInsensitive(key, "ToogleDebug") ) {
             keybindings.toogleDebug = SDL_GetKeyFromName( value.c_str() );
         }
+        else if( StringUtils::equalCaseInsensitive(key, "TooglePause") ) {
+            keybindings.tooglePause = SDL_GetKeyFromName( value.c_str() );
+        }
     }
 }
 
