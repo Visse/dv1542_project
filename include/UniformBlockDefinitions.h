@@ -17,8 +17,7 @@ struct SceneRenderUniforms {
               inverseViewProjMatrix;
     
     glm::vec2 clippingPlanes; // x = near plane, y = far plane
-    // aligment, see opengl layout std140
-    float _dummy0[2];
+    glm::vec2 windowSize;
     
     glm::vec3 cameraPosition;
     float _dummy1[1];

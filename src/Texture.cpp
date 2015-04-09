@@ -177,6 +177,14 @@ bool Texture::isCubeMap()
     return isTypeCubeMap( mType );
 }
 
+void Texture::copyTexture( const SharedPtr<Texture> &texture )
+{
+    assert( isCubeMap() == false );
+    assert( texture && texture->isCubeMap() == false );
+    
+    glm::uvec2 size = texture->getSize();
+    glCopyImageSubData( texture->getGLTexture(), GL_TEXTURE_2D, 0, 0, 0, 0, mGLTexture, GL_TEXTURE_2D, 0, 0, 0, 0, size.x, size.y, 1 );
+}
 
 /// @todo FIXME this code needs some serius clean up....
 

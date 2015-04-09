@@ -9,6 +9,7 @@
 void loadKeyBindigs( KeyBindings &keybindings, Yaml::MappingNode node );
 void loadFlyingControllerConfig( FlyingControllConfig &config, Yaml::MappingNode node );
 void loadComputeParticleConfig( ComputeParticleConfig &config, Yaml::MappingNode node );
+void loadComputeWaterConfig( ComputeWaterConfig &config, Yaml::MappingNode node );
 
 void Config::load( const std::string &filename )
 {
@@ -84,6 +85,9 @@ void Config::load( const std::string &filename )
         }
         else if( StringUtils::equalCaseInsensitive(key, "LogFileName") ) {
             logFileName = value.asValue().getValue();
+        }
+        else if( StringUtils::equalCaseInsensitive(key, "ComputeWater") ) {
+            loadComputeWaterConfig( computeWater, value.asMapping() );
         }
     }
 }
@@ -191,5 +195,17 @@ void loadComputeParticleConfig( ComputeParticleConfig &config, Yaml::MappingNode
     }
 }
 
+void loadComputeWaterConfig( ComputeWaterConfig &config, Yaml::MappingNode node )
+{
+    for( size_t i=0, count=node.getCount(); i < count; ++i ) {
+        auto entry = node.getValue(i);
+        auto key = entry.first.asValue().getValue();
+        auto value = entry.second.asValue();
+        
+        if( StringUtils::equalCaseInsensitive(key, "TextureSize") ) {
+            config.textureSize = value.getValue<size_t>();
+        }
+    }
+}
 
 

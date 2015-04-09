@@ -55,6 +55,7 @@ void Renderer::renderScene( Scene *scene, Camera *camera )
     prepereShadowCasters();
     
     SceneRenderUniforms sceneUniforms = camera->getSceneUniforms();
+    sceneUniforms.windowSize = glm::vec2(mWindowSize.x,mWindowSize.y);
     mSceneUniforms = aquireUniformBuffer( sceneUniforms );
     
     AmbientUniforms ambientUniforms = scene->getAmbientUniforms();

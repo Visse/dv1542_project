@@ -82,4 +82,15 @@ private:
     Root *mRoot;
 };
 
-
+class ComputeWaterFactory :
+    public SceneObjectFactory
+{
+public:
+    ComputeWaterFactory( Root *root );
+    
+    virtual SceneObject* createObject( const Yaml::Node& node ) override;
+    virtual SceneObject* cloneObject( SceneObject *object ) override;
+    
+private:
+    Root *mRoot;
+};

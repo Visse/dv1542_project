@@ -17,6 +17,12 @@ ShaderType stringToShaderType( const std::string &str )
     if( StringUtils::equalCaseInsensitive(str,"Geometry") ) {
         return ShaderType::Geometry;
     }
+    if( StringUtils::equalCaseInsensitive(str,"TessControl") ) {
+        return ShaderType::TessControl;
+    }
+    if( StringUtils::equalCaseInsensitive(str,"TessEval") ) {
+        return ShaderType::TessEval;
+    }
     
     throw std::runtime_error( StringUtils::strjoin("String isn't a ShaderType (\"",str,"\")") );
 }
@@ -32,6 +38,10 @@ GLenum shaderTypeToGL( ShaderType type )
         return GL_GEOMETRY_SHADER;
     case( ShaderType::Compute ):
         return GL_COMPUTE_SHADER;
+    case( ShaderType::TessControl ):
+        return GL_TESS_CONTROL_SHADER;
+    case( ShaderType::TessEval ):
+        return GL_TESS_EVALUATION_SHADER;
     }
     
     throw std::runtime_error( "ShaderType isn't valid!" );

@@ -5,7 +5,7 @@
 #include "ComputeParticleSystem.h"
 #include "Mesh.h"
 #include "RandomMovingObjects.h"
-
+#include "ComputeWater.h"
 
 #include "imgui.h"
 
@@ -216,4 +216,30 @@ void DebugManager::showSceneObject( float dt, SceneObject *object )
     
         ImGui::Checkbox( "Light Volume", &debugDrawInfo.debugLight );
     }
+
+    if( ComputeWater *water = dynamic_cast<ComputeWater*>(object) ) {
+        ImGui::Checkbox( "Show SimTexture", &debugDrawInfo.showComputeWaterTexture );
+        bool useWireFrame = water->getUseWireFrame();
+        float depthFalloff = water->getDepthFalloff();
+        float heightScale = water->getHeightScale();
+        float waterSizeScale = water->getWaterSizeScale();
+        float lodScale = water->getLODScale();
+        
+        if( ImGui::Checkbox("Use Wireframe", &useWireFrame) ) {
+            water->setUseWireFrame( useWireFrame );
+        }
+        if( ImGui::SliderFloat("Depth Falloff", &depthFalloff, 0.0, 0.2) ) {
+            water->setDepthFalloff( depthFalloff );
+        }
+        if( ImGui::SliderFloat("Height Scale", &heightScale, 0.0, 2.0) ) {
+            water->setHeightScale( heightScale );
+        }
+        if( ImGui::SliderFloat("Size Scale", &waterSizeScale, 0.0, 10.0) ) {
+            water->setWaterSizeScale( waterSizeScale );
+        }
+        if( ImGui::SliderFloat("LOD Scale", &lodScale, 0.0, 4.0) ) {
+            water->setLODScale( lodScale );
+        }
+    }
+    
 }

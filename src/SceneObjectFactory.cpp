@@ -8,6 +8,7 @@
 #include "RandomMovingObjects.h"
 #include "PulsingObject.h"
 #include "SceneManager.h"
+#include "ComputeWater.h"
 
 #include <yaml-cxx/YamlCxx.h>
 
@@ -284,6 +285,42 @@ SceneObject *PulsingObjectFactory::cloneObject( SceneObject *object )
     
     return clone;
 }
+
+ComputeWaterFactory::ComputeWaterFactory( Root *root ) :
+    mRoot(root)
+{
+}
+
+SceneObject* ComputeWaterFactory::createObject( const Yaml::Node &node )
+{
+    Yaml::MappingNode config = node.asMapping();
+    
+    ComputeWater *water = new ComputeWater( this, mRoot );
+    
+    float depthFalloff = config.getFirstValue("DepthFalloff",false).asValue().getValue<float>( water->getDepthFalloff() );
+    float heightScale = config.getFirstValue("HeightScale",false).asValue().getValue<float>( water->getHeightScale() );
+    float waterSizeScale = config.getFirstValue("WaterSizeScale",false).asValue().getValue<float>( water->getWaterSizeScale() );
+    glm::vec3 lightPosition = config.getFirstValue("LightPosition",false).asValue().getValue<glm::vec3>( water->getLightPosition() );
+    glm::vec3 lightColor = config.getFirstValue("LightColor",false).asValue().getValue<glm::vec3>( water->getLightColor() );
+    
+    water->setDepthFalloff( depthFalloff );
+    water->setHeightScale( heightScale );
+    water->setWaterSizeScale( waterSizeScale );
+    water->setLightPosition( lightPosition );
+    water->setLightColor( lightColor );
+    
+    return water;
+}
+
+SceneObject* ComputeWaterFactory::cloneObject( SceneObject *object )
+{
+    ComputeWater *water = dynamic_cast<ComputeWater*>( object );
+    assert( water );
+    ComputeWater *clone = new ComputeWater( this, mRoot );
+    
+    return clone;
+}
+
 
 
 

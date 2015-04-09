@@ -9,6 +9,8 @@ enum class ShaderType {
     Vertex, 
     Fragment,
     Geometry,
+    TessControl,
+    TessEval,
     
     Compute
 };

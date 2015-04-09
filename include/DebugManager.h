@@ -58,6 +58,7 @@ private:
              parentSceneNodes = false;
              
         bool debugLight = false;
+        bool showComputeWaterTexture = false;
         
         SharedPtr<Mesh> mesh;
     };

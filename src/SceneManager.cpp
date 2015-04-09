@@ -26,6 +26,7 @@ bool SceneManager::init( Root *root )
     addFactory( "Light", new LightFactory(mRoot), true );
     addFactory( "RandomMovingObjects", new RandomMovingObjectFactory(mRoot), true );
     addFactory( "PulsingObject", new PulsingObjectFactory(mRoot), true );
+    addFactory( "ComputeWater", new ComputeWaterFactory(mRoot), true );
     
     StartupMesurements *mesurements = mRoot->getStartupMesurements();
     mesurements->sceneStartup = initTimer.getTimeAsSeconds();

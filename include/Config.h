@@ -44,6 +44,10 @@ struct ComputeParticleConfig {
            defaultAttractorCount = 4;
 };
 
+struct ComputeWaterConfig {
+    size_t textureSize = 512;
+};
+
 struct Config 
 {
     void load( const std::string &filename );
@@ -87,4 +91,5 @@ struct Config
     KeyBindings keyBindings;    
     FlyingControllConfig freeCamera;
     ComputeParticleConfig computeParticle;
+    ComputeWaterConfig computeWater;
 };

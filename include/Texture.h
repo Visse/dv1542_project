@@ -62,8 +62,14 @@ public:
     GLuint getGLTexture() {
         return mGLTexture;
     }
+    glm::uvec2 getSize() {
+        return mSize;
+    }
     
     bool isCubeMap();
+    
+    void copyTexture( const SharedPtr<Texture> &texture );
+    
 private:
     GLuint mGLTexture;
     TextureType mType;

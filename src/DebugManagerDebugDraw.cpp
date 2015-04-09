@@ -7,6 +7,7 @@
 #include "SceneNode.h"
 #include "SceneGraph.h"
 #include "SceneManager.h"
+#include "ComputeWater.h"
 
 #include "imgui.h"
 #include <GraphicsManager.h>
@@ -53,6 +54,12 @@ void DebugManager::submitDebugDraw()
                 showSceneNode( node, COLOR_PARENT_SCENENODES );
                 node  = node->getParent();
             }
+        }
+        if( info.showComputeWaterTexture ) {
+            ComputeWater *water = dynamic_cast<ComputeWater*>( object );
+            assert( water );
+            
+            debugDrawer->drawTexture( glm::vec2(0.5,0.5), glm::vec2(0.5,0.5), water->getSimTexture(), 1.0f );
         }
     }
 
