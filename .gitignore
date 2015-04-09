@@ -3,3 +3,4 @@ build/
 .kdev4/
 models/
 *.kdev4
+dependecies/
