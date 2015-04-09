@@ -6,6 +6,23 @@
 #include <algorithm>
 #include <cassert>
 
+
+#ifdef _MSC_VER
+#include <cstdarg>
+namespace std {
+    int snprintf(char* str, size_t size, const char* format, ...) {
+        va_list args;
+
+        va_start(args, format);
+        int count = std::vsnprintf( str, size, format, args );
+        va_end(args);
+        return count; 
+    }
+}
+
+#endif
+
+
 typedef std::chrono::system_clock ClockType;
 
 uint64_t timeNow() {

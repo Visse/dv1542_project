@@ -3,6 +3,7 @@
 #include <sstream>
 #include <fstream>
 #include <vector>
+#include <cstdint>
 
 #include "SharedEnums.h"
 #include "StringUtils.h"

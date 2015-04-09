@@ -13,6 +13,8 @@
 #include <stdexcept>
 #include <cassert>
 #include <map>
+#include <array>
+#include <functional>
 
 #include <glm/vec3.hpp>
 #include <glm/vec2.hpp>

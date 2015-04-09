@@ -69,6 +69,8 @@ bool GraphicsManager::init( Root *root )
     glEnable( GL_BLEND );
     glEnable( GL_DEPTH_TEST );
     glEnable( GL_CULL_FACE );
+
+    glEnable( GL_VERTEX_PROGRAM_POINT_SIZE_ARB );
     
     if( config->openglDebug && glDebugMessageCallback ) {
         glDebugMessageCallback( debugCallback, NULL );
@@ -280,7 +282,9 @@ void GLAPIENTRY debugCallback( GLenum source, GLenum type, unsigned int id, GLui
         severityStr = "Medium";
     } else if( severity == GL_DEBUG_SEVERITY_LOW_ARB ) {
         severityStr = "Low";
-    } 
+    } else if( severity == GL_DEBUG_SEVERITY_NOTIFICATION ) {
+        return;
+    }
     
     std::fprintf( stderr, "[OpenGL]\tSource: %s\tType: %s\tID: %d\tSeverity: %s\tMessage: %s\n", sourceStr, typeStr, id, severityStr, message );
 }
