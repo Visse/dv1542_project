@@ -42,6 +42,11 @@ namespace StringUtils
     void toUpperCaseInPlace( std::string &str );
     void toUpperCaseInPlace( char *str, size_t lenght=0 );
     
+    // test the string for a substrign described by pattern,
+    // the test is ignoring case, and the special token '*' is a wild card
+    bool testString( const std::string &str, const std::string &pattern );
+    bool testString( const char *str, size_t lenght, const char *pattern, size_t patternLenght );
+    
     struct CaseInsensitiveCompare {
         bool operator () ( const std::string &s1, const std::string &s2 ) const {
             return compareCaseInsensitive( s1, s2 );

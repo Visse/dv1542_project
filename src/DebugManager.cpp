@@ -258,6 +258,7 @@ void DebugManager::update( float dt )
             
             if( ImGui::CollapsingHeader("Logs") ) {
                 ImGui::BeginChild( "DefaultLog", ImVec2(0,200), true );
+                
                 ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4,1));
                 const auto logEntries = mLogListener->getMessages();
                 for( const auto &message : logEntries ) {
@@ -371,13 +372,18 @@ void DebugManager::update( float dt )
                 
                 
                 if( ImGui::CollapsingHeader("SceneObjects") ) {
+                    ImGui::Text( "Filter" );
+                    ImGui::SameLine();
+                    ImGui::InputText( "", mSceneObjectsFilter, 32, ImGuiInputTextFlags_AutoSelectAll );
                     scene->forEachObject(
                         [&]( SceneObject *object ) {
                             std::string objectType = demangleName(typeid(*object).name());
                             
-                            if( ImGui::TreeNode(object, "%s", objectType.c_str()) ) {
-                                showSceneObject( dt, object );
-                                ImGui::TreePop();
+                            if( StringUtils::testString(objectType.c_str(),objectType.size(), mSceneObjectsFilter, strlen(mSceneObjectsFilter) ) ) {
+                                if( ImGui::TreeNode(object, "%s", objectType.c_str()) ) {
+                                    showSceneObject( dt, object );
+                                    ImGui::TreePop();
+                                }
                             }
                         }
                     );

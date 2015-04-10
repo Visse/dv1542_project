@@ -260,6 +260,30 @@ namespace StringUtils
         return internal::toUpperCase( str, lenght );
     }
     
+    inline bool testString( const std::string &str, const std::string &pattern )
+    {
+        return testString( str.c_str(), str.size(), pattern.c_str(), pattern.size() );
+    }
+    
+    inline bool testString( const char *str, size_t lenght, const char *pattern, size_t patternLenght )
+    {
+        if( lenght == 0 ) {
+            lenght = std::strlen(str);
+        }
+        if( patternLenght == 0 ) {
+            patternLenght = std::strlen(pattern);
+        }
+        return std::search( 
+            str, str+lenght, pattern, pattern+patternLenght,
+            []( char s, char p ) {
+                if( p == '*' ) { 
+                    return true;
+                }
+                return std::tolower(s) == std::tolower(p);
+            }
+        ) != (str + lenght);
+    }
+    
     namespace internal 
     {
         class InMemoryIOBuffer :
