@@ -85,10 +85,10 @@ namespace FileUtils
     bool isFile( const std::string &filename )
     {
         DWORD attributes = GetFileAttributes(filename.c_str());
-        if( attributes == 0xFFFFFFFF ) {
+        if( attributes == INVALID_FILE_ATTRIBUTES ) {
             return false;
         }
-        return attributes  == FILE_ATTRIBUTE_NORMAL;
+          return (attributes & FILE_ATTRIBUTE_DIRECTORY) == 0;
     }
     
     bool isDirectory( const std::string &directory )

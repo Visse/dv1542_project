@@ -132,6 +132,8 @@ private:
 
 bool DebugManager::init( Root *root )
 {
+    mSceneObjectsFilter[0] = '\0';
+
     Timer initTimer;
     
     mRoot = root;

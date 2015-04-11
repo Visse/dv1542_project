@@ -106,5 +106,5 @@ private:
     
     SharedPtr<Material> mGBufferNormalMaterial, mGBufferDepthMaterial;
     
-    char mSceneObjectsFilter[32]={'\0'};
+    char mSceneObjectsFilter[32];
 };
