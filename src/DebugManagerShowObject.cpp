@@ -242,10 +242,10 @@ void DebugManager::showSceneObject( float dt, SceneObject *object )
         if( ImGui::SliderFloat("LOD Scale", &lodScale, 0.0, 4.0) ) {
             water->setLODScale( lodScale );
         }
-        if( ImGui::SliderFloat("Frensel", &frensel, 0.0, 1.0) ) {
+        if( ImGui::SliderFloat("Frensel", &frensel, 0.0, 3.0) ) {
             water->setFrensel( frensel );
         }
-        if( ImGui::SliderFloat("Frensel Falloff", &frenselFalloff, 0.0, 1.0) ) {
+        if( ImGui::SliderFloat("Frensel Falloff", &frenselFalloff, 0.0, 20.0) ) {
             water->setFrenselFalloff( frenselFalloff );
         }
     }

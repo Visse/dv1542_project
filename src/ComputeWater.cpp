@@ -113,7 +113,7 @@ void ComputeWater::render( Renderer &renderer )
     glDisable( GL_CULL_FACE );
     glPatchParameteri( GL_PATCH_VERTICES, 4 );
     glDrawArrays( GL_PATCHES, 0, 16 );
-    glDisable( GL_CULL_FACE );
+    glEnable( GL_CULL_FACE );
 };
 
 void ComputeWater::createSurface()
