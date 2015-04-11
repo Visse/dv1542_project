@@ -63,6 +63,9 @@ SharedPtr<GpuShader> loadShader( ShaderType type, const void *source, size_t siz
 
 SharedPtr<GpuShader> GpuShader::LoadShaderFromFile( ShaderType type, const std::string &filename )
 {
+    if( !FileUtils::isFile(filename) ) {
+        throw std::runtime_error( StringUtils::strjoin("Filename isn't a file! (",filename,")") ); 
+    }
     std::string source = FileUtils::getFileContent( filename );
     return loadShader(type, source.data(), source.size(), filename );
 }

@@ -185,12 +185,16 @@ void Renderer::initGBuffer()
     mGBuffer.diffuseTexture = Texture::CreateTexture( TextureType::RGBA, gbufferSize, 1 );
     mGBuffer.normalTexture = Texture::CreateTexture( TextureType::RGB, gbufferSize, 1 );
     mGBuffer.depthTexture = Texture::CreateTexture( TextureType::Depth, gbufferSize, 1 );
+    mGBuffer.litDiffuseTexture = Texture::CreateTexture( TextureType::RGB, gbufferSize, 1 );
     
     mGBuffer.framebuffer = makeSharedPtr<FrameBuffer>();
     
     mGBuffer.framebuffer->attachColorTexture( mGBuffer.diffuseTexture, 0 );
     mGBuffer.framebuffer->attachColorTexture( mGBuffer.normalTexture, 1 );
     mGBuffer.framebuffer->setDepthTexture( mGBuffer.depthTexture );
+    
+    mGBuffer.lightFrameBuffer = makeSharedPtr<FrameBuffer>();
+    mGBuffer.lightFrameBuffer->attachColorTexture( mGBuffer.litDiffuseTexture, 0 );
     
     mGBuffer.frameBufferSize = gbufferSize;
 }
@@ -240,7 +244,7 @@ void Renderer::initDeferred()
     mDeferred.pointLightProgram = resourceMgr->getGpuProgramAutoPack( "DeferredPointLightShader" );
     mDeferred.pointLightNoShadowProgram = resourceMgr->getGpuProgramAutoPack( "DeferredPointLightNoShadowShader" );
     mDeferred.ambientLightProgram = resourceMgr->getGpuProgramAutoPack( "DeferredAmbientShader" );
-    mDeferred.copyDepthProgram = resourceMgr->getGpuProgramAutoPack( "DeferredCopyDepthShader" );
+    mDeferred.copyToWindowProgram = resourceMgr->getGpuProgramAutoPack( "DeferredCopyToWindowShader" );
     mDeferred.wireFrameProgram = resourceMgr->getGpuProgramAutoPack( "DeferredWireFrameShader" );
     
     mDeferred.sphereMesh = resourceMgr->getMeshAutoPack( "Sphere" );
@@ -387,18 +391,14 @@ void Renderer::renderSSAO()
 
 void Renderer::renderLights()
 {
-    setBlendMode( BlendMode::AddjectiveBlend );
-    glBindFramebuffer( GL_FRAMEBUFFER, 0 );
-    setViewportSize( mWindowSize );
+    mGBuffer.lightFrameBuffer->bindFrameBuffer();
+    setViewportSize( mGBuffer.frameBufferSize );
+    glClear( GL_COLOR_BUFFER_BIT );
     
+    setBlendMode( BlendMode::AddjectiveBlend );
     mGBuffer.diffuseTexture->bindTexture( 0 );
     mGBuffer.normalTexture->bindTexture( 1 );
     mGBuffer.depthTexture->bindTexture( 2 );
-    
-    { // copy our gbuffer-depth buffer to the default framebuffer
-        mDeferred.copyDepthProgram->bindProgram();
-        glDrawArrays( GL_POINTS, 0, 1 );
-    }
     
     { // point lights
         for( const PointLightInfo &info : mPointLights ) {
@@ -415,8 +415,8 @@ void Renderer::renderLights()
             mShadows.pointLightShadowCasterProgram->bindProgram();
             renderPointLightShadowMap( info.firstShadowCaster, info.lastShadowCaster );
             
-            glBindFramebuffer( GL_FRAMEBUFFER, 0 );
-            setViewportSize( mWindowSize );
+            mGBuffer.lightFrameBuffer->bindFrameBuffer();
+            setViewportSize( mGBuffer.frameBufferSize );
             
             mShadows.pointLightShadowTexture->bindTexture(3);
             
@@ -455,9 +455,21 @@ void Renderer::renderLights()
         
         glDrawArrays( GL_POINTS, 0, 1 );
     }
+    
+    glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+    setViewportSize( mWindowSize );
     setBlendMode( BlendMode::Replace );
     glDepthMask( GL_TRUE );
     glEnable( GL_DEPTH_TEST );
+    
+    { // copy the lit diffuse & depth to the window    
+        mDeferred.copyToWindowProgram->bindProgram();
+        mGBuffer.litDiffuseTexture->bindTexture( 0 );
+        mGBuffer.depthTexture->bindTexture( 1 );
+        
+        glDrawArrays( GL_POINTS, 0, 1 );
+    }
+    
 }
 
 void Renderer::renderOther()

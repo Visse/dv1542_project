@@ -220,25 +220,33 @@ void DebugManager::showSceneObject( float dt, SceneObject *object )
     if( ComputeWater *water = dynamic_cast<ComputeWater*>(object) ) {
         ImGui::Checkbox( "Show SimTexture", &debugDrawInfo.showComputeWaterTexture );
         bool useWireFrame = water->getUseWireFrame();
-        float depthFalloff = water->getDepthFalloff();
         float heightScale = water->getHeightScale();
         float waterSizeScale = water->getWaterSizeScale();
         float lodScale = water->getLODScale();
+        float frensel = water->getFrensel();
+        float frenselFalloff = water->getFrenselFalloff();
+        glm::vec3 color = water->getWaterColor();
         
         if( ImGui::Checkbox("Use Wireframe", &useWireFrame) ) {
             water->setUseWireFrame( useWireFrame );
         }
-        if( ImGui::SliderFloat("Depth Falloff", &depthFalloff, 0.0, 0.2) ) {
-            water->setDepthFalloff( depthFalloff );
-        }
         if( ImGui::SliderFloat("Height Scale", &heightScale, 0.0, 2.0) ) {
             water->setHeightScale( heightScale );
+        }
+        if( ImGui::ColorEdit3("Color", glm::value_ptr(color)) ) {
+            water->setWaterColor( color );
         }
         if( ImGui::SliderFloat("Size Scale", &waterSizeScale, 0.0, 10.0) ) {
             water->setWaterSizeScale( waterSizeScale );
         }
         if( ImGui::SliderFloat("LOD Scale", &lodScale, 0.0, 4.0) ) {
             water->setLODScale( lodScale );
+        }
+        if( ImGui::SliderFloat("Frensel", &frensel, 0.0, 1.0) ) {
+            water->setFrensel( frensel );
+        }
+        if( ImGui::SliderFloat("Frensel Falloff", &frenselFalloff, 0.0, 1.0) ) {
+            water->setFrenselFalloff( frenselFalloff );
         }
     }
     

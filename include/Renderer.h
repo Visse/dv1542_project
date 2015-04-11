@@ -125,6 +125,9 @@ public:
     SharedPtr<Texture> getGBufferDepthTexture() {
         return mGBuffer.depthTexture;
     }
+    SharedPtr<Texture> getGBufferLitDiffuseTexture() {
+        return mGBuffer.litDiffuseTexture;
+    }
 private:
     void initGBuffer();
     void initSSAO();
@@ -195,11 +198,13 @@ private:
                   mAmbientUniforms;
     
     struct { // GBuffer data
-        SharedPtr<FrameBuffer> framebuffer;
+        SharedPtr<FrameBuffer> framebuffer,
+                               lightFrameBuffer;
         
         SharedPtr<Texture> diffuseTexture,
                            normalTexture,
-                           depthTexture;
+                           depthTexture,
+                           litDiffuseTexture;
         
         glm::uvec2 frameBufferSize;
     } mGBuffer;
@@ -227,7 +232,7 @@ private:
                               pointLightProgram,
                               pointLightNoShadowProgram,
                               ambientLightProgram,
-                              copyDepthProgram,
+                              copyToWindowProgram,
                               wireFrameProgram;
                               
         SharedPtr<Mesh> sphereMesh;

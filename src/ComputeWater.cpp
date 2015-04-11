@@ -38,7 +38,6 @@ ComputeWater::ComputeWater( SceneObjectFactory *factory, Root *root ) :
     mWaterWireShader = resourceMgr->getGpuProgramAutoPack( "WaterWireShader" );
     mWaterSimulation = resourceMgr->getGpuProgramAutoPack( "WaterSimulation" );
     
-    mWaterTexture = resourceMgr->getTextureAutoPack( "WaterTexture" );
     mNormalTexture = resourceMgr->getTextureAutoPack( "WaterNormal" );
     
     mSimTexture = Texture::CreateTexture( TextureType::Red, glm::uvec2(512,512), 1 );
@@ -83,6 +82,9 @@ void ComputeWater::submitRenderer( Renderer &renderer )
     uniforms.scrollDirection = glm::vec2(0.02,0.02);
     uniforms.currentTime = mCurrentTime;
     uniforms.lodScale = mLODScale;
+    uniforms.frensel = mFrensel;
+    uniforms.frenselFalloff = mFrenselFalloff;
+    uniforms.waterColor = mWaterColor;
     uniforms.lightPos = mLightPosition;
     uniforms.lightColor = mLightColor;
     
@@ -91,16 +93,16 @@ void ComputeWater::submitRenderer( Renderer &renderer )
         settings.uniforms[0] = renderer.getSceneUniforms();
         settings.uniforms[1] = renderer.aquireUniformBuffer( uniforms );
         settings.textures[0] = renderer.getGBufferDepthTexture();
-        settings.textures[1] = mSimTexture;
-        settings.textures[2] = mWaterTexture;
-        settings.textures[3] = mNormalTexture;
+        settings.textures[1] = renderer.getGBufferLitDiffuseTexture();
+        settings.textures[2] = mSimTexture;
+        settings.textures[4] = mNormalTexture;
         settings.renderable = mRenderable;
-    if( mUseWireFrame || renderer.getRenderWireFrame() ) {
         settings.blendMode = BlendMode::Replace;
+        
+    if( mUseWireFrame || renderer.getRenderWireFrame() ) {
         settings.program = mWaterWireShader;
     }
     else {
-        settings.blendMode = BlendMode::AlphaBlend;
         settings.program = mWaterShader;
     }
     renderer.addCustomRenderable( settings );
@@ -108,8 +110,10 @@ void ComputeWater::submitRenderer( Renderer &renderer )
 
 void ComputeWater::render( Renderer &renderer )
 {
+    glDisable( GL_CULL_FACE );
     glPatchParameteri( GL_PATCH_VERTICES, 4 );
     glDrawArrays( GL_PATCHES, 0, 16 );
+    glDisable( GL_CULL_FACE );
 };
 
 void ComputeWater::createSurface()

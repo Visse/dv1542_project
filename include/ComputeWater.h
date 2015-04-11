@@ -24,6 +24,10 @@ public:
     SharedPtr<Texture> getSimTexture() {
         return mSimTexture;
     }
+    
+    glm::vec3 getWaterColor() {
+        return mWaterColor;
+    }
     bool getUseWireFrame() {
         return mUseWireFrame;
     }
@@ -39,6 +43,12 @@ public:
     float getLODScale() {
         return mLODScale;
     }
+    float getFrensel() {
+        return mFrensel;
+    }
+    float getFrenselFalloff() {
+        return mFrenselFalloff;
+    }
     glm::vec3 getLightPosition() {
         return mLightPosition;
     }
@@ -46,6 +56,9 @@ public:
         return mLightColor;
     }
     
+    void setWaterColor( const glm::vec3 &color ) {
+        mWaterColor = color;
+    }
     void setUseWireFrame( bool useWireFrame ) {
         mUseWireFrame = useWireFrame;
     }
@@ -58,6 +71,12 @@ public:
     void setWaterSizeScale( float waterSizeScale );
     void setLODScale( float lodScale ) {
         mLODScale = lodScale;
+    }
+    void setFrensel( float frensel ) {
+        mFrensel = frensel;
+    }
+    void setFrenselFalloff( float frenselFalloff ) {
+        mFrenselFalloff = frenselFalloff;
     }
     void setLightPosition( const glm::vec3 &lightPosition ) {
         mLightPosition = lightPosition;
@@ -80,9 +99,10 @@ private:
         float depthFalloff,
               heightScale;
         glm::vec2 scrollDirection;
-        float currentTime, lodScale;
-        float padding0[2];
-        
+        float currentTime, lodScale, 
+              frensel, frenselFalloff;
+        glm::vec3 waterColor;
+        float padding0;
         glm::vec3 lightPos;
         float padding1;
         glm::vec3 lightColor;
@@ -96,7 +116,6 @@ private:
     SharedPtr<VertexArrayObject> mVAO;
     SharedPtr<GpuBuffer> mWaterSurface;
     SharedPtr<Texture> mSimTexture,
-                       mWaterTexture,
                        mNormalTexture;
     SharedPtr<GpuProgram> mWaterSimulation,
                           mWaterShader,
@@ -108,8 +127,10 @@ private:
     float mDepthFalloff = 0.03f,
           mHeightScale = 0.2f,
           mWaterSizeScale = 1.f,
-          mLODScale = 1.0f;
-          
+          mLODScale = 1.0f,
+          mFrensel = 0.8f,
+          mFrenselFalloff = 5.0f;
+    glm::vec3 mWaterColor = glm::vec3(0.098,0.145,0.243);
     glm::vec3 mLightPosition,
               mLightColor;
 }; 
